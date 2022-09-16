@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "downloader_app"
 version = "0.1.0"
-description = ""
+description = "The routines available in this package are designed to capture and process satellite images"
 authors = ["Flavio Codeco Coelho <fccoelho@gmail.com>"]
 license = "GPL V3 License"
 
