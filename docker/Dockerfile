@@ -34,8 +34,8 @@ RUN addgroup --gid ${HOST_GID} downloader \
 COPY --chown=downloader:downloader conda/dev.yaml /tmp/environment.yaml
 COPY --chown=downloader:downloader downloader_app /opt/services/downloader_app/
 COPY --chown=downloader:downloader docker/celery/run.sh  /opt/services/celery-run.sh
-COPY --chown=downloader:downloader docker/ee/credentials /home/downloader/.config/earthengine/credentials
-COPY --chown=downloader:downloader docker/ee/mycreds.txt  /opt/services/downloader_app/mycreds.txt
+# COPY --chown=downloader:downloader docker/ee/credentials /home/downloader/.config/earthengine/credentials
+# COPY --chown=downloader:downloader docker/ee/mycreds.txt  /opt/services/downloader_app/mycreds.txt
 COPY --chown=downloader:downloader env.tpl pyproject.toml poetry.lock  /opt/services/
 COPY --chown=downloader:downloader docker/scripts/poetry-install.sh /tmp/poetry-install.sh
 
