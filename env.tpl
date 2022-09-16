@@ -17,6 +17,5 @@ PSQL_PORT=25432
 SHAPEFILES_DIR="../../downloader_app/tests/data/shapefiles"
 TIFFS_DIR="../../downloader_app/tests/data/tiffs"
 
-
 HOST_GID=1000
 HOST_UID=1000

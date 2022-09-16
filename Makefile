@@ -46,8 +46,6 @@ prepare_environment:
 	# python downloader_app/ci/create_credentials.py
 	envsubst < env.tpl > .env
 
-
-
 # Python
 .PHONY: clean
 clean: ## clean all artifacts

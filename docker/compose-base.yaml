@@ -42,7 +42,7 @@ services:
       interval: 60s
       timeout: 10s
       retries: 5
-      start_period: 30s  # requires docker-compose 3.4
+      start_period: 30s
 
 networks:
   downloader:
