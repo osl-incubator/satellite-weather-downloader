@@ -1,9 +1,28 @@
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "downloader_app"
-version = "0.1.0"
+version = "0.1.0"  # changed by semantic-release
 description = "The routines available in this package are designed to capture and process satellite images"
+readme = "README.md"
 authors = ["Flavio Codeco Coelho <fccoelho@gmail.com>"]
-license = "GPL V3 License"
+license = "GNU GPL v3.0"
+repository = "https://github.com/esloch/downloader_app"
+homepage = "https://github.com/esloch/downloader_app"
+
+# Pypi classifiers: https://pypi.org/classifiers/
+classifiers = [  #! Update me
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+]
 
 packages = [{include='downloader_app'}]
 
@@ -16,10 +35,6 @@ pre-commit = "^2.20.0"
 isort = "^5.10.1"
 black = "^22.8.0"
 flake8 = "^5.0.4"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
 profile = "black"

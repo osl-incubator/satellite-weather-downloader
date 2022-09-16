@@ -1,5 +1,16 @@
-__version__ = '0.1.0'
+# type: ignore[attr-defined]
+"""Downloader_app Python package"""
 
-from .celeryapp import app as celery_app
+import sys
+from importlib import metadata as importlib_metadata
 
-__all__ = ("celery_app",)
+
+def get_version() -> str:
+    try:
+        return importlib_metadata.version(__name__)
+    except importlib_metadata.PackageNotFoundError:  # pragma: no cover
+        return "0.1.0"  # changed by semantic-release
+
+
+version: str = get_version()
+__version__: str = version
