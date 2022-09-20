@@ -21,7 +21,7 @@ services:
       args:
         HOST_UID: ${HOST_UID}
         HOST_GID: ${HOST_GID}
-        ENV: ${ENV}
+        # ENV: ${ENV}
     env_file:
       - ../.env
     environment:
@@ -32,13 +32,11 @@ services:
       - downloader
     volumes:
       - ../../logs:/var/log/
-    #   - ${TIFFS_DIR}/:/AlertaDengueCaptura/downloader_app/DownloadedFiles:rw
-    #   - ${SHAPEFILES_DIR}/:/AlertaDengueCaptura/downloader_app/shapefiles:rw
     depends_on:
       - rabbitmq
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", 'celery --app downloader_app.celeryapp.app inspect ping -d "celery@$${HOSTNAME}"']
+      test: ["CMD-SHELL", 'celery --app satellite_weather_downloader.celeryapp.app inspect ping -d "celery@$${HOSTNAME}"']
       interval: 60s
       timeout: 10s
       retries: 5

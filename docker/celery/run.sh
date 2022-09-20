@@ -1,3 +1,3 @@
 #!/bin/bash
 
-exec celery -A downloader_app.celeryapp worker -l INFO
+exec celery -A satellite_weather_downloader.celeryapp worker -l INFO

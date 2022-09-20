@@ -50,7 +50,7 @@ jobs:
 
     - name: Docker start satellite
       run: |
-        make docker-start ENV=dev SERVICES=satellite
+        make docker-start SERVICES=satellite
 
     # - name: Test with pytest
     #   run: |
