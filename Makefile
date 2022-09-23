@@ -1,7 +1,9 @@
 #
 .ONESHELL:
 
-# ENV:=$(ENV)
+include .env
+
+ENV:=$(ENV)
 SERVICES:=
 SERVICE:=
 
