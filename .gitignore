@@ -4,7 +4,7 @@
 # Temporary data
 .ipynb_checkpoints/
 notebooks_tmp/
-downloader_app/tests/
+satellite_weather_downloader/tests/
 *utilities/geo_json/
 
 
@@ -56,7 +56,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-downloader/downloader_app/tests/data/tiffs/
+*satellite_weather_downloader/tests
 
 # Translations
 *.mo
@@ -71,7 +71,6 @@ docs/_build/
 # PyBuilder
 target/
 *.env
-.env_downloader
 .idea/
 *.ini
 .vscode

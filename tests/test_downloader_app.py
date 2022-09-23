@@ -1,4 +1,4 @@
-from downloader_app import __version__
+from satellite_weather_downloader import __version__
 
 
 def test_version():

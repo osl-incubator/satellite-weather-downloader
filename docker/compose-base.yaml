@@ -6,7 +6,7 @@ services:
     ports:
       - 5672:5672
     networks:
-      - downloader
+      - satellite
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "5672"]
       interval: 10s
@@ -14,7 +14,7 @@ services:
       retries: 5
       start_period: 10s
 
-  satellite:
+  worker:
     build:
       context: ".."
       dockerfile: "docker/Dockerfile"
@@ -29,7 +29,7 @@ services:
       - PSQL_HOST=${PSQL_HOST}
       - PSQL_PORT=${PSQL_PORT}
     networks:
-      - downloader
+      - satellite
     volumes:
       - ../../logs:/var/log/
     depends_on:
@@ -43,5 +43,5 @@ services:
       start_period: 30s
 
 networks:
-  downloader:
+  satellite:
       driver: bridge
