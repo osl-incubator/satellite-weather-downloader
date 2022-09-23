@@ -40,7 +40,7 @@ jobs:
     - name: Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        PYPI_TOKEN: ${{ secrets.PYPITOKENSATELLITE }}
+        PYPI_TOKEN: ${{ secrets.PYPITOKENSATELLITEWD }}
       run: |
         poetry config pypi-token.pypi ${PYPI_TOKEN}
         npx --yes \
