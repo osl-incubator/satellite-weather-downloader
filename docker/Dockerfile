@@ -17,32 +17,30 @@ RUN sed -i -e "s/# pt_BR.*/pt_BR.UTF-8 UTF-8/" /etc/locale.gen \
     && dpkg-reconfigure --frontend=noninteractive locales \
     && update-locale LANG=pt_BR.UTF-8
 
-# Create downloader user and working directory
-RUN addgroup --gid ${HOST_GID} downloader \
-  && useradd --uid ${HOST_UID} --gid ${HOST_GID} -ms /bin/bash downloader \
-  && echo "downloader ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/downloader \
-  && chmod 0440 /etc/sudoers.d/downloader \
+# Create satellite user and working directory
+RUN addgroup --gid ${HOST_GID} satellite \
+  && useradd --uid ${HOST_UID} --gid ${HOST_GID} -ms /bin/bash satellite \
+  && echo "satellite ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/satellite \
+  && chmod 0440 /etc/sudoers.d/satellite \
   && export ENV_NAME="$ENV_NAME" \
-  && mkdir -p /opt/conda /opt/services/logs /opt/services/downloader_app/ \
-  && chmod -R a+rwx /opt/conda /opt/services/downloader_app/ /tmp \
-  && chown downloader:downloader /opt/services/ /tmp \
+  && mkdir -p /opt/conda /opt/services/logs /opt/services/satellite_weather_downloader/ \
+  && chmod -R a+rwx /opt/conda /opt/services/satellite_weather_downloader/ /tmp \
+  && chown satellite:satellite /opt/services/ /tmp \
   && echo 'source /opt/conda/bin/activate "$ENV_NAME" && exec "$@"' > /activate.sh \
-  && echo 'source activate "$ENV_NAME"' >  /home/downloader/.bashrc \
+  && echo 'source activate "$ENV_NAME"' >  /home/satellite/.bashrc \
   && chmod +x /activate.sh
 
 # Copy dependencies file
-COPY --chown=downloader:downloader conda/dev.yaml /tmp/environment.yaml
-COPY --chown=downloader:downloader downloader_app /opt/services/downloader_app/
-COPY --chown=downloader:downloader docker/celery/run.sh  /opt/services/celery-run.sh
-# COPY --chown=downloader:downloader docker/ee/credentials /home/downloader/.config/earthengine/credentials
-# COPY --chown=downloader:downloader docker/ee/mycreds.txt  /opt/services/downloader_app/mycreds.txt
-COPY --chown=downloader:downloader env.tpl pyproject.toml poetry.lock README.md /opt/services/
-COPY --chown=downloader:downloader docker/scripts/poetry-install.sh /tmp/poetry-install.sh
+COPY --chown=satellite:satellite conda/dev.yaml /tmp/environment.yaml
+COPY --chown=satellite:satellite satellite_weather_downloader /opt/services/satellite_weather_downloader/
+COPY --chown=satellite:satellite docker/celery/run.sh  /opt/services/celery-run.sh
+COPY --chown=satellite:satellite env.tpl pyproject.toml poetry.lock README.md /opt/services/
+COPY --chown=satellite:satellite docker/scripts/poetry-install.sh /tmp/poetry-install.sh
 
-ENV PATH "$PATH:/home/downloader/.local/bin"
+ENV PATH "$PATH:/home/satellite/.local/bin"
 ENV PATH /opt/conda/envs/$ENV_NAME/bin:$PATH
 
-USER downloader
+USER satellite
 
 # Use environment to create the env-satellite
 RUN mamba env create -n $ENV_NAME \
@@ -55,7 +53,7 @@ RUN mamba env create -n $ENV_NAME \
   && find /opt/conda/ -type f,l -name '*.js.map' -delete \
   && rm -rf /opt/conda/pkgs
 
-WORKDIR /opt/services/downloader_app/
+WORKDIR /opt/services/satellite_weather_downloader/
 
 ENTRYPOINT ["bash", "/activate.sh"]
 CMD ["/opt/services/celery-run.sh"]

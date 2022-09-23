@@ -4,14 +4,14 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "downloader_app"
-version = "1.0.0"  # changed by semantic-release
+name = "satellite-weather-downloader"
+version = "1.1.0"  # changed by semantic-release
 description = "The routines available in this package are designed to capture and process satellite images"
 readme = "README.md"
 authors = ["Flavio Codeco Coelho <fccoelho@gmail.com>"]
 license = "GNU GPL v3.0"
-repository = "https://github.com/esloch/downloader_app"
-homepage = "https://github.com/esloch/downloader_app"
+repository = "https://github.com/osl-incubator/satellite-weather-downloader"
+homepage = "https://github.com/osl-incubator/satellite-weather-downloader"
 
 # Pypi classifiers: https://pypi.org/classifiers/
 classifiers = [  #! Update me
@@ -24,7 +24,7 @@ classifiers = [  #! Update me
   "Programming Language :: Python :: 3.9",
 ]
 
-packages = [{include='downloader_app'}]
+packages = [{include='satellite_weather_downloader'}]
 
 [tool.poetry.dependencies]
 python = "^3.9"

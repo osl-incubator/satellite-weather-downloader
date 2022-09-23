@@ -9,7 +9,7 @@ SERVICE:=
 
 DOCKER=docker-compose \
 	--env-file .env \
-	--project-name downloader \
+	--project-name satellite \
 	--file docker/compose-base.yaml \
 
 CONSOLE:=bash
@@ -18,7 +18,7 @@ CONSOLE:=bash
 # DOCKER
 .PHONY:docker-build
 docker-build:
-	$(DOCKER) build satellite
+	$(DOCKER) build worker
 
 .PHONY:docker-start
 docker-start:
@@ -42,8 +42,6 @@ docker-down:
 
 .PHONY: prepare_environment
 prepare_environment:
-	# bash .github/scripts/update_credentials_environ.sh
-	# python downloader_app/ci/create_credentials.py
 	envsubst < env.tpl > .env
 
 # Python

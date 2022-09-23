@@ -1,10 +1,20 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
 name: release
 
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  main:
+
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     defaults:
       run:
@@ -12,6 +22,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: recursive
+
 
     - uses: conda-incubator/setup-miniconda@v2
       with:
@@ -26,7 +40,7 @@ jobs:
     - name: Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        PYPI_TOKEN: ${{ secrets.PYPITOKENDOWNLOADER }}
+        PYPI_TOKEN: ${{ secrets.PYPITOKENSATELLITEWD }}
       run: |
         poetry config pypi-token.pypi ${PYPI_TOKEN}
         npx --yes \

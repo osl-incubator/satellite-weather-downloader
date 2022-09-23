@@ -8,7 +8,7 @@ load_dotenv()
 broker_url = os.getenv('CELERY_BROKER_URL')
 
 # List of modules to import when the Celery worker starts.
-imports = ('downloader_app.tasks',)
+imports = ('satellite_weather_downloader.tasks',)
 accept_content = ['application/json']
 result_serializer = 'json'
 worker_max_tasks_per_child = 10
