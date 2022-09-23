@@ -1,5 +1,5 @@
 # type: ignore[attr-defined]
-"""Downloader_app Python package"""
+"""satellite_weather_downloader Python package"""
 
 import sys
 from importlib import metadata as importlib_metadata

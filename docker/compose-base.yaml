@@ -6,7 +6,7 @@ services:
     ports:
       - 5672:5672
     networks:
-      - downloader
+      - satellite
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "5672"]
       interval: 10s
@@ -14,14 +14,14 @@ services:
       retries: 5
       start_period: 10s
 
-  satellite:
+  worker:
     build:
       context: ".."
       dockerfile: "docker/Dockerfile"
       args:
         HOST_UID: ${HOST_UID}
         HOST_GID: ${HOST_GID}
-        ENV: ${ENV}
+        # ENV: ${ENV}
     env_file:
       - ../.env
     environment:
@@ -29,21 +29,19 @@ services:
       - PSQL_HOST=${PSQL_HOST}
       - PSQL_PORT=${PSQL_PORT}
     networks:
-      - downloader
+      - satellite
     volumes:
       - ../../logs:/var/log/
-    #   - ${TIFFS_DIR}/:/AlertaDengueCaptura/downloader_app/DownloadedFiles:rw
-    #   - ${SHAPEFILES_DIR}/:/AlertaDengueCaptura/downloader_app/shapefiles:rw
     depends_on:
       - rabbitmq
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", 'celery --app downloader_app.celeryapp.app inspect ping -d "celery@$${HOSTNAME}"']
+      test: ["CMD-SHELL", 'celery --app satellite_weather_downloader.celeryapp.app inspect ping -d "celery@$${HOSTNAME}"']
       interval: 60s
       timeout: 10s
       retries: 5
       start_period: 30s
 
 networks:
-  downloader:
+  satellite:
       driver: bridge
