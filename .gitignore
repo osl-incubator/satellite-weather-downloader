@@ -88,3 +88,5 @@ downloads.db
 *docker/dbschemas/
 */docker/dev_dumps/
 *.gz
+
+data/*
