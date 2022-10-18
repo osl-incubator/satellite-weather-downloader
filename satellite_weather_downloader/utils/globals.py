@@ -2,9 +2,10 @@
 Globals variables used within cds_weather app.
 """
 
-import numpy as np
-from pathlib import Path
 import os
+from pathlib import Path
+
+import numpy as np
 
 workdir = os.path.dirname(os.path.realpath(__file__))
 

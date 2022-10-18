@@ -1,3 +1,3 @@
 import tasks
-tasks.hello.delay()
 
+tasks.hello.delay()

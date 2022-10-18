@@ -12,13 +12,14 @@ Methods
 from_geocode(geocode):
                 Returns a tuple (latitude, longitude)
 """
-import pandas as pd
 import json
 
+import pandas as pd
 from satellite_weather_downloader.utils.globals import PROJECT_DIR
 
-
-mun_json = open(f"{PROJECT_DIR}/satellite_weather_downloader/utils/municipios.json")
+mun_json = open(
+    f"{PROJECT_DIR}/satellite_weather_downloader/utils/municipios.json"
+)
 mun_decoded = mun_json.read().encode().decode("utf-8-sig")
 municipios = json.loads(mun_decoded)
 mun_json.close()

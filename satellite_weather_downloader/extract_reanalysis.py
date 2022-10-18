@@ -11,16 +11,16 @@ contains the following data:
 date       : datetime object.
 geocode    : geocode from a specific brazilian city, according to IBGE format.
 temp_min   : Minimum┐
-temp_med   : Average├─ temperature in `celcius degrees` given a geocode coordinate.
+temp_med   : Average├─ temperature in `celcius degrees` given a geocode coord.
 temp_max   : Maximum┘
 precip_min : Minimum┐
-precip_med : Average├─ of total precipitation in `mm` given a geocode coordinate.
+precip_med : Average├─ of total precipitation in `mm` given a geocode coord.
 precip_max : Maximum┘
 pressao_min: Minimum┐
-pressao_med: Average├─ sea level pressure in `hPa` given a geocode coordinate.
+pressao_med: Average├─ sea level pressure in `hPa` given a geocode coord.
 pressao_max: Maximum┘
 umid_min   : Minimum┐
-umid_med   : Average├─ percentage of relative humidity given a geocode coordinate.
+umid_med   : Average├─ percentage of relative humidity given a geocode coord.
 umid_max   : Maximum┘
 
 Data collected for these measures are obtained by retrieving the following
@@ -63,23 +63,22 @@ Methods
                          DataFrame with the format above.
 """
 
-import re
 import logging
+import re
+from datetime import datetime, timedelta
+from functools import reduce
+from pathlib import Path
+from typing import Optional, Tuple, Union
+
+import metpy.calc as mpcalc
 import numpy as np
 import pandas as pd
 import xarray as xr
-import metpy.calc as mpcalc
-
-from pathlib import Path
-from functools import reduce
 from metpy.units import units
-from typing import Optional, Union, Tuple
-from datetime import datetime, timedelta
-
 from satellite_weather_downloader.utils import (
+    connection,
     extract_coordinates,
     extract_latlons,
-    connection,
 )
 from satellite_weather_downloader.utils.globals import BR_AREA, DATA_DIR
 
@@ -116,7 +115,7 @@ def download_netcdf(
     download_netcdf(date='2022-10-04', date_end='2022-10-01')
 
     Using this way, a request will be done to extract the data related
-    to the area of Brazil. A file in the NetCDF format will be downloaded 
+    to the area of Brazil. A file in the NetCDF format will be downloaded
     as specified in `data_dir` attribute, with the format '*.nc',
     returned as a variable to be used in `netcdf_to_dataframe()` method.
 
@@ -125,14 +124,14 @@ def download_netcdf(
         date_end (opt(str)): Format 'YYYY-MM-DD'. Used along with `date`
                               to define a date range.
         data_dir (opt(str)): Path in which the NetCDF file will be downloaded.
-                             Default directory is specified in `globals.DATA_DIR`.
+                             Default dir is specified in `globals.DATA_DIR`.
         uid (opt(str)): UID from Copernicus User page, it will be used with
                         `connection.connect()` method.
         key (opt(str)): API Key from Copernicus User page, it will be used with
                         `connection.connect()` method.
 
     Returns:
-        String corresponding to path: `data_dir/filename`, that can later be used 
+        String corresponding to path: `data_dir/filename`, that can later be used
         to transform into DataFrame with the `netcdf_to_dataframe()` method.
     """
 
@@ -223,12 +222,12 @@ def netcdf_to_dataframe(
     `extract_latlons` and `extract_coordinates` to define the closest area of
     the geocode passed to the method. Extract the values using xarray DataSet
     and return the average values related to the geocode area. More information
-    about how the area is extracted can be found in the `extract_coordinates` 
+    about how the area is extracted can be found in the `extract_coordinates`
     module.
     (geocodes source https://ibge.gov.br/explica/codigos-dos-municipios.php)
 
     Attrs:
-        file_path (str)     : The path related to a NetCDF file, returned by 
+        file_path (str)     : The path related to a NetCDF file, returned by
                               `download_netcdf()` method.
         geocode (str or int): Geocode of a city in Brazil according to IBGE.
     """
@@ -259,7 +258,6 @@ def netcdf_to_dataframe(
 
     lats = [N, S]
     lons = [E, W]
-
 
     t2m_area = ds["t2m"].sel(longitude=lons, latitude=lats, method="nearest")
     tp_area = ds["tp"].sel(longitude=lons, latitude=lats, method="nearest")
@@ -414,7 +412,7 @@ def _retrieve_data(row):
     Parse row to the right encode type and returns the average value.
 
     Attrs:
-        row (dataset row) : A row in xarray DataSet to be parsed. 
+        row (dataset row) : A row in xarray DataSet to be parsed.
     """
     parsed_date = row.time.values.astype("M8[ms]").astype("O")
     avg_vals = np.mean(row.values)

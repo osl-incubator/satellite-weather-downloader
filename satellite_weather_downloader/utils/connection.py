@@ -31,11 +31,11 @@ connect(opt[uid], opt[key]) : If none credentials are passed, it will request
                               a Status from `cdsapi` Client, if credentials are
                               not found, will enter _interactive_con.
 """
-import uuid
-import cdsapi
 import logging
-
+import uuid
 from typing import Optional
+
+import cdsapi
 from satellite_weather_downloader.utils.globals import CDSAPIRC_PATH
 
 credentials = "url: https://cds.climate.copernicus.eu/api/v2\n" "key: "
