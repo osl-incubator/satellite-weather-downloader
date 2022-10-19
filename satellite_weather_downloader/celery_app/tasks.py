@@ -2,6 +2,8 @@ import logging
 import os
 from datetime import datetime, timedelta
 from turtle import update
+import pandas as pd
+import subprocess
 
 from dotenv import find_dotenv, load_dotenv
 from satellite_weather_downloader.celery_app.celeryapp import app
@@ -28,9 +30,8 @@ engine = create_engine(
 geocodes = [mun["geocodigo"] for mun in municipios]
 
 
-# runs daily
 @app.task
-def download_data_reanalysis(date):
+def reanalysis_download_data(date):
 
     data_file = download_netcdf(
         date=date
@@ -42,9 +43,7 @@ def download_data_reanalysis(date):
 
 
 @app.task
-def insert_reanalysis_into_db(data, geocode):
-
-    df = netcdf_to_dataframe(data, geocode)
+def reanalysis_insert_into_db(df: pd.DataFrame):
 
     df.to_sql(
         "weather_copernicus",
@@ -53,19 +52,55 @@ def insert_reanalysis_into_db(data, geocode):
         if_exists="append",
     )
 
+    logging.info(f'{len(df)} rows updated on "Municipios".weather_copernicus')
 
 @app.task
-def fetch_reanalysis_data_daily():
+def reanalysis_delete_netcdf(file: str):
+
+    subprocess.run([
+        'rm',
+        '-rf',
+        file
+    ])
+
+    logging.info(f'{file.split("/")[-1]} removed.')
+
+
+@app.task
+def reanalysis_fetch_data_daily():
 
     today = datetime.now()
     update_delay = timedelta(days=7)
     last_update = (today - update_delay).strftime("%Y-%m-%d")
 
-    data = download_data_reanalysis(last_update)
+    data = reanalysis_download_data(last_update)
+
+    cope_df = pd.DataFrame(columns=[
+        'date',
+        'geocodigo',
+        'temp_min',
+        'temp_med',
+        'temp_max',
+        'precip_min',
+        'precip_med',
+        'precip_max',
+        'pressao_min',
+        'pressao_med',
+        'pressao_max',
+        'umid_min',
+        'umid_med',
+        'umid_max',  
+    ])
 
     for geocode in geocodes:
-        insert_reanalysis_into_db(data, geocode)
-        logging.info(f"{geocode} updated {last_update}")
+        row = netcdf_to_dataframe(data, geocode)
+        cope_df = cope_df.merge(row, on=list(cope_df.columns), how='outer')
+
+    cope_df = cope_df.set_index('date')
+
+    reanalysis_insert_into_db(cope_df)
+
+    reanalysis_delete_netcdf(data)
 
 
-fetch_reanalysis_data_daily()
+reanalysis_fetch_data_daily()
