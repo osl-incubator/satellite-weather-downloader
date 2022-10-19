@@ -1,18 +1,18 @@
-import logging
-import os
-from datetime import datetime, timedelta
-from turtle import update
 import pandas as pd
 import subprocess
+import logging
+import os
 
+from sqlalchemy import create_engine
+from celery.schedules import crontab
+from datetime import datetime, timedelta
 from dotenv import find_dotenv, load_dotenv
 from satellite_weather_downloader.celery_app.celeryapp import app
+from satellite_weather_downloader.utils.extract_latlons import municipios
 from satellite_weather_downloader.extract_reanalysis import (
     download_netcdf,
     netcdf_to_dataframe,
 )
-from satellite_weather_downloader.utils.extract_latlons import municipios
-from sqlalchemy import create_engine
 
 load_dotenv(find_dotenv())
 
@@ -66,7 +66,7 @@ def reanalysis_delete_netcdf(file: str):
     logging.info(f'{file.split("/")[-1]} removed.')
 
 
-@app.task
+@app.task(name='fetch_copernicus_weather')
 def reanalysis_fetch_data_daily():
 
     today = datetime.now()
@@ -103,4 +103,11 @@ def reanalysis_fetch_data_daily():
     reanalysis_delete_netcdf(data)
 
 
-reanalysis_fetch_data_daily()
+app.conf.beat_schedule = {
+    # Executes every 0:01 a.m.
+    'fetch-copernicus-weather-daily': {
+        'task': 'fetch_copernicus_weather',
+        'schedule': crontab(minute="1", hour="0"),
+    },
+}
+
