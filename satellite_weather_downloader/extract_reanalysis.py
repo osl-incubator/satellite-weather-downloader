@@ -335,7 +335,7 @@ def _format_dates(
             )
 
         # safety limit for Copernicus limit and file size: 1 year
-        max_api_query = timedelta(days=365)
+        max_api_query = timedelta(days=367)
         if end_date - ini_date > max_api_query:
             raise Exception(
                 f"""
