@@ -215,6 +215,7 @@ def download_netcdf(
 def netcdf_to_dataframe(
     file_path: str,
     geocode: Union[str, int],
+    raw: bool = False,
 ):
     """
     Returns a DataFrame with the values related to the geocode of a brazilian
@@ -230,6 +231,9 @@ def netcdf_to_dataframe(
         file_path (str)     : The path related to a NetCDF file, returned by
                               `download_netcdf()` method.
         geocode (str or int): Geocode of a city in Brazil according to IBGE.
+        raw (bool)          : If raw is set to True, the DataFrame returned will
+                              contain data in 3 hours intervals. Default return
+                              will aggregate these values into 24 hours interval.
     """
 
     # Load netCDF file into xarray dataset
@@ -263,6 +267,25 @@ def netcdf_to_dataframe(
     tp_area = ds["tp"].sel(longitude=lons, latitude=lats, method="nearest")
     rh_area = ds["d2m"].sel(longitude=lons, latitude=lats, method="nearest")
     msl_area = ds["msl"].sel(longitude=lons, latitude=lats, method="nearest")
+
+    if raw:
+        temperature = pd.DataFrame([_retrieve_data(v) for v in t2m_area])
+        precipitation = pd.DataFrame([_retrieve_data(v) for v in tp_area])
+        rel_hum = pd.DataFrame([_retrieve_data(v) for v in rh_area])
+        pressure = pd.DataFrame([_retrieve_data(v) for v in msl_area])
+
+        temperature.columns = temperature.columns.str.replace("var", "temp")
+        precipitation.columns = precipitation.columns.str.replace("var", "precip")
+        rel_hum.columns = rel_hum.columns.str.replace("var", "umid")
+        pressure.columns = pressure.columns.str.replace("var", "pressao")
+
+        dfs = [temperature, precipitation, pressure, rel_hum]
+        merged_dfs = reduce(lambda l, r: pd.merge(l, r, on=["date"]), dfs)
+
+        geocodes = [geocode for r in range(len(merged_dfs))]
+        merged_dfs.insert(0, "geocodigo", geocodes)
+
+        return merged_dfs
 
     temperature = _parse_data([_retrieve_data(v) for v in t2m_area], "temp")
     precipitation = _parse_data([_retrieve_data(v) for v in tp_area], "precip")
