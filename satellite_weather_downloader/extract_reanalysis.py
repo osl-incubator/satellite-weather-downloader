@@ -66,7 +66,7 @@ Methods
 import logging
 import re
 from datetime import datetime, timedelta
-from functools import reduce
+from functools import lru_cache, reduce
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
@@ -211,7 +211,7 @@ def download_netcdf(
         except Exception as e:
             logging.error(e)
 
-
+@lru_cache
 def netcdf_to_dataframe(
     file_path: str,
     geocode: Union[str, int],
