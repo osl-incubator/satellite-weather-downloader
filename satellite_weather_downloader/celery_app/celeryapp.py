@@ -15,6 +15,6 @@ def debug_task(self):
 
 if __name__ == "__main__":
     worker = app.Worker(
-        include=['satellite_weather_downloader.celery_app.tasks']
+        include=['tasks']
     )
     worker.start()
