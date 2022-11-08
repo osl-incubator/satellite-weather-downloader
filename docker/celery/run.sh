@@ -1,3 +1,3 @@
 #!/bin/bash
 
-exec celery -A satellite_weather_downloader.celery_app.celeryapp beat -l DEBUG
+exec celery --workdir satellite_weather_downloader/celery_app --config celeryconfig -A tasks worker -B --loglevel=DEBUG

@@ -3,6 +3,7 @@ import subprocess
 import logging
 import os
 
+
 from sqlalchemy import create_engine
 from celery.schedules import crontab
 from datetime import datetime, timedelta
@@ -18,8 +19,8 @@ load_dotenv(find_dotenv())
 
 PSQL_USER = os.getenv("POSTGRES_USER")
 PSQL_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-HOST = os.getenv("PSQL_HOST")
-PORT = os.getenv("PSQL_PORT")
+HOST = os.getenv("POSTGRES_HOST")
+PORT = os.getenv("POSTGRES_PORT")
 DBASE = os.getenv("POSTGRES_DATABASE")
 
 
@@ -95,6 +96,7 @@ def reanalysis_fetch_data_daily():
     for geocode in geocodes:
         row = netcdf_to_dataframe(data, geocode)
         cope_df = cope_df.merge(row, on=list(cope_df.columns), how='outer')
+        logging.info(f'{geocode} added to dataframe')
 
     cope_df = cope_df.set_index('date')
 
