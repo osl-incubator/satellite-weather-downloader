@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import pandas as pd
 import subprocess
 import logging
+import tqdm
 import os
 
 from sqlalchemy import create_engine
@@ -19,7 +20,7 @@ load_dotenv(find_dotenv())
 
 PSQL_USER = os.getenv("POSTGRES_USER")
 PSQL_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-HOST = os.getenv("POSTGRES_HOST")
+HOST = os.getenv("PSQL_HOST")
 PORT = os.getenv("POSTGRES_PORT")
 DBASE = os.getenv("POSTGRES_DATABASE")
 UUID = os.getenv("API_UUID")
@@ -96,22 +97,15 @@ def reanalysis_fetch_data_daily():
         'umid_max',  
     ])
 
-    for geocode in geocodes:
-        row = netcdf_to_dataframe(data, geocode)
-        cope_df = cope_df.merge(row, on=list(cope_df.columns), how='outer')
-        logging.info(f'{geocode} added to dataframe')
+    total_cities = 5570
+    with tqdm.tqdm(total=total_cities) as pbar:
+        for geocode in geocodes:
+            row = netcdf_to_dataframe(data, geocode)
+            cope_df = cope_df.merge(row, on=list(cope_df.columns), how='outer')
+            pbar.update(1)
 
     cope_df = cope_df.set_index('date')
 
     reanalysis_insert_into_db(cope_df)
 
     reanalysis_delete_netcdf(data)
-
-
-app.conf.beat_schedule = {
-    # Executes every 0:01 a.m.
-    'fetch-copernicus-weather-daily': {
-        'task': 'fetch_copernicus_weather',
-        'schedule': timedelta(minutes=1, hours=24),
-    },
-}

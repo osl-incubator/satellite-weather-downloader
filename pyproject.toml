@@ -36,6 +36,7 @@ SQLAlchemy = "^1.4.41"
 python-dotenv = "^0.21.0"
 psycopg2-binary = "^2.9.4"
 netCDF4 = "^1.6.1"
+tqdm = "^4.64.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
