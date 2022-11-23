@@ -1,3 +1,3 @@
 #!/bin/bash
 
-exec celery -A satellite_weather_downloader.celeryapp worker -l INFO
+exec celery --workdir /opt/services/satellite_weather_downloader/celery_app --config celeryconfig -A tasks worker -B --loglevel=INFO

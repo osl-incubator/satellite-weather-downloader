@@ -3,16 +3,9 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - docker-compose #
-  - python-dotenv #
-  - celery #
-  - earthengine-api
-  - geoviews
-  - imageio
+  - docker-compose
+  - celery
   - make
   - poetry
-  - pydrive
   - python=3.9
-  - rasterio
-  - rasterstats
-  - sqlalchemy #
+
