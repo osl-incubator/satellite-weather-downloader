@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+# [1.2.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.1.0...1.2.0) (2022-11-23)
+
+
+### Features
+
+* **copernicus:** Collect weather data from Copernicus API ([#3](https://github.com/osl-incubator/satellite-weather-downloader/issues/3)) ([991d1ec](https://github.com/osl-incubator/satellite-weather-downloader/commit/991d1ec7025e2a97555ad54b03589d3d02711e38))
+
 # [1.1.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.0.0...1.1.0) (2022-09-23)
 
 
