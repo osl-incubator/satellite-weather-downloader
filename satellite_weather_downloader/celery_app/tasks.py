@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from pathlib import Path
 
 import pandas as pd
 import subprocess
@@ -26,6 +27,8 @@ DBASE = os.getenv("POSTGRES_DATABASE")
 UUID = os.getenv("API_UUID")
 KEY = os.getenv("API_KEY")
 
+BACKFILL_FILE = os.getenv("BACKFILL_FILE")
+
 engine = create_engine(
     f"postgresql://{PSQL_USER}:{PSQL_PASSWORD}@{HOST}:{PORT}/{DBASE}"
 )
@@ -34,7 +37,7 @@ geocodes = [mun["geocodigo"] for mun in extract_latlons.municipios]
 
 
 @app.task
-def reanalysis_download_data(date):
+def reanalysis_download_data(date) -> str:
 
     connection.connect(UUID, KEY)
 
@@ -48,37 +51,7 @@ def reanalysis_download_data(date):
 
 
 @app.task
-def reanalysis_insert_into_db(df: pd.DataFrame):
-
-    df.to_sql(
-        "weather_copernicus",
-        engine,
-        schema="Municipio",
-        if_exists="append",
-    )
-
-    logging.info(f'{len(df)} rows updated on "Municipios".weather_copernicus')
-
-@app.task
-def reanalysis_delete_netcdf(file: str):
-
-    subprocess.run([
-        'rm',
-        '-rf',
-        file
-    ])
-
-    logging.info(f'{file.split("/")[-1]} removed.')
-
-
-@app.task(name='fetch_copernicus_weather')
-def reanalysis_fetch_data_daily():
-
-    today = datetime.now()
-    update_delay = timedelta(days=7)
-    last_update = (today - update_delay).strftime("%Y-%m-%d")
-
-    data = reanalysis_download_data(last_update)
+def reanalysis_create_dataframe(data: str) -> pd.DataFrame:
 
     cope_df = pd.DataFrame(columns=[
         'date',
@@ -106,6 +79,108 @@ def reanalysis_fetch_data_daily():
 
     cope_df = cope_df.set_index('date')
 
+    return cope_df
+
+
+@app.task
+def reanalysis_insert_into_db(df: pd.DataFrame):
+
+    df.to_sql(
+        "weather_copernicus",
+        engine,
+        schema="Municipio",
+        if_exists="append",
+    )
+
+    logging.info(f'{len(df)} rows updated on "Municipios".weather_copernicus')
+
+
+@app.task
+def reanalysis_delete_netcdf(file: str):
+
+    subprocess.run([
+        'rm',
+        '-rf',
+        file
+    ])
+
+    logging.info(f'{file.split("/")[-1]} removed.')
+
+
+@app.task(name='fetch_copernicus_weather')
+def reanalysis_fetch_data_daily():
+    """
+    This task is triggered once a day, fetch the last update available
+    in Copernicus API and load the data into database.
+    """
+
+    today = datetime.now()
+    update_delay = timedelta(days=9)
+    last_update = (today - update_delay).strftime("%Y-%m-%d")
+
+    data = reanalysis_download_data(last_update)
+
+    cope_df = reanalysis_create_dataframe(data)
+
     reanalysis_insert_into_db(cope_df)
 
     reanalysis_delete_netcdf(data)
+
+
+# Backfill
+# --------
+
+@app.task(name='backfill_copernicus_weather')
+def backfill_analysis_data():
+    """
+    This task will read the file `backfill_cope_dates.txt`
+    searching for dates to be uploaded into database, where
+    each line represents a day to be uploaded with its flag.
+    The flag is set to true if the date has been already
+    processed into postgres. Celery will check for dates
+    every 1 hour.
+    Format: "%Y-%m-%d" bool
+    Example: 2020-01-01 true
+    """
+
+    def gen_next_date() -> str:
+        """
+        Open backfill file and search for next available date.
+        Returns the next date set as False and change it to True.
+        """
+        file = Path(BACKFILL_FILE)
+
+        with open(file, 'r', encoding='utf-8') as f:
+            data = f.readlines()
+
+        for i, line in enumerate(data):
+            flag = 'false' #False = not uploaded
+
+            if flag in line:
+                date, flag = line.split(' ')
+                data[i] = line.replace('false', 'true')
+
+                with open(file, 'w', encoding='utf-8') as f:
+                    for line in data:
+                        f.write(line)
+                
+                yield date
+    
+    try:
+        date = next(gen_next_date())
+
+    except StopIteration:
+        logging.warning('No date available in `backfill_cope_dates.txt`\nEnding task.')
+        return
+
+    data = reanalysis_download_data(next(date))
+
+    cope_df = reanalysis_create_dataframe(data)
+
+    cope_df = reanalysis_create_dataframe(data)
+
+    reanalysis_insert_into_db(cope_df)
+
+    reanalysis_delete_netcdf(data)
+
+# --------
