@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+# [1.4.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.3.0...1.4.0) (2022-11-25)
+
+
+### Features
+
+* **flower:** Add flower to keep a better track of celery tasks ([#7](https://github.com/osl-incubator/satellite-weather-downloader/issues/7)) ([d551d83](https://github.com/osl-incubator/satellite-weather-downloader/commit/d551d838e4be85ef776b353464b1600d941c7ecc))
+
 # [1.3.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.2.0...1.3.0) (2022-11-25)
 
 
