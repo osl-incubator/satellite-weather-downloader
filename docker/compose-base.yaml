@@ -49,6 +49,19 @@ services:
       retries: 5
       start_period: 30s
 
+  flower:
+    image: mher/flower
+    environment: 
+        - CELERY_BROKER_URL=amqp://${RBTMQ_USER}:${RBTMQ_PASSWORD}@rabbitmq:${RBTMQAMQP_PORT}
+        - FLOWER_PORT=5555
+    networks:
+      - satellite
+    ports:
+        - 5555:5555
+    depends_on:
+      - rabbitmq
+      - worker
+
 networks:
   satellite:
       driver: bridge
