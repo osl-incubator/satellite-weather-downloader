@@ -94,3 +94,8 @@ data/*
 celerybeat-schedule.bak
 celerybeat-schedule.dat
 celerybeat-schedule.dir
+
+rabbitmq.conf
+*certificate.pem
+*key.pem
+*key.p12

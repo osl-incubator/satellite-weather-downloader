@@ -1,14 +1,20 @@
 version: "3.4"
 services:
   rabbitmq:
-    image: rabbitmq:3-alpine
+    image: rabbitmq:3-management
     hostname: rabbitmq
     ports:
-      - 5672:5672
+      - ${RBTMQAMQP_PORT}:${RBTMQAMQP_PORT}
+      - ${RBTMQHTTP_PORT}:${RBTMQHTTP_PORT}
+      - ${RBTMQ_PORT}:${RBTMQ_PORT}
+    volumes:
+      - ${RBTMQ_CONFIG_DIR}/rabbitmq.conf:/var/lib/rabbitmq/rabbitmq.conf
+    environment:
+      - RABBITMQ_CONFIG_FILE=/var/lib/rabbitmq/rabbitmq.conf
     networks:
       - satellite
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "5672"]
+      test: ["CMD", "nc", "-z", "localhost", "${RBTMQ_PORT}"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -25,7 +31,7 @@ services:
     env_file:
       - ../.env
     environment:
-      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672
+      - CELERY_BROKER_URL=amqp://${RBTMQ_USER}:${RBTMQ_PASSWORD}@rabbitmq:${RBTMQAMQP_PORT}
       - PSQL_HOST=${PSQL_HOST}
       - PSQL_PORT=${PSQL_PORT}
     networks:
@@ -42,6 +48,19 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  flower:
+    image: mher/flower
+    environment: 
+        - CELERY_BROKER_URL=amqp://${RBTMQ_USER}:${RBTMQ_PASSWORD}@rabbitmq:${RBTMQAMQP_PORT}
+        - FLOWER_PORT=5555
+    networks:
+      - satellite
+    ports:
+        - 5555:5555
+    depends_on:
+      - rabbitmq
+      - worker
 
 networks:
   satellite:
