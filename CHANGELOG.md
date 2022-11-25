@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+# [1.3.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.2.0...1.3.0) (2022-11-25)
+
+
+### Features
+
+* **celery task:** The ability of backfilling copernicus data ([#5](https://github.com/osl-incubator/satellite-weather-downloader/issues/5)) ([80b43c9](https://github.com/osl-incubator/satellite-weather-downloader/commit/80b43c939b18747b6fbf2aa8d893c5209068b05f))
+
 # [1.2.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.1.0...1.2.0) (2022-11-23)
 
 

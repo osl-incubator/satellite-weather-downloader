@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "satellite-weather-downloader"
-version = "1.2.0"  # changed by semantic-release
+version = "1.3.0"  # changed by semantic-release
 description = "The routines available in this package are designed to capture and process satellite images"
 readme = "README.md"
 authors = ["Flavio Codeco Coelho <fccoelho@gmail.com>"]
