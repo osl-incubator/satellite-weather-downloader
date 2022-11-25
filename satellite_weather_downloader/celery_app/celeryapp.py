@@ -17,7 +17,7 @@ app.conf.beat_schedule = {
 
     'backfill-copernicus-weather-hourly': {
         'task': 'backfill_copernicus_weather',
-        'schedule': timedelta(hours=1),
+        'schedule': timedelta(minutes=30),
     },
 }
 
