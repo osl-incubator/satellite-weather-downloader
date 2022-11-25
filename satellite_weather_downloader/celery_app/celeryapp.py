@@ -10,16 +10,19 @@ app.config_from_object("satellite_weather_downloader.celery_app.celeryconfig")
 
 
 app.conf.beat_schedule = {
-    # Executes every 0:01 a.m.
     'fetch-copernicus-weather-daily': {
         'task': 'fetch_copernicus_weather',
         'schedule': timedelta(hours=24),
     },
+
+    'backfill-copernicus-weather-hourly': {
+        'task': 'backfill_copernicus_weather',
+        'schedule': timedelta(minutes=30),
+    },
 }
 
 
-"""Send signal to run at worker startup"""
-
+# Send signal to run at worker startup
 
 @worker_ready.connect
 def at_start(sender, **kwargs):
