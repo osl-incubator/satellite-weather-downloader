@@ -14,7 +14,7 @@ from_geocode(geocode):
 """
 import json
 
-import pandas as pd
+from collections import defaultdict
 from satellite_weather_downloader.utils.globals import PROJECT_DIR
 
 mun_json = open(
@@ -42,9 +42,12 @@ def from_geocode(geocode: int) -> tuple:
                         between -180 and 180. Represents
                         the West and East coordinates.
     """
-    df = pd.DataFrame(municipios)
-    df = df.set_index("geocodigo")
 
-    lat = df.loc[geocode].latitude
-    lon = df.loc[geocode].longitude
+    coords = defaultdict()
+
+    for mun in municipios:
+        coords[mun['geocodigo']] = (mun['latitude'], mun['longitude'])
+    
+    lat, lon = coords[int(geocode)]
+    
     return lat, lon
