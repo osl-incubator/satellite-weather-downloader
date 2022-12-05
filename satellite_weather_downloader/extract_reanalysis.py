@@ -63,18 +63,23 @@ Methods
                          DataFrame with the format above.
 """
 
-import logging
-import re
-from datetime import datetime, timedelta
-from functools import lru_cache, reduce
 from pathlib import Path
+from statistics import mean
+from itertools import chain
+from metpy.units import units
+from collections import ChainMap
+from collections import defaultdict
+from functools import lru_cache, reduce
+from datetime import datetime, timedelta
 from typing import Optional, Tuple, Union
 
-import metpy.calc as mpcalc
+import re
+import logging
 import numpy as np
 import pandas as pd
 import xarray as xr
-from metpy.units import units
+import metpy.calc as mpcalc
+
 from satellite_weather_downloader.utils import (
     connection,
     extract_coordinates,
@@ -237,68 +242,68 @@ def netcdf_to_dataframe(
     """
 
     # Load netCDF file into xarray dataset
-    ds = xr.load_dataset(file_path, engine="netcdf4")
+    with xr.open_dataset(file_path, engine="netcdf4") as ds:
 
-    # Parse units to br's units
-    ds["t2m"] = ds.t2m - 273.15
-    ds["tp"] = ds.tp * 1000
-    ds["msl"] = ds.msl / 100
-    ds["d2m"] = ds.d2m - 273.15
+        # Parse units to br's units
+        ds["t2m"] = ds.t2m - 273.15
+        ds["tp"] = ds.tp * 1000
+        ds["msl"] = ds.msl / 100
+        ds["d2m"] = ds.d2m - 273.15
 
-    # relative_humidity = temperature/dewpoint_temperature
-    rh = (
-        mpcalc.relative_humidity_from_dewpoint(
-            ds["t2m"] * units.degC, ds["d2m"] * units.degC
+        # relative_humidity = temperature/dewpoint_temperature
+        rh = (
+            mpcalc.relative_humidity_from_dewpoint(
+                ds["t2m"] * units.degC, ds["d2m"] * units.degC
+            )
+            * 100
         )
-        * 100
-    )
 
-    # dewpoint sacrifice to store relative humidity in DataSet
-    # d2m is now relative humidity
-    ds["d2m"] = rh
+        # dewpoint sacrifice to store relative humidity in DataSet
+        # d2m is now relative humidity
+        ds["d2m"] = rh
 
-    lat, lon = extract_latlons.from_geocode(int(geocode))
-    N, S, E, W = extract_coordinates.from_latlon(lat, lon)
+        lat, lon = extract_latlons.from_geocode(int(geocode))
+        N, S, E, W = extract_coordinates.from_latlon(lat, lon)
 
-    lats = [N, S]
-    lons = [E, W]
+        lats = [N, S]
+        lons = [E, W]
 
-    t2m_area = ds["t2m"].sel(longitude=lons, latitude=lats, method="nearest")
-    tp_area = ds["tp"].sel(longitude=lons, latitude=lats, method="nearest")
-    rh_area = ds["d2m"].sel(longitude=lons, latitude=lats, method="nearest")
-    msl_area = ds["msl"].sel(longitude=lons, latitude=lats, method="nearest")
+        t2m_area = ds["t2m"].sel(longitude=lons, latitude=lats, method="nearest")
+        tp_area = ds["tp"].sel(longitude=lons, latitude=lats, method="nearest")
+        rh_area = ds["d2m"].sel(longitude=lons, latitude=lats, method="nearest")
+        msl_area = ds["msl"].sel(longitude=lons, latitude=lats, method="nearest")
 
-    if raw:
-        temperature = pd.DataFrame([_retrieve_data(v) for v in t2m_area])
-        precipitation = pd.DataFrame([_retrieve_data(v) for v in tp_area])
-        rel_hum = pd.DataFrame([_retrieve_data(v) for v in rh_area])
-        pressure = pd.DataFrame([_retrieve_data(v) for v in msl_area])
+        if raw:
+            temperature = pd.DataFrame(_parse_data(t2m_area, True, "temp")).set_index('date')
+            precipitation = pd.DataFrame(_parse_data(tp_area, True, "precip")).set_index('date')
+            rel_hum = pd.DataFrame(_parse_data(rh_area, True, "umid")).set_index('date')
+            pressure = pd.DataFrame(_parse_data(msl_area, True, "pressao")).set_index('date')
+            
+            merged_dfs = temperature\
+                        .join(precipitation, on='date')\
+                        .join(rel_hum, on='date')\
+                        .join(pressure, on='date')
 
-        temperature.columns = temperature.columns.str.replace("var", "temp")
-        precipitation.columns = precipitation.columns.str.replace("var", "precip")
-        rel_hum.columns = rel_hum.columns.str.replace("var", "umid")
-        pressure.columns = pressure.columns.str.replace("var", "pressao")
+            geocodes = [geocode for r in range(len(merged_dfs))]
+            merged_dfs.insert(0, "geocodigo", geocodes)
+            return merged_dfs
 
-        dfs = [temperature, precipitation, pressure, rel_hum]
-        merged_dfs = reduce(lambda l, r: pd.merge(l, r, on=["date"]), dfs)
+        temperature = _parse_data(t2m_area, False, "temp")
+        precipitation = _parse_data(tp_area, False, "precip")
+        rel_hum = _parse_data(rh_area, False, "umid")
+        pressure = _parse_data(msl_area, False, "pressao")
 
-        geocodes = [geocode for r in range(len(merged_dfs))]
-        merged_dfs.insert(0, "geocodigo", geocodes)
+        tmp = list(chain(temperature, precipitation, pressure, rel_hum))
+        
+        result = defaultdict(dict)
+        for row in tmp:
+            result[row["date"]].update(row)
 
-        return merged_dfs
+        df = pd.DataFrame(result.values()).set_index('date')
+        geocodes = [geocode for r in range(len(df))]
+        df.insert(0, "geocodigo", geocodes)
 
-    temperature = _parse_data([_retrieve_data(v) for v in t2m_area], "temp")
-    precipitation = _parse_data([_retrieve_data(v) for v in tp_area], "precip")
-    rel_hum = _parse_data([_retrieve_data(v) for v in rh_area], "umid")
-    pressure = _parse_data([_retrieve_data(v) for v in msl_area], "pressao")
-
-    dfs = [temperature, precipitation, pressure, rel_hum]
-    merged_dfs = reduce(lambda l, r: pd.merge(l, r, on=["date"]), dfs)
-
-    geocodes = [geocode for r in range(len(merged_dfs))]
-    merged_dfs.insert(0, "geocodigo", geocodes)
-
-    return merged_dfs
+        return df
 
 
 def _format_dates(
@@ -407,7 +412,7 @@ def _format_dates(
     return year, month, day
 
 
-def _parse_data(data, column_name):
+def _parse_data(data: xr.Dataset, raw: bool, column_name: str) -> list[dict]:
     """
     Group min, max and avg values into a DataFrame and changes the columns to
     AlertaDengue's format.
@@ -420,23 +425,43 @@ def _parse_data(data, column_name):
     Returns:
         result (DataFrame): DataFrame ready to be merged into final DataFrame.
     """
-    df = pd.DataFrame(data)
-    df["date"] = df["date"].dt.floor("D")
-    result = df.groupby("date").agg(
-        var_min=("var", "min"), var_med=("var", "mean"), var_max=("var", "max")
-    )
+    
+    raw_result = defaultdict(list)
 
-    result.columns = result.columns.str.replace("var", column_name)
-    return result
+    for row in data:
+        parsed_date = row.time.values.astype("M8[ms]").astype("O")
 
+        if not raw:
+            parsed_date = datetime(
+                year = parsed_date.year,
+                month = parsed_date.month,
+                day = parsed_date.day
+            )
 
-def _retrieve_data(row):
-    """
-    Parse row to the right encode type and returns the average value.
+        avg_vals = np.mean(row.values)
+        raw_result[parsed_date].append(avg_vals)
 
-    Attrs:
-        row (dataset row) : A row in xarray DataSet to be parsed.
-    """
-    parsed_date = row.time.values.astype("M8[ms]").astype("O")
-    avg_vals = np.mean(row.values)
-    return dict(date=parsed_date, var=avg_vals)
+    if raw:
+        result = list()
+        for date, var in dict(raw_result).items():
+            tmp = dict()
+            tmp['date'] = date
+            tmp[column_name] = var[0]
+            result.append(tmp)
+        return result
+
+    var_min = "_".join([column_name, "min"])
+    var_med = "_".join([column_name, "med"])
+    var_max = "_".join([column_name, "max"])
+
+    daily_result = list()
+    for date, vars in raw_result.items():
+        tmp = dict()
+        tmp['date'] = date
+        tmp[var_min] = min(vars)
+        tmp[var_med] = mean(vars)
+        tmp[var_max] = max(vars)
+
+        daily_result.append(tmp)
+
+    return daily_result

@@ -43,11 +43,9 @@ def from_geocode(geocode: int) -> tuple:
                         the West and East coordinates.
     """
 
-    coords = defaultdict()
-
+    coords = defaultdict(dict)
     for mun in municipios:
         coords[mun['geocodigo']] = (mun['latitude'], mun['longitude'])
     
     lat, lon = coords[int(geocode)]
-    
     return lat, lon
