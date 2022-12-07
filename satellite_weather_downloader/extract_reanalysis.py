@@ -268,16 +268,24 @@ def netcdf_to_dataframe(
         lats = [N, S]
         lons = [E, W]
 
-        t2m_area = ds["t2m"].sel(longitude=lons, latitude=lats, method="nearest")
-        tp_area = ds["tp"].sel(longitude=lons, latitude=lats, method="nearest")
-        rh_area = ds["d2m"].sel(longitude=lons, latitude=lats, method="nearest")
-        msl_area = ds["msl"].sel(longitude=lons, latitude=lats, method="nearest")
+
+        def get_sliced_data(key):
+            return ds[key].sel(longitude=lons, latitude=lats, method="nearest")
+
+        t2m_area = get_sliced_data("t2m")
+        tp_area = get_sliced_data("tp")
+        rh_area = get_sliced_data("d2m")
+        msl_area = get_sliced_data("msl")
 
         if raw:
-            temperature = pd.DataFrame(_parse_data(t2m_area, True, "temp")).set_index('date')
-            precipitation = pd.DataFrame(_parse_data(tp_area, True, "precip")).set_index('date')
-            rel_hum = pd.DataFrame(_parse_data(rh_area, True, "umid")).set_index('date')
-            pressure = pd.DataFrame(_parse_data(msl_area, True, "pressao")).set_index('date')
+
+            def create_raw_df(data, column):
+                return pd.DataFrame(_parse_data(data, True, column)).set_index('date')
+
+            temperature = create_raw_df(t2m_area, "temp")
+            precipitation = create_raw_df(tp_area, "precip")
+            rel_hum = create_raw_df(rh_area, "umid")
+            pressure = create_raw_df(msl_area, "pressao")
             
             merged_dfs = temperature\
                         .join(precipitation, on='date')\
