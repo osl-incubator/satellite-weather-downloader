@@ -40,7 +40,7 @@ services:
     volumes:
       - ../../logs:/var/log/
       - ../satellite_weather_downloader:/opt/services/satellite_weather_downloader
-      - ./celery/backfill_cope_dates.txt:/Backfill/backfill_cope_dates.txt
+      - ~/${BACKFILL_FILE}:~/{BACKFILL_FILE}
     depends_on:
       - rabbitmq
     restart: always
