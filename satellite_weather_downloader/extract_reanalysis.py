@@ -268,6 +268,10 @@ def netcdf_to_dataframe(
     lats = [N, S]
     lons = [E, W]
 
+    match geocode:
+        case 4108304: # Foz do Iguaçu
+            lats = [-25.5]
+            lons = [-54.5, -54.75]
 
     def get_sliced_data(key):
         return ds[key].sel(longitude=lons, latitude=lats, method="nearest")
@@ -276,7 +280,7 @@ def netcdf_to_dataframe(
     tp_area = get_sliced_data("tp")
     rh_area = get_sliced_data("d2m")
     msl_area = get_sliced_data("msl")
-
+    breakpoint()
     if raw:
 
         def create_raw_df(data, column):
