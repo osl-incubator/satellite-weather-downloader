@@ -262,56 +262,56 @@ def netcdf_to_dataframe(
         # d2m is now relative humidity
         ds["d2m"] = rh
 
-        lat, lon = extract_latlons.from_geocode(int(geocode))
-        N, S, E, W = extract_coordinates.from_latlon(lat, lon)
+    lat, lon = extract_latlons.from_geocode(int(geocode))
+    N, S, E, W = extract_coordinates.from_latlon(lat, lon)
 
-        lats = [N, S]
-        lons = [E, W]
+    lats = [N, S]
+    lons = [E, W]
 
 
-        def get_sliced_data(key):
-            return ds[key].sel(longitude=lons, latitude=lats, method="nearest")
+    def get_sliced_data(key):
+        return ds[key].sel(longitude=lons, latitude=lats, method="nearest")
 
-        t2m_area = get_sliced_data("t2m")
-        tp_area = get_sliced_data("tp")
-        rh_area = get_sliced_data("d2m")
-        msl_area = get_sliced_data("msl")
+    t2m_area = get_sliced_data("t2m")
+    tp_area = get_sliced_data("tp")
+    rh_area = get_sliced_data("d2m")
+    msl_area = get_sliced_data("msl")
 
-        if raw:
+    if raw:
 
-            def create_raw_df(data, column):
-                return pd.DataFrame(_parse_data(data, True, column)).set_index('date')
+        def create_raw_df(data, column):
+            return pd.DataFrame(_parse_data(data, True, column)).set_index('date')
 
-            temperature = create_raw_df(t2m_area, "temp")
-            precipitation = create_raw_df(tp_area, "precip")
-            rel_hum = create_raw_df(rh_area, "umid")
-            pressure = create_raw_df(msl_area, "pressao")
-            
-            merged_dfs = temperature\
-                        .join(precipitation, on='date')\
-                        .join(rel_hum, on='date')\
-                        .join(pressure, on='date')
-
-            geocodes = [geocode for r in range(len(merged_dfs))]
-            merged_dfs.insert(0, "geocodigo", geocodes)
-            return merged_dfs
-
-        temperature = _parse_data(t2m_area, False, "temp")
-        precipitation = _parse_data(tp_area, False, "precip")
-        rel_hum = _parse_data(rh_area, False, "umid")
-        pressure = _parse_data(msl_area, False, "pressao")
-
-        tmp = list(chain(temperature, precipitation, pressure, rel_hum))
+        temperature = create_raw_df(t2m_area, "temp")
+        precipitation = create_raw_df(tp_area, "precip")
+        rel_hum = create_raw_df(rh_area, "umid")
+        pressure = create_raw_df(msl_area, "pressao")
         
-        result = defaultdict(dict)
-        for row in tmp:
-            result[row["date"]].update(row)
+        merged_dfs = temperature\
+                    .join(precipitation, on='date')\
+                    .join(rel_hum, on='date')\
+                    .join(pressure, on='date')
 
-        df = pd.DataFrame(result.values()).set_index('date')
-        geocodes = [geocode for r in range(len(df))]
-        df.insert(0, "geocodigo", geocodes)
+        geocodes = [geocode for r in range(len(merged_dfs))]
+        merged_dfs.insert(0, "geocodigo", geocodes)
+        return merged_dfs
 
-        return df
+    temperature = _parse_data(t2m_area, False, "temp")
+    precipitation = _parse_data(tp_area, False, "precip")
+    rel_hum = _parse_data(rh_area, False, "umid")
+    pressure = _parse_data(msl_area, False, "pressao")
+
+    tmp = list(chain(temperature, precipitation, pressure, rel_hum))
+    
+    result = defaultdict(dict)
+    for row in tmp:
+        result[row["date"]].update(row)
+
+    df = pd.DataFrame(result.values()).set_index('date')
+    geocodes = [geocode for r in range(len(df))]
+    df.insert(0, "geocodigo", geocodes)
+
+    return df
 
 
 def _format_dates(

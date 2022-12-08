@@ -35,15 +35,31 @@ engine = create_engine(
 
 geocodes = [mun["geocodigo"] for mun in extract_latlons.municipios]
 
+COPE_DF = pd.DataFrame(columns=[
+    'date',
+    'geocodigo',
+    'temp_min',
+    'temp_med',
+    'temp_max',
+    'precip_min',
+    'precip_med',
+    'precip_max',
+    'pressao_min',
+    'pressao_med',
+    'pressao_max',
+    'umid_min',
+    'umid_med',
+    'umid_max',  
+])
 
 @app.task
-def reanalysis_download_data(date) -> str:
+def reanalysis_download_data(date, date_end=None) -> str:
 
     connection.connect(UUID, KEY)
 
     data_file = download_netcdf(
-        date=date
-        # date_end = daily? weekly? monthly?
+        date=date,
+        date_end=date_end
         # data_dir = '/tmp'
     )
 
@@ -53,33 +69,17 @@ def reanalysis_download_data(date) -> str:
 @app.task
 def reanalysis_create_dataframe(data: str) -> pd.DataFrame:
 
-    cope_df = pd.DataFrame(columns=[
-        'date',
-        'geocodigo',
-        'temp_min',
-        'temp_med',
-        'temp_max',
-        'precip_min',
-        'precip_med',
-        'precip_max',
-        'pressao_min',
-        'pressao_med',
-        'pressao_max',
-        'umid_min',
-        'umid_med',
-        'umid_max',  
-    ])
 
     total_cities = 5570
     with tqdm.tqdm(total=total_cities) as pbar:
         for geocode in geocodes:
             row = netcdf_to_dataframe(data, geocode)
-            cope_df = cope_df.merge(row, on=list(cope_df.columns), how='outer')
+            tmp_df = COPE_DF.merge(row, on=list(COPE_DF.columns), how='outer')
             pbar.update(1)
 
-    cope_df = cope_df.set_index('date')
+    df = tmp_df.set_index('date')
 
-    return cope_df
+    return df
 
 
 @app.task
@@ -184,3 +184,5 @@ def backfill_analysis_data():
     reanalysis_delete_netcdf(data)
 
 # --------
+
+#Iguazu Falls
