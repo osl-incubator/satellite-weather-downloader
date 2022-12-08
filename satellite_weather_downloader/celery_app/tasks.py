@@ -71,7 +71,7 @@ def reanalysis_create_dataframe(data: str) -> pd.DataFrame:
 
 
     total_cities = 5570
-    with tqdm.tqdm(total=total_cities) as pbar:
+    with tqdm.tqdm(total=total_cities, disable=None) as pbar:
         for geocode in geocodes:
             row = netcdf_to_dataframe(data, geocode)
             tmp_df = COPE_DF.merge(row, on=list(COPE_DF.columns), how='outer')
