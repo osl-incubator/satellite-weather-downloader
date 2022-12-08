@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 from datetime import datetime, timedelta
 from dotenv import find_dotenv, load_dotenv
 from satellite_weather_downloader.celery_app.celeryapp import app
+from satellite_weather_downloader.celery_app.backfill import BackfillDB
 from satellite_weather_downloader.utils import extract_latlons, connection
 from satellite_weather_downloader.extract_reanalysis import (
     download_netcdf,
@@ -51,6 +52,13 @@ COPE_DF = pd.DataFrame(columns=[
     'umid_med',
     'umid_max',  
 ])
+
+
+@app.task(name='initialize_backfill_db')
+def initialize_backfill_db():
+    db = BackfillDB
+    db.populate_tables()
+
 
 @app.task
 def reanalysis_download_data(date, date_end=None) -> str:

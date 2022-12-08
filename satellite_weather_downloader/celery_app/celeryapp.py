@@ -28,4 +28,5 @@ app.conf.beat_schedule = {
 def at_start(sender, **kwargs):
     """Run tasks at startup"""
     with sender.app.connection() as conn:
-        sender.app.send_task("fetch_copernicus_weather", connection=conn)
+        sender.app.send_task("initialize_backfill_db", connection=conn)
+        sender.app.send_task("fetch_copernicus_weather", connection=conn) #fetch current date
