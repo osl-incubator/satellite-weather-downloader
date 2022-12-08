@@ -140,7 +140,7 @@ def backfill_analysis_data():
     processed into postgres. Celery will check for dates
     every 1 hour.
     Format: "%Y-%m-%d" bool
-    Example: 2020-01-01 true
+    Example: 2020-01-01 false
     """
 
     def gen_next_date() -> str:
@@ -173,7 +173,7 @@ def backfill_analysis_data():
         logging.warning('No date available in `backfill_cope_dates.txt`\nEnding task.')
         return
 
-    data = reanalysis_download_data(next(date))
+    data = reanalysis_download_data(date)
 
     cope_df = reanalysis_create_dataframe(data)
 

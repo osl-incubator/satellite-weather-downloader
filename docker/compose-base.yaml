@@ -28,17 +28,19 @@ services:
         HOST_UID: ${HOST_UID}
         HOST_GID: ${HOST_GID}
         # ENV: ${ENV}
+    user: "satellite:satellite"
     env_file:
       - ../.env
     environment:
-      - CELERY_BROKER_URL=amqp://${RBTMQ_USER}:${RBTMQ_PASSWORD}@rabbitmq:${RBTMQAMQP_PORT}
-      - PSQL_HOST=${PSQL_HOST}
-      - PSQL_PORT=${PSQL_PORT}
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672
+      - PSQL_HOST=${POSTGRES_HOST}
+      - PSQL_PORT=${POSTGRES_PORT}
     networks:
       - satellite
     volumes:
       - ../../logs:/var/log/
-      - ../satellite_weather_downloader/celery_app:/opt/services/satellite_weather_downloader/celery_app
+      - ../satellite_weather_downloader:/opt/services/satellite_weather_downloader
+      - ./celery/backfill_cope_dates.txt:/Backfill/backfill_cope_dates.txt
     depends_on:
       - rabbitmq
     restart: always

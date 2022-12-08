@@ -11,6 +11,7 @@ broker_url = os.getenv("CELERY_BROKER_URL")
 imports = ("satellite_weather_downloader.celery_app.tasks",)
 accept_content = ["application/json"]
 result_serializer = "json"
+worker_concurrency = 4
 worker_max_tasks_per_child = 10
 timezone = "America/Sao_Paulo"
 task_always_eager = False
