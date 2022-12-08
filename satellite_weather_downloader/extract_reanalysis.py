@@ -280,7 +280,6 @@ def netcdf_to_dataframe(
     tp_area = get_sliced_data("tp")
     rh_area = get_sliced_data("d2m")
     msl_area = get_sliced_data("msl")
-    breakpoint()
     if raw:
 
         def create_raw_df(data, column):
