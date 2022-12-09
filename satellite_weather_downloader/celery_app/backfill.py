@@ -119,7 +119,6 @@ class BackfillDB():
             logger.error(f"{date} has been already added into {table}")
 
 
-pd.DataFrame.from_dict
 class BackfillHandler():
     """
     This class is responsible for controlling the dates of the Backfill DB,

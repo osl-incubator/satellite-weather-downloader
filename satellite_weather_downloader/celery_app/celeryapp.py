@@ -56,6 +56,16 @@ app.conf.beat_schedule = {
         'task': 'fetch_foz_weather',
         'schedule': get_task_delay('fetch_foz_weather'),
     },
+
+    'add-date-to-fetch-br': {
+        'task': 'update_brasil_fetch_date',
+        'schedule': timedelta(days=1),
+    },
+
+        'add-date-to-fetch-foz': {
+        'task': 'update_foz_fetch_date',
+        'schedule': timedelta(days=14),
+    },
 }
 
 
