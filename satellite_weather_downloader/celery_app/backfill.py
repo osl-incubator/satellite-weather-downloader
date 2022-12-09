@@ -164,7 +164,7 @@ class BackfillHandler():
             )
 
             self.conn.commit()
-            logger.debug(f"☑️  backfill task for {date} done on {self.tablename}")
+            logger.debug(f"☑️  task for {date} done on {self.tablename}")
 
         except sqlite3.IntegrityError as e:
             logger.error(f"❌ task for {date} on table {self.tablename} "

@@ -104,12 +104,11 @@ def reanalysis_create_dataframe(data: str, task: str) -> pd.DataFrame:
                     row = netcdf_to_dataframe(data, geocode)
                     tmp_df = COPE_DF.merge(row, on=list(COPE_DF.columns), how='outer')
                     pbar.update(1)
+                    df = tmp_df.set_index('date')
         
         case 'fetch_foz_weather':
-            tmp_df = netcdf_to_dataframe(data, 4108304)
-
-    df = tmp_df.set_index('date')
-
+            df = netcdf_to_dataframe(data, 4108304)
+    
     return df
 
 
