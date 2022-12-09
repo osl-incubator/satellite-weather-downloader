@@ -132,7 +132,7 @@ class BackfillHandler():
         return date
     
 
-    def done(self, date):
+    def set_done(self, date):
         #Updates done and in_progress for a specific date
         cur = self.conn.cursor()
 
@@ -155,7 +155,7 @@ class BackfillHandler():
                          f"has been fetched already!")
 
     
-    def unfinished(self, date):
+    def set_unfinished(self, date):
         #In case some error occur after retrieving the date,
         # this method changes in_progress back to false 
         cur = self.conn.cursor()

@@ -1,0 +1,1 @@
+[{"task": "fetch_brasil_weather", "delay": 4}, {"task": "fetch_foz_weather", "delay": 10}]
