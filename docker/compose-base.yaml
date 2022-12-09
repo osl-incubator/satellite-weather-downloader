@@ -40,7 +40,7 @@ services:
     volumes:
       - ../../logs:/var/log/
       - ../satellite_weather_downloader:/opt/services/satellite_weather_downloader
-      - ~/${BACKFILL_FILE}:~/{BACKFILL_FILE}
+      - ~/${BACKFILL_FILE}:~/${BACKFILL_FILE}
     depends_on:
       - rabbitmq
     restart: always
