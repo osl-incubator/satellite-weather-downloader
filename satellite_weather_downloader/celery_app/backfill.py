@@ -3,6 +3,7 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 from loguru import logger
+from datetime import datetime
 from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv())
@@ -101,8 +102,24 @@ class BackfillDB():
                             )[::-1]
                         df = create_df(dates)
                         df.to_sql(table, self.conn, if_exists='append')
-            
 
+
+    def update_table(self, date: str, table: str):
+        cur = self.conn.cursor()
+
+        try:
+            with self.conn:
+                cur.execute(f"INSERT INTO {table} (date, done, in_progress)"
+                            f" VALUES (DATE('{date}'), False, False);")
+                self.conn.commit()
+
+            logger.info(f"➕ {date} added to {table} table")
+        
+        except sqlite3.IntegrityError:
+            logger.error(f"{date} has been already added into {table}")
+
+
+pd.DataFrame.from_dict
 class BackfillHandler():
     """
     This class is responsible for controlling the dates of the Backfill DB,
@@ -132,7 +149,7 @@ class BackfillHandler():
         return date
     
 
-    def set_done(self, date):
+    def set_task_done(self, date):
         #Updates done and in_progress for a specific date
         cur = self.conn.cursor()
 
@@ -155,7 +172,7 @@ class BackfillHandler():
                          f"has been fetched already!")
 
     
-    def set_unfinished(self, date):
+    def set_task_unfinished(self, date):
         #In case some error occur after retrieving the date,
         # this method changes in_progress back to false 
         cur = self.conn.cursor()

@@ -93,10 +93,10 @@ date_format = "%Y-%m-%d"
 date_re_format = r"\d{4}-\d{2}-\d{2}"
 date_iso_format = "YYYY-MM-DD"
 
-# dataset has maximum of 7 days of update delay.
+# dataset has maximum of 8 days of update delay.
 # in order to prevent requesting invalid dates,
-# the max date is 7 days ago, from today's date
-max_update_delay = date_today - timedelta(days=7)
+# the max date is 8 days ago, from today's date
+max_update_delay = date_today - timedelta(days=8)
 max_update_delay_f = datetime.strftime(max_update_delay, date_format)
 
 
