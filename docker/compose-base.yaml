@@ -32,7 +32,7 @@ services:
     env_file:
       - ../.env
     environment:
-      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:${RBTMQAMQP_PORT}
       - PSQL_HOST=${POSTGRES_HOST}
       - PSQL_PORT=${POSTGRES_PORT}
     networks:
@@ -40,7 +40,7 @@ services:
     volumes:
       - ../../logs:/var/log/
       - ../satellite_weather_downloader:/opt/services/satellite_weather_downloader
-      - ~/${BACKFILL_FILE}:~/${BACKFILL_FILE}
+      - /etc/${BACKFILL_FILE}:/etc/${BACKFILL_FILE}
     depends_on:
       - rabbitmq
     restart: always
