@@ -7,7 +7,7 @@ POSTGRES_DATABASE=dengue
 HOST_GID=1000
 HOST_UID=1000
 
-BACKFILL_FILE='/opt/services/satellite_weather_downloader/celery_app/backfill_cope_dates.txt'
+BACKFILL_FILE='/etc/.backfilldb'
 
 RBTMQ_PORT=15672
 RBTMQHTTP_PORT=25672

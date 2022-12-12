@@ -7,5 +7,5 @@ dependencies:
   - celery
   - make
   - poetry
-  - python=3.9
+  - python=3.11
 
