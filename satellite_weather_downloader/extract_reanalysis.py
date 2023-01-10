@@ -240,27 +240,6 @@ def netcdf_to_dataframe(
                               will aggregate these values into 24 hours interval.
     """
 
-    # Load netCDF file into xarray dataset
-    with xr.open_dataset(file_path, engine="netcdf4") as ds:
-
-        # Parse units to br's units
-        ds["t2m"] = ds.t2m - 273.15
-        ds["tp"] = ds.tp * 1000
-        ds["msl"] = ds.msl / 100
-        ds["d2m"] = ds.d2m - 273.15
-
-        # relative_humidity = temperature/dewpoint_temperature
-        rh = (
-            mpcalc.relative_humidity_from_dewpoint(
-                ds["t2m"] * units.degC, ds["d2m"] * units.degC
-            )
-            * 100
-        )
-
-        # dewpoint sacrifice to store relative humidity in DataSet
-        # d2m is now relative humidity
-        ds["d2m"] = rh
-
     lat, lon = extract_latlons.from_geocode(int(geocode))
     N, S, E, W = extract_coordinates.from_latlon(lat, lon)
 
@@ -272,48 +251,102 @@ def netcdf_to_dataframe(
             lats = [-25.5]
             lons = [-54.5, -54.75]
 
-    def get_sliced_data(key):
-        return ds[key].sel(longitude=lons, latitude=lats, method="nearest")
+    # Load netCDF file into xarray dataset
+    ds = _load_dataset(file_path)
 
-    t2m_area = get_sliced_data("t2m")
-    tp_area = get_sliced_data("tp")
-    rh_area = get_sliced_data("d2m")
-    msl_area = get_sliced_data("msl")
-    if raw:
+    # Slice data by coordinates
+    geocode_ds = _slice_dataset_by_coord(ds, lat=lats, lon=lons)
 
-        def create_raw_df(data, column):
-            return pd.DataFrame(_parse_data(data, True, column)).set_index('date')
+    # Format variables to Brazil's format
+    geocode_br_ds = _convert_to_br_units(geocode_ds)
 
-        temperature = create_raw_df(t2m_area, "temp")
-        precipitation = create_raw_df(tp_area, "precip")
-        rel_hum = create_raw_df(rh_area, "umid")
-        pressure = create_raw_df(msl_area, "pressao")
-        
-        merged_dfs = temperature\
-                    .join(precipitation, on='date')\
-                    .join(rel_hum, on='date')\
-                    .join(pressure, on='date')
+    # TODO: add raw case
 
-        geocodes = [geocode for r in range(len(merged_dfs))]
-        merged_dfs.insert(0, "geocodigo", geocodes)
-        return merged_dfs
+    # Group dataset by day
+    gb = geocode_br_ds.groupby('time.dayofyear')
 
-    temperature = _parse_data(t2m_area, False, "temp")
-    precipitation = _parse_data(tp_area, False, "precip")
-    rel_hum = _parse_data(rh_area, False, "umid")
-    pressure = _parse_data(msl_area, False, "pressao")
+    gmin, gmean, gmax = _reduce_by(gb, np.min, 'min'), \
+                        _reduce_by(gb, np.mean, 'med'), \
+                        _reduce_by(gb, np.max, 'max')
 
-    tmp = list(chain(temperature, precipitation, pressure, rel_hum))
+    final_ds = xr.combine_by_coords([gmin, gmean, gmax], data_vars='all')
+
+    return final_ds.to_dataframe()
+
+
+# Xarray Dataset Methods
+
+def _load_dataset(file_path: str) -> xr.Dataset:
+    with xr.open_dataset(file_path, engine="netcdf4") as ds:
+        return ds
+
+
+def _slice_dataset_by_coord(
+    dataset: xr.Dataset, 
+    lat: list[int],
+    lon: list[int]
+) -> xr.Dataset:
+    """
+    Slices a dataset using latitudes and longitudes, returns a dataset 
+    with the mean values between the coordinates.
+    """
+    ds = dataset.sel(latitude=lat, longitude=lon, method='nearest')
+    return ds.mean(dim=["latitude", "longitude"])
+
+
+def _convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
+    """
+    Parse the units according to Brazil's standard unit measures.
+    Rename their unit names and long names as well. 
+    """
+    ds = dataset
+    vars = list(ds.data_vars.keys())
+
+    if 't2m' in vars:
+        #Convert Kelvin to Celsius degrees
+        ds['t2m'] = ds.t2m - 273.15
+        ds['t2m'].attrs = {
+            'units': 'degC', 
+            'long_name': 'Temperatura'} 
+    if 'tp' in vars:
+        #Convert meters to millimeters
+        ds['tp'] = ds.tp * 1000
+        ds['tp'].attrs = {
+            'units': 'mm',
+            'long_name': 'Precipitação'}
+    if 'msl' in vars:
+        #Convert Pa to ATM
+        ds['msl'] = ds.msl * 0.00000986923
+        ds['msl'].attrs = {
+            'units': 'atm',
+            'long_name': 'Pressão ao Nível do Mar'}
+    if 'd2m' in vars:
+        #Calculate Relative Humidity percentage and add to Dataset 
+        ds['d2m'] = ds.d2m - 273.15
+        rh = mpcalc.relative_humidity_from_dewpoint(
+                ds['t2m'] * units.degC, ds['d2m'] * units.degC) * 100
+        #Replacing the variable instead of dropping. d2m won't be used.
+        ds['d2m'] = rh
+        ds['d2m'].attrs = {
+            'units': 'pct',
+            'long_name': 'Umidade Relativa do Ar'}
     
-    result = defaultdict(dict)
-    for row in tmp:
-        result[row["date"]].update(row)
+    with_br_names = {
+        't2m': 'temp', 
+        'tp': 'precip', 
+        'msl': 'pressao',
+        'd2m': 'umid'
+    }
+    
+    return ds.rename(with_br_names)
 
-    df = pd.DataFrame(result.values()).set_index('date')
-    geocodes = [geocode for r in range(len(df))]
-    df.insert(0, "geocodigo", geocodes)
 
-    return df
+def _reduce_by(ds, f, prefix):
+    ds = ds.apply(func=f)
+    return ds.rename(dict(zip(list(ds.data_vars), list(map(lambda x: f'{x}_{prefix}', list(ds.data_vars))))))
+
+
+# ---
 
 
 def _format_dates(
@@ -420,58 +453,3 @@ def _format_dates(
             year.sort()
 
     return year, month, day
-
-
-def _parse_data(data: xr.Dataset, raw: bool, column_name: str) -> list[dict]:
-    """
-    Group min, max and avg values into a DataFrame and changes the columns to
-    AlertaDengue's format.
-
-    Attrs:
-        data (list)       : List of values retrieved by xarray DataSet.
-        column_name (str) : Name of the column to be updated into the
-                            DataFrame
-
-    Returns:
-        result (DataFrame): DataFrame ready to be merged into final DataFrame.
-    """
-    
-    raw_result = defaultdict(list)
-
-    for row in data:
-        parsed_date = row.time.values.astype("M8[ms]").astype("O")
-
-        if not raw:
-            parsed_date = datetime(
-                year = parsed_date.year,
-                month = parsed_date.month,
-                day = parsed_date.day
-            )
-
-        avg_vals = np.mean(row.values)
-        raw_result[parsed_date].append(avg_vals)
-
-    if raw:
-        result = list()
-        for date, var in dict(raw_result).items():
-            tmp = dict()
-            tmp['date'] = date
-            tmp[column_name] = var[0]
-            result.append(tmp)
-        return result
-
-    var_min = "_".join([column_name, "min"])
-    var_med = "_".join([column_name, "med"])
-    var_max = "_".join([column_name, "max"])
-
-    daily_result = list()
-    for date, vars in raw_result.items():
-        tmp = dict()
-        tmp['date'] = date
-        tmp[var_min] = min(vars)
-        tmp[var_med] = mean(vars)
-        tmp[var_max] = max(vars)
-
-        daily_result.append(tmp)
-
-    return daily_result
