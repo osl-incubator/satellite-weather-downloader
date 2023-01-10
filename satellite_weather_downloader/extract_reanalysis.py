@@ -263,7 +263,7 @@ def netcdf_to_dataframe(
     # TODO: add raw case
 
     # Group dataset by day
-    gb = geocode_br_ds.groupby('time.dayofyear')
+    gb = geocode_br_ds.resample(time='1D')
 
     gmin, gmean, gmax = _reduce_by(gb, np.min, 'min'), \
                         _reduce_by(gb, np.mean, 'med'), \
