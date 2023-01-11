@@ -36,7 +36,7 @@ import uuid
 from typing import Optional
 
 import cdsapi
-from satellite_weather_downloader.utils.globals import CDSAPIRC_PATH
+from satellite_weather.utils.globals import CDSAPIRC_PATH
 
 credentials = 'url: https://cds.climate.copernicus.eu/api/v2\n' 'key: '
 

@@ -1,4 +1,5 @@
-from satellite_weather_downloader import __version__
+from satellite_weather import __version__
+import satellite_weather as sat
 
 
 def test_version():
@@ -6,7 +7,7 @@ def test_version():
 
 
 def test_import_package():
-    from satellite_weather_downloader import extract_reanalysis
+    from satellite_downloader import extract_reanalysis
 
     assert (
         extract_reanalysis.__name__
@@ -15,8 +16,8 @@ def test_import_package():
 
 
 def test_extract_latlons_from_geocode_n_extract_coord_from_latlons():
-    from satellite_weather_downloader.utils.extract_latlons import from_geocode
-    from satellite_weather_downloader.utils.extract_coordinates import (
+    from satellite_weather.utils.extract_latlons import from_geocode
+    from satellite_weather.utils.extract_coordinates import (
         from_latlon,
     )
 
@@ -34,3 +35,6 @@ def test_extract_latlons_from_geocode_n_extract_coord_from_latlons():
     assert latlon_florianopolis == (-27.5945, -48.5477)
     assert coord_rio_de_janeiro == (-22.75, -23.0, -43.0, -43.25)
     assert coord_florianopolis == (-27.5, -27.75, -48.5, -48.75)
+
+def test_download_netcdf_file():
+    ...

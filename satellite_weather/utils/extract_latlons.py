@@ -15,7 +15,7 @@ from_geocode(geocode):
 import json
 
 from collections import defaultdict
-from satellite_weather_downloader.utils.globals import PROJECT_DIR
+from satellite_weather.utils.globals import PROJECT_DIR
 
 mun_json = open(
     f'{PROJECT_DIR}/satellite_weather_downloader/utils/municipios.json'

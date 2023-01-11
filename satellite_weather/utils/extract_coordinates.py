@@ -14,7 +14,7 @@ Methods:
                                    coordinate.
 """
 
-from satellite_weather_downloader.utils.globals import LATITUDES, LONGITUDES
+from satellite_weather.utils.globals import LATITUDES, LONGITUDES
 
 
 def from_latlon(lat, lon) -> tuple:

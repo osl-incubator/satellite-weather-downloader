@@ -6,6 +6,5 @@ dependencies:
   - docker-compose
   - celery
   - make
-  - poetry
-  - python=3.11
+  - python=^3.11
 

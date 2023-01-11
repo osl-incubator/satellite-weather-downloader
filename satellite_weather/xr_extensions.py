@@ -3,7 +3,7 @@ import pandas as pd
 import xarray as xr
 import metpy.calc as mpcalc
 from metpy.units import units
-from satellite_weather_downloader.utils import (
+from satellite_weather.utils import (
     extract_coordinates,
     extract_latlons,
 )

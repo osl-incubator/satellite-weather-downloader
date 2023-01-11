@@ -9,18 +9,18 @@ from loguru import logger
 from sqlalchemy import create_engine
 from datetime import datetime, timedelta
 from dotenv import find_dotenv, load_dotenv
-from satellite_weather_downloader.celery_app.celeryapp import (
+from satellite_downloader.utils import connection
+from satellite_weather.celery_app.celeryapp import (
     app,
     update_task_delay,
 )
-from satellite_weather_downloader.celery_app.backfill import (
+from satellite_weather.celery_app.backfill import (
     BackfillDB,
     BackfillHandler,
 )
-from satellite_weather_downloader.utils import extract_latlons, connection
-from satellite_weather_downloader.extract_reanalysis import (
-    download_netcdf,
-    netcdf_to_dataframe,
+from satellite_weather.utils import extract_latlons
+from satellite_downloader.extract_reanalysis import (
+    download_br_netcdf,
 )
 
 load_dotenv(find_dotenv())
@@ -96,7 +96,7 @@ def reanalysis_download_data(date, date_end=None) -> str:
 
     connection.connect(UUID, KEY)
 
-    data_file = download_netcdf(
+    data_file = download_br_netcdf(
         date=date,
         date_end=date_end
         # data_dir = '/tmp'

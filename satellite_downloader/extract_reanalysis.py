@@ -20,7 +20,7 @@ the values from the day.
 Methods
 -------
 
-download_netcdf() : Send a request to Copernicus API with the parameters of
+download_br_netcdf() : Send a request to Copernicus API with the parameters of
                     the city specified by its geocode. The data can be retrieved
                     for certain day of the year and within a time range. As much
                     bigger the time interval chosen, as long will take to download
@@ -40,10 +40,12 @@ import re
 import logging
 import pandas as pd
 
-from satellite_weather_downloader.utils.globals import BR_AREA, DATA_DIR
-from satellite_weather_downloader.utils import connection
+from satellite_weather.utils.globals import DATA_DIR
+from satellite_downloader.utils import connection
 
-help_d = 'Use `help(extract_reanalysis.download_netcdf())` for more info.'
+BR_AREA = {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
+
+help_d = 'Use `help(extract_reanalysis.download_br_netcdf)` for more info.'
 
 date_today = datetime.now()
 date_format = '%Y-%m-%d'
@@ -57,7 +59,7 @@ max_update_delay = date_today - timedelta(days=8)
 max_update_delay_f = datetime.strftime(max_update_delay, date_format)
 
 
-def download_netcdf(
+def download_br_netcdf(
     date: Optional[str] = None,
     date_end: Optional[str] = None,
     data_dir: Optional[str] = None,
@@ -71,9 +73,9 @@ def download_netcdf(
     `cdsapi.Client()`. Data can be retrieved for a specific date or a
     date range, usage:
 
-    download_netcdf() -> downloads the last available date
-    download_netcdf(date='2022-10-04') or
-    download_netcdf(date='2022-10-04', date_end='2022-10-01')
+    download_br_netcdf() -> downloads the last available date
+    download_br_netcdf(date='2022-10-04') or
+    download_br_netcdf(date='2022-10-04', date_end='2022-10-01')
 
     Using this way, a request will be done to extract the data related
     to the area of Brazil. A file in the NetCDF format will be downloaded
@@ -93,7 +95,8 @@ def download_netcdf(
 
     Returns:
         String corresponding to path: `data_dir/filename`, that can later be used
-        to transform into DataFrame with the `netcdf_to_dataframe()` method.
+        to transform into a `xarray.Dataset` with the CopeBRDatasetExtension located
+        in `xr_extensions` module.
     """
 
     conn = connection.connect(uid, key)

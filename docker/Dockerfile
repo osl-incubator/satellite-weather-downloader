@@ -1,4 +1,4 @@
-FROM condaforge/mambaforge
+FROM condaforge/mambaforge as base
 
 ARG HOST_UID
 ARG HOST_GID
@@ -32,8 +32,8 @@ RUN addgroup --gid ${HOST_GID} satellite \
 
 # Copy dependencies file
 COPY --chown=satellite:satellite conda/dev.yaml /tmp/environment.yaml
-COPY --chown=satellite:satellite satellite_weather_downloader /opt/services/satellite_weather_downloader/
-COPY --chown=satellite:satellite docker/scripts/run_celery.sh  /opt/services/celery-run.sh
+COPY --chown=satellite:satellite docker/scripts/beat_weather.sh /beat_weather.sh
+COPY --chown=satellite:satellite docker/scripts/beat_downloader.sh  /beat_downloader.sh
 COPY --chown=satellite:satellite env.tpl pyproject.toml poetry.lock README.md /opt/services/
 COPY --chown=satellite:satellite docker/scripts/poetry-install.sh /tmp/poetry-install.sh
 
@@ -56,4 +56,3 @@ RUN mamba env create -n $ENV_NAME \
 WORKDIR /opt/services/satellite_weather_downloader/
 
 ENTRYPOINT ["bash", "/activate.sh"]
-CMD ["/opt/services/celery-run.sh"]

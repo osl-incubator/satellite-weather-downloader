@@ -2,7 +2,7 @@
 """satellite_weather_downloader Python package"""
 from importlib import metadata as importlib_metadata
 from .xr_extensions import CopeBRDatasetExtension
-from .extract_reanalysis import download_netcdf
+from ..satellite_downloader.extract_reanalysis import download_br_netcdf
 import xarray as xr
 
 
