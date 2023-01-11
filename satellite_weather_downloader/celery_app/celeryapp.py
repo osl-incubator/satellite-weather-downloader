@@ -6,9 +6,9 @@ from celery import Celery
 from datetime import timedelta
 from celery.signals import worker_ready
 
-app = Celery("satellite_weather_downloader")
+app = Celery('satellite_weather_downloader')
 
-app.config_from_object("satellite_weather_downloader.celery_app.celeryconfig")
+app.config_from_object('satellite_weather_downloader.celery_app.celeryconfig')
 
 delay_file = Path(__file__).parent / 'delay_controller.json'
 
@@ -22,8 +22,10 @@ Responsible for communicating with `delay_controller.json`,
  rather there is data to fetch or not. 
  @Warning All delays in the file must be in minutes. 
 """
+
+
 def get_task_delay(task):
-    #WARNING: Every delay in `delay_controller.json` must be in minutes
+    # WARNING: Every delay in `delay_controller.json` must be in minutes
     with open(delay_file, 'r') as d:
         delays = json.load(d)
 
@@ -38,9 +40,11 @@ def update_task_delay(task, minutes):
     for tsk in delays:
         if tsk['task'] == task:
             tsk['delay'] = minutes
-    
+
     with open(delay_file, 'w') as d:
         json.dump(delays, d)
+
+
 """
 -----------------
 """
@@ -51,18 +55,15 @@ app.conf.beat_schedule = {
         'task': 'fetch_brasil_weather',
         'schedule': get_task_delay('fetch_brasil_weather'),
     },
-
     'fetch-foz-weather': {
         'task': 'fetch_foz_weather',
         'schedule': get_task_delay('fetch_foz_weather'),
     },
-
     'add-date-to-fetch-br': {
         'task': 'update_brasil_fetch_date',
         'schedule': timedelta(days=1),
     },
-
-        'add-date-to-fetch-foz': {
+    'add-date-to-fetch-foz': {
         'task': 'update_foz_fetch_date',
         'schedule': timedelta(days=14),
     },
@@ -74,4 +75,4 @@ app.conf.beat_schedule = {
 def at_start(sender, **kwargs):
     """Run tasks at startup"""
     with sender.app.connection() as conn:
-        sender.app.send_task("initialize_backfill_db", connection=conn)
+        sender.app.send_task('initialize_backfill_db', connection=conn)
