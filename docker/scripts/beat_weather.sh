@@ -1,7 +1,7 @@
 #!/bin/bash
 
 exec celery \
-    --workdir /opt/services/satellite_celeryapp/weather \
+    --workdir /opt/services/satellite/celeryapp/weather \
     --config beat \
     -A tasks worker -B \
     -s /tmp/celerybeat-schedule \
