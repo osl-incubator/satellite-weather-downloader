@@ -96,7 +96,7 @@ def download_br_netcdf(
     Returns:
         String corresponding to path: `data_dir/filename`, that can later be used
         to transform into a `xarray.Dataset` with the CopeBRDatasetExtension located
-        in `xr_extensions` module.
+        in `satellite_weather` module.
     """
 
     conn = connection.connect(uid, key)

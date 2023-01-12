@@ -24,7 +24,7 @@ class CopeBRDatasetExtension:
     Usage:
 
         ```
-        import satellite_weather_downloader as sat
+        import satellite_weather as sat
         ds = sat.load_dataset('file/path')
         RJ_geocode = 3304557
         rio_df = ds.copebr.to_dataframe(RJ_geocode)
