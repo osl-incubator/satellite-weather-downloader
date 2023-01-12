@@ -46,12 +46,14 @@ USER satellite
 RUN mamba env create -n $ENV_NAME \
     --file /tmp/environment.yaml \
   && cd /opt/services/ \
-  && . /tmp/poetry-install.sh \
   && conda clean --all \
   && find /opt/conda/ -type f,l -name '*.a' -delete \
   && find /opt/conda/ -type f,l -name '*.pyc' -delete \
   && find /opt/conda/ -type f,l -name '*.js.map' -delete \
   && rm -rf /opt/conda/pkgs
+
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+  && . /tmp/poetry-install.sh
 
 WORKDIR /opt/services/satellite_weather_downloader/
 
