@@ -51,11 +51,6 @@ RUN mamba env create -n $ENV_NAME \
   && find /opt/conda/ -type f,l -name '*.js.map' -delete \
   && rm -rf /opt/conda/pkgs
 
-# Install Poetry dependencies
-RUN curl -sSL https://install.python-poetry.org | python3 - \
-  && cd /opt/services/ \
-  && . /tmp/poetry-install.sh
-
 WORKDIR /opt/services/satellite/
 
 ENTRYPOINT ["bash", "/activate.sh"]
