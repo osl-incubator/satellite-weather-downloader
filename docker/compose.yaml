@@ -36,7 +36,7 @@ services:
       - ../../logs:/var/log/
       - ./celeryapp:/opt/services/satellite/celeryapp
 
-  satellite-weather:
+  weather:
     hostname: weather
     extends:
       service: satellite-base
@@ -51,7 +51,7 @@ services:
       retries: 5
       start_period: 30s
 
-  satellite-downloader:
+  downloader:
     hostname: downloader
     extends:
       service: satellite-base
@@ -79,8 +79,8 @@ services:
         - 5555:5555
     depends_on:
       - rabbitmq
-      - satellite-weather
-      - satellite-downloader
+      - weather
+      - downloader
 
 networks:
   satellite:
