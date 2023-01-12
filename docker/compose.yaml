@@ -42,7 +42,7 @@ services:
       service: satellite-base
     volumes:
       - ../satellite_weather/opt/services/satellite_weather
-    entrypoint: /beat_weather.sh
+    command: /beat_weather.sh
     depends_on:
       - rabbitmq
     restart: always
@@ -59,7 +59,7 @@ services:
       service: satellite-base
     volumes:
       - ../satellite_weather/opt/services/satellite_weather
-    entrypoint: /beat_downloader.sh
+    command: /beat_downloader.sh
     depends_on:
       - rabbitmq
     restart: always

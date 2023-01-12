@@ -6,9 +6,9 @@ from celery import Celery
 from datetime import timedelta
 from celery.signals import worker_ready
 
-app = Celery('beat_weather')
+app = Celery('beat_downloader')
 
-app.config_from_object('satellite_celeryapp.weather.config')
+app.config_from_object('satellite_celeryapp.downloader.config')
 
 delay_file = Path(__file__).parent.parent / 'delay_controller.json'
 
