@@ -1,5 +1,6 @@
 # type: ignore[attr-defined]
 """satellite_weather_downloader Weather Collection Python package"""
+# TODO: docstrings
 from importlib import metadata as importlib_metadata
 from .xr_extensions import *
 from .utils import *
