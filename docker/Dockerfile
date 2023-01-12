@@ -31,11 +31,10 @@ RUN addgroup --gid ${HOST_GID} satellite \
   && chmod +x /activate.sh
 
 # Copy dependencies file
-COPY --chown=satellite:satellite conda/dev.yaml /tmp/environment.yaml
+COPY --chown=satellite:satellite conda/dev.yaml /opt/services/satellite/environment.yaml
 COPY --chown=satellite:satellite docker/scripts/beat_weather.sh /beat_weather.sh
 COPY --chown=satellite:satellite docker/scripts/beat_downloader.sh  /beat_downloader.sh
 COPY --chown=satellite:satellite env.tpl pyproject.toml poetry.lock README.md /opt/services/
-COPY --chown=satellite:satellite docker/scripts/poetry-install.sh /tmp/poetry-install.sh
 
 ENV PATH "$PATH:/home/satellite/.local/bin"
 ENV PATH /opt/conda/envs/$ENV_NAME/bin:$PATH
@@ -44,12 +43,11 @@ USER satellite
 
 # Use environment to create the env-satellite
 RUN mamba env create -n $ENV_NAME \
-    --file /tmp/environment.yaml \
+    --file /opt/services/satellite/environment.yaml \
   && conda clean --all \
   && find /opt/conda/ -type f,l -name '*.a' -delete \
   && find /opt/conda/ -type f,l -name '*.pyc' -delete \
-  && find /opt/conda/ -type f,l -name '*.js.map' -delete \
-  && rm -rf /opt/conda/pkgs
+  && find /opt/conda/ -type f,l -name '*.js.map' -delete
 
 WORKDIR /opt/services/satellite/
 
