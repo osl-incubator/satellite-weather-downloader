@@ -15,12 +15,12 @@ from_geocode(geocode):
 import json
 
 from collections import defaultdict
-from satellite_weather_downloader.utils.globals import PROJECT_DIR
+from pathlib import Path
 
 mun_json = open(
-    f"{PROJECT_DIR}/satellite_weather_downloader/utils/municipios.json"
+    f'{Path(__file__).parent}/municipios.json'
 )
-mun_decoded = mun_json.read().encode().decode("utf-8-sig")
+mun_decoded = mun_json.read().encode().decode('utf-8-sig')
 municipios = json.loads(mun_decoded)
 mun_json.close()
 
@@ -46,6 +46,6 @@ def from_geocode(geocode: int) -> tuple:
     coords = defaultdict(dict)
     for mun in municipios:
         coords[mun['geocodigo']] = (mun['latitude'], mun['longitude'])
-    
+
     lat, lon = coords[int(geocode)]
     return lat, lon

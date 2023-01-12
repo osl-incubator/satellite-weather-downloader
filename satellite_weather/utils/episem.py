@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 
 import numpy as np
 
-__author__ = "Marcelo Ferreira da Costa Gomes"
+__author__ = 'Marcelo Ferreira da Costa Gomes'
 """
 Return Brazilian epidemiological week from passed date
 """
@@ -17,7 +17,7 @@ def extractweekday(x=datetime):
 
 
 def firstepiday(year=int):
-    day = datetime.strptime("%s-01-01" % year, "%Y-%m-%d")
+    day = datetime.strptime('%s-01-01' % year, '%Y-%m-%d')
 
     day_week = extractweekday(day)
 
@@ -35,7 +35,7 @@ def firstepiday(year=int):
 
 
 def lastepiday(year=int):
-    day = datetime.strptime("%s-12-31" % year, "%Y-%m-%d")
+    day = datetime.strptime('%s-12-31' % year, '%Y-%m-%d')
 
     day_week = extractweekday(day)
 
@@ -52,7 +52,7 @@ def lastepiday(year=int):
     return day
 
 
-def episem(x, sep="W", out="YW"):
+def episem(x, sep='W', out='YW'):
 
     """
     Return Brazilian corresponding epidemiological week from x.
@@ -67,18 +67,18 @@ def episem(x, sep="W", out="YW"):
 
     x = str(x)
 
-    def out_format(year, week, out, sep="W"):
-        if out == "YW":
-            return "%s%s%02d" % (year, sep, week)
-        if out == "Y":
-            return "%s" % (year)
-        if out == "W":
-            return "%02d" % week
+    def out_format(year, week, out, sep='W'):
+        if out == 'YW':
+            return '%s%s%02d' % (year, sep, week)
+        if out == 'Y':
+            return '%s' % (year)
+        if out == 'W':
+            return '%02d' % week
 
     if type(x) != datetime:
-        if str(x) == "" or x is None or (type(x) != str and np.isnan(x)):
+        if str(x) == '' or x is None or (type(x) != str and np.isnan(x)):
             return None
-        x = datetime.strptime(x, "%Y-%m-%d %H:%M:%S")
+        x = datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
 
     epiyear = x.year
     epiend = lastepiday(epiyear)
@@ -146,16 +146,16 @@ def episem2date(epi_year_week: str, weekday: int = 0):
     epi_year_week = str(epi_year_week)
     # Separate year and week:
     if len(epi_year_week) not in [6, 7]:
-        raise Exception("Epi Year Week not valid.")
+        raise Exception('Epi Year Week not valid.')
 
     epiyear = int(epi_year_week[:4])
     epiweek = int(epi_year_week[-2:])
 
     # Obtain sunday of first epiweek of epiyear
     # day.one
-    date_1 = datetime.strptime("%s-01-01" % epiyear, "%Y-%m-%d")
+    date_1 = datetime.strptime('%s-01-01' % epiyear, '%Y-%m-%d')
     # day.one.week
-    date_1_w = int(date_1.strftime("%w"))
+    date_1_w = int(date_1.strftime('%w'))
 
     # Check wether week day of Jan 1st was before or after a Wednesday
     # and set the start of the epiyear accordingly

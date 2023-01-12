@@ -13,8 +13,10 @@ Methods:
     do_area(latitude, longitude) : Returns North, South, East and West given a
                                    coordinate.
 """
+import numpy as np
 
-from satellite_weather_downloader.utils.globals import LATITUDES, LONGITUDES
+LONGITUDES = list(np.arange(-90.0, 90.25, 0.25))
+LATITUDES = list(np.arange(-180.0, 180.25, 0.25))
 
 
 def from_latlon(lat, lon) -> tuple:

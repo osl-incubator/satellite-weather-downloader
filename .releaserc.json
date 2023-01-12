@@ -8,12 +8,22 @@
       {
         "replacements": [
           {
-            "files": ["satellite_weather_downloader/__init__.py"],
+            "files": [
+              "satellite_weather/__init__.py",
+              "satellite_weather/utils/__init__.py", 
+              "satellite_downloader/__init__.py",
+              "satellite_downloader/utils/__init__.py"
+            ],
             "from": "return \".*\"  # changed by semantic-release",
             "to": "return \"${nextRelease.version}\"  # changed by semantic-release",
             "results": [
               {
-                "file": "satellite_weather_downloader/__init__.py",
+                "files": [
+                  "satellite_weather/__init__.py",
+                  "satellite_weather/utils/__init__.py", 
+                  "satellite_downloader/__init__.py",
+                  "satellite_downloader/utils/__init__.py"
+                ],
                 "hasChanged": true,
                 "numMatches": 1,
                 "numReplacements": 1
@@ -65,7 +75,8 @@
         "assets": [
           "pyproject.toml",
           "CHANGELOG.md",
-          "satellite_weather_downloader/__init__.py"
+          "satellite_weather/__init__.py",
+          "satellite_downloader/__init__.py"
         ],
         "message": "chore(release): ${nextRelease.version}"
       }
