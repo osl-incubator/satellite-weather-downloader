@@ -34,10 +34,11 @@ connect(opt[uid], opt[key]) : If none credentials are passed, it will request
 import logging
 import uuid
 from typing import Optional
+from pathlib import Path
 
 import cdsapi
-from satellite_weather.utils.globals import CDSAPIRC_PATH
 
+CDSAPIRC_PATH = Path.home() / '.cdsapirc'
 credentials = 'url: https://cds.climate.copernicus.eu/api/v2\n' 'key: '
 
 

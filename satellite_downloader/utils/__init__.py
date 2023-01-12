@@ -14,4 +14,4 @@ def get_version() -> str:
 version: str = get_version()
 __version__: str = version
 
-DATA_DIR = Path().home / 'copernicus_data'
+

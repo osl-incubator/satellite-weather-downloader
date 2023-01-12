@@ -40,9 +40,10 @@ import re
 import logging
 import pandas as pd
 
-from utils import connection, DATA_DIR
+from .utils import connection
 
 BR_AREA = {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
+DATA_DIR = Path.home() / 'copernicus_data'
 
 help_d = 'Use `help(extract_reanalysis.download_br_netcdf)` for more info.'
 
@@ -86,7 +87,7 @@ def download_br_netcdf(
         date_end (opt(str)): Format 'YYYY-MM-DD'. Used along with `date`
                               to define a date range.
         data_dir (opt(str)): Path in which the NetCDF file will be downloaded.
-                             Default dir is specified in `globals.DATA_DIR`.
+                             Default dir is `$HOME/copernicus_data/`.
         uid (opt(str)): UID from Copernicus User page, it will be used with
                         `connection.connect()` method.
         key (opt(str)): API Key from Copernicus User page, it will be used with
