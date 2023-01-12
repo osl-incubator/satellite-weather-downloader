@@ -3,8 +3,8 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - docker-compose
-  - celery
-  - make
   - python 3.11.*
-
+  - docker-compose
+  - make
+  - celery
+  - satellite-weather-downloader
