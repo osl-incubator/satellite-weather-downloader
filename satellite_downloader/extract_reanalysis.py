@@ -40,7 +40,7 @@ import re
 import logging
 import pandas as pd
 
-from satellite_weather.utils.globals import DATA_DIR
+from satellite_downloader.utils import DATA_DIR
 from satellite_downloader.utils import connection
 
 BR_AREA = {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}

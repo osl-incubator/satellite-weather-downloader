@@ -66,7 +66,7 @@ class CopeBRDatasetExtension:
                                   will aggregate these values into 24 hours interval.
         Returns:
             xr.Dataset: The final dataset with the data parsed into Br's format.
-                        if not `raw`, will group the data by day, taking it's 
+                        if not `raw`, will group the data by day, taking it's
                         min, mean and max values. If `raw`, the data corresponds
                         to a 3h interval range for each day in the dataset.
         """

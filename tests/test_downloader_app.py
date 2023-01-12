@@ -36,5 +36,6 @@ def test_extract_latlons_from_geocode_n_extract_coord_from_latlons():
     assert coord_rio_de_janeiro == (-22.75, -23.0, -43.0, -43.25)
     assert coord_florianopolis == (-27.5, -27.75, -48.5, -48.75)
 
+
 def test_download_netcdf_file():
     ...

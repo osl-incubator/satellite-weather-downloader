@@ -1,4 +1,4 @@
-FROM condaforge/mambaforge as base
+FROM condaforge/mambaforge as satellite-base
 
 ARG HOST_UID
 ARG HOST_GID
@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -qq update --yes \
   && apt-get -qq install --yes --no-install-recommends \
   build-essential git make postgresql-client vim \
-  ca-certificates wget locales cron sudo \
+  ca-certificates wget locales curl cron sudo \
   && rm -rf /var/lib/apt/lists/*
 
 #Set locale
@@ -23,8 +23,8 @@ RUN addgroup --gid ${HOST_GID} satellite \
   && echo "satellite ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/satellite \
   && chmod 0440 /etc/sudoers.d/satellite \
   && export ENV_NAME="$ENV_NAME" \
-  && mkdir -p /opt/conda /opt/services/logs /opt/services/satellite_weather_downloader/ \
-  && chmod -R a+rwx /opt/conda /opt/services/satellite_weather_downloader/ /tmp \
+  && mkdir -p /opt/conda /opt/services/logs /opt/services/satellite/ \
+  && chmod -R a+rwx /opt/conda /opt/services/satellite/ /tmp \
   && chown satellite:satellite /opt/services/ /tmp \
   && echo 'source /opt/conda/bin/activate "$ENV_NAME" && exec "$@"' > /activate.sh \
   && echo 'source activate "$ENV_NAME"' >  /home/satellite/.bashrc \
@@ -45,16 +45,17 @@ USER satellite
 # Use environment to create the env-satellite
 RUN mamba env create -n $ENV_NAME \
     --file /tmp/environment.yaml \
-  && cd /opt/services/ \
   && conda clean --all \
   && find /opt/conda/ -type f,l -name '*.a' -delete \
   && find /opt/conda/ -type f,l -name '*.pyc' -delete \
   && find /opt/conda/ -type f,l -name '*.js.map' -delete \
   && rm -rf /opt/conda/pkgs
 
+# Install Poetry dependencies
 RUN curl -sSL https://install.python-poetry.org | python3 - \
+  && cd /opt/services/ \
   && . /tmp/poetry-install.sh
 
-WORKDIR /opt/services/satellite_weather_downloader/
+WORKDIR /opt/services/satellite/
 
 ENTRYPOINT ["bash", "/activate.sh"]

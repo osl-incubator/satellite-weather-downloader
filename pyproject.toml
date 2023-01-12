@@ -8,7 +8,8 @@ name = "satellite-weather-downloader"
 version = "1.4.0"  # changed by semantic-release
 description = "The routines available in this package are designed to capture and process satellite images"
 readme = "README.md"
-authors = ["Flavio Codeco Coelho <fccoelho@gmail.com>"]
+authors = ["Luã Bida Vacaro <luabidaa@gmail.com>"]
+maintainers = ["Luã Bida Vacaro <luabidaa@gmail.com>"]
 license = "GNU GPL v3.0"
 repository = "https://github.com/osl-incubator/satellite-weather-downloader"
 homepage = "https://github.com/osl-incubator/satellite-weather-downloader"
@@ -24,7 +25,10 @@ classifiers = [  #! Update me
   "Programming Language :: Python :: 3.9",
 ]
 
-packages = [{include='satellite_weather_downloader'}]
+packages = [
+  {include='satellite_weather'},
+  {include='satellite_downloader'},
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"

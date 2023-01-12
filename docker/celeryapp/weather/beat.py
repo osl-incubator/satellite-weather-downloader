@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from celery import Celery
+from celeryapp import Celery
 from datetime import timedelta
 from celery.signals import worker_ready
 

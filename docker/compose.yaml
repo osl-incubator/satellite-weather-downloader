@@ -34,14 +34,14 @@ services:
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:${RBTMQAMQP_PORT}
     volumes:
       - ../../logs:/var/log/
-      - ../satellite_celeryapp:/opt/services/satellite_celeryapp
+      - ./celeryapp:/opt/services/satellite/celeryapp
 
   satellite-weather:
     hostname: weather
     extends:
       service: satellite-base
     volumes:
-      - ../satellite_weather/opt/services/satellite_weather
+      - ../satellite/weather:/opt/services/satellite/weather
     command: /beat_weather.sh
     depends_on:
       - rabbitmq
@@ -58,7 +58,8 @@ services:
     extends:
       service: satellite-base
     volumes:
-      - ../satellite_weather/opt/services/satellite_weather
+      - ../satellite/downloader:/opt/services/satellite/downloader
+      - ${COPERNICUS_DATA}:/home/satellite/copernicus_data
     command: /beat_downloader.sh
     depends_on:
       - rabbitmq
