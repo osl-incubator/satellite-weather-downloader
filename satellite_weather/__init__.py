@@ -1,8 +1,8 @@
 # type: ignore[attr-defined]
-"""satellite_weather_downloader Python package"""
+"""satellite_weather_downloader Weather Collection Python package"""
 from importlib import metadata as importlib_metadata
-from .xr_extensions import CopeBRDatasetExtension
-from ..satellite_downloader.extract_reanalysis import download_br_netcdf
+from xr_extensions import CopeBRDatasetExtension
+import satellite_weather as weather
 import xarray as xr
 
 

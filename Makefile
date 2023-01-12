@@ -10,7 +10,7 @@ SERVICE:=
 DOCKER=docker-compose \
 	--env-file .env \
 	--project-name satellite \
-	--file docker/compose-base.yaml \
+	--file docker/compose.yaml \
 
 CONSOLE:=bash
 
@@ -18,7 +18,7 @@ CONSOLE:=bash
 # DOCKER
 .PHONY:docker-build
 docker-build:
-	$(DOCKER) build worker
+	$(DOCKER) build satellite-downloader satellite-weather
 
 .PHONY:docker-start
 docker-start:

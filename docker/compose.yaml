@@ -37,7 +37,7 @@ services:
       - ../satellite_celeryapp:/opt/services/satellite_celeryapp
 
   satellite-weather:
-    hostname: satellite-weather
+    hostname: weather
     extends:
       service: satellite-base
     volumes:
@@ -54,7 +54,7 @@ services:
       start_period: 30s
 
   satellite-downloader:
-    hostname: satellite-downloader
+    hostname: downloader
     extends:
       service: satellite-base
     volumes:
@@ -81,8 +81,8 @@ services:
         - 5555:5555
     depends_on:
       - rabbitmq
-      - weather
-      - downloader
+      - satellite-weather
+      - satellite-downloader
 
 networks:
   satellite:
