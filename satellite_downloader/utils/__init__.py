@@ -13,5 +13,3 @@ def get_version() -> str:
 
 version: str = get_version()
 __version__: str = version
-
-

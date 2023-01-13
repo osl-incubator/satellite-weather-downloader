@@ -2,9 +2,11 @@
 """satellite_weather_downloader Weather Collection Python package"""
 # TODO: docstrings
 from importlib import metadata as importlib_metadata
-from .xr_extensions import *
-from .utils import *
+
 import xarray as xr
+
+from .utils import *
+from .xr_extensions import *
 
 
 def load_dataset(file_path: str) -> xr.Dataset:

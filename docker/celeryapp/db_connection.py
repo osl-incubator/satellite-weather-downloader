@@ -1,10 +1,11 @@
 import os
 import sqlite3
-import pandas as pd
-from pathlib import Path
-from loguru import logger
 from datetime import datetime
+from pathlib import Path
+
+import pandas as pd
 from dotenv import find_dotenv, load_dotenv
+from loguru import logger
 
 load_dotenv(find_dotenv())
 

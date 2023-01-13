@@ -32,12 +32,12 @@ download_br_netcdf() : Send a request to Copernicus API with the parameters of
                     @warning: date 2022-08-01 is corrupting all data retrieved.
 """
 
-from pathlib import Path
+import logging
+import re
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional, Tuple, Union
 
-import re
-import logging
 import pandas as pd
 
 from .utils import connection
@@ -177,25 +177,28 @@ def download_br_netcdf(
 
 
 def _format_dates(
-    date: str,
-    date_end: Optional[str] = None,
+    date: str or datetime,
+    date_end: Optional[str or datetime] = None,
 ) -> Tuple[Union[str, list], Union[str, list], Union[str, list]]:
     """
     Returns the days, months and years by given a date or
     a date range.
 
     Attrs:
-        date (str)    : Initial date.
-        date_end (str): If provided, defines a date range to be extracted.
+        date (str or datetime)    : Initial date.
+        date_end (str or datetime): If provided, defines a date
+                                    range to be extracted.
 
     Returns:
         year (str or list) : The year(s) related to date provided.
         month (str or list): The month(s) related to date provided.
         day (str or list)  : The day(s) related to date provided.
     """
-
-    ini_date = datetime.strptime(date, date_format)
-    year, month, day = date.split('-')
+    if type(date) == datetime:
+        year, month, day = (date.year, date.month, date.day)
+    elif type(date) == str:
+        ini_date = datetime.strptime(date, date_format)
+        year, month, day = date.split('-')
 
     if ini_date > max_update_delay:
         raise Exception(
@@ -220,7 +223,8 @@ def _format_dates(
     # if there is no end date, only the day specified on
     # `date` will be downloaded
     if date_end:
-        end_date = datetime.strptime(date_end, date_format)
+        if type(date_end) == str:
+            end_date = datetime.strptime(date_end, date_format)
 
         # check for right end date format
         if not re.match(date_re_format, date_end):
@@ -267,11 +271,11 @@ def _format_dates(
             day_set.add(day_)
 
         # parsing the correct types
-        month = list(month_set)
-        day = list(day_set)
+        months = list(month_set)
+        days = list(day_set)
         # sorting them (can't do inline)
-        month.sort()
-        day.sort()
+        months.sort()
+        days.sort()
 
         if len(year_set) == 1:
             year = str(year_set.pop())
@@ -279,4 +283,4 @@ def _format_dates(
             year = list(year)
             year.sort()
 
-    return year, month, day
+    return year, months, days

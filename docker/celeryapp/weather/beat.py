@@ -1,14 +1,14 @@
-# Create app celery to start satellite_weather_downloader
+# Create app celery to start satellite_weather
 
 import json
 from pathlib import Path
-from celeryapp import Celery
+from celery import Celery
 from datetime import timedelta
 from celery.signals import worker_ready
 
 app = Celery('beat_weather')
 
-app.config_from_object('satellite_celeryapp.weather.config')
+app.config_from_object('satellite.celeryapp.weather.config')
 
 delay_file = Path(__file__).parent.parent / 'delay_controller.json'
 

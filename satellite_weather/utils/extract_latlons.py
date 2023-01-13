@@ -13,13 +13,10 @@ from_geocode(geocode):
                 Returns a tuple (latitude, longitude)
 """
 import json
-
 from collections import defaultdict
 from pathlib import Path
 
-mun_json = open(
-    f'{Path(__file__).parent}/municipios.json'
-)
+mun_json = open(f'{Path(__file__).parent}/municipios.json')
 mun_decoded = mun_json.read().encode().decode('utf-8-sig')
 municipios = json.loads(mun_decoded)
 mun_json.close()

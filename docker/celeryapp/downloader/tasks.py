@@ -1,64 +1,106 @@
-# from __future__ import absolute_import
+from __future__ import absolute_import
 
-# import os
+import calendar
+import os
+from datetime import datetime, timedelta
+from types import NoneType
+
+from dotenv import find_dotenv, load_dotenv
+from satellite_downloader import extract_reanalysis as ex
+
 # import tqdm
 # import calendar
 # import subprocess
 # import pandas as pd
 # from loguru import logger
-# from sqlalchemy import create_engine
-# from datetime import datetime, timedelta
-# from dotenv import find_dotenv, load_dotenv
-# from satellite_downloader.utils import connection
-# from satellite_weather.celery_app.celeryapp import (
-#     app,
-#     update_task_delay,
-# )
-# from satellite_weather.celery_app.backfill import (
-#     BackfillDB,
-#     BackfillHandler,
-# )
-# from satellite_weather.utils import extract_latlons
-# from satellite_downloader.extract_reanalysis import (
-#     download_br_netcdf,
-# )
+from sqlalchemy import create_engine
 
-# load_dotenv(find_dotenv())
+from .beat import app, update_task_delay
 
-# PSQL_USER = os.getenv('POSTGRES_USER')
-# PSQL_PASSWORD = os.getenv('POSTGRES_PASSWORD')
-# HOST = os.getenv('PSQL_HOST')
-# PORT = os.getenv('POSTGRES_PORT')
-# DBASE = os.getenv('POSTGRES_DATABASE')
-# UUID = os.getenv('API_UUID')
-# KEY = os.getenv('API_KEY')
+load_dotenv(find_dotenv())
 
-# BACKFILL_FILE = os.getenv('BACKFILL_FILE')
+PSQL_USER = os.getenv('POSTGRES_USER')
+PSQL_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+HOST = os.getenv('PSQL_HOST')
+PORT = os.getenv('POSTGRES_PORT')
+DBASE = os.getenv('POSTGRES_DATABASE')
+UUID = os.getenv('API_UUID')
+KEY = os.getenv('API_KEY')
 
-# engine = create_engine(
-#     f'postgresql://{PSQL_USER}:{PSQL_PASSWORD}@{HOST}:{PORT}/{DBASE}'
-# )
 
-# geocodes = [mun['geocodigo'] for mun in extract_latlons.municipios]
+engine = create_engine(
+    f'postgresql://{PSQL_USER}:{PSQL_PASSWORD}@{HOST}:{PORT}/{DBASE}'
+)
 
-# COPE_DF = pd.DataFrame(
-#     columns=[
-#         'date',
-#         'geocodigo',
-#         'temp_min',
-#         'temp_med',
-#         'temp_max',
-#         'precip_min',
-#         'precip_med',
-#         'precip_max',
-#         'pressao_min',
-#         'pressao_med',
-#         'pressao_max',
-#         'umid_min',
-#         'umid_med',
-#         'umid_max',
-#     ]
-# )
+
+def _get_last_available_date(conn, schema: str, table: str) -> datetime:
+    sql = f'SELECT MIN(date) FROM {schema}.{table}'
+    with conn:
+        cur = conn.execute(sql)
+        res = cur.fetchone()
+        if not res:  # Will run only at system initialization
+            current = datetime.now()
+            return datetime(current.year, current.month, 1)
+        return res[0]
+
+
+def _calc_last_month_range(date: datetime) -> tuple(datetime, datetime):
+    if date.month == 1:
+        ini_date = datetime(date.year - 1, 12, 1)
+    else:
+        ini_date = datetime(date.year, date.month - 1, 1)
+
+    end_date = datetime(
+        ini_date.year,
+        ini_date.month,
+        calendar.monthrange(ini_date.year, ini_date.month)[1],
+    )
+
+    return ini_date, end_date
+
+
+def _download_monthly_file(ini_date: datetime, end_date: datetime) -> str:
+    return ex.download_br_netcdf(ini_date, end_date)
+
+
+def _create_file_query(
+    schema: str, table: str, date: datetime, file_path: str
+) -> str:
+    sql = f'INSERT INTO {schema}.{table} (date, path, in_progress, done) VALUES ({date}, {file_path}, false, false)'
+    return sql
+
+
+@app.task
+def download_netcdf_monthly():
+    schema = ''  # TODO: define a psql table and schema
+    table = ''
+    with engine.connect() as conn:
+        next_date = _get_last_available_date(conn, schema, table)
+
+    ini_date, end_date = _calc_last_month_range(next_date)
+
+    try:
+        file = _download_monthly_file(ini_date, end_date)
+    except Exception as e:
+        ...  # Retry task & log
+
+    if file:
+        sql = _create_file_query(schema, table, ini_date, file)
+        with engine.connect() as conn:
+            conn.execute(sql)
+            ...  # log
+    else:
+        ...  # Retry task & log
+
+
+@app.task
+def initialize_db() -> None:
+    ...  # Runs at startup
+    # CREATE TABLE IF NOT EXISTS (
+    # date: date (primeiro dia de cada mes)
+    # path: str (path do arquivo netcdf)
+    # in progress: bool
+    # done: bool)
 
 
 # @app.task

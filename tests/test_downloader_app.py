@@ -1,9 +1,9 @@
-from satellite_weather import __version__
 import satellite_weather as sat
+from satellite_weather import __version__
 
 
 def test_version():
-    assert __version__ == '0.1.0'   # changed by semantic-release
+    assert __version__ == '0.1.0'  # changed by semantic-release
 
 
 def test_import_package():
@@ -16,10 +16,8 @@ def test_import_package():
 
 
 def test_extract_latlons_from_geocode_n_extract_coord_from_latlons():
+    from satellite_weather.utils.extract_coordinates import from_latlon
     from satellite_weather.utils.extract_latlons import from_geocode
-    from satellite_weather.utils.extract_coordinates import (
-        from_latlon,
-    )
 
     latlon_rio_de_janeiro = from_geocode(3304557)
     latlon_florianopolis = from_geocode(4205407)

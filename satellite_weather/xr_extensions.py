@@ -1,12 +1,10 @@
+import metpy.calc as mpcalc
 import numpy as np
 import pandas as pd
 import xarray as xr
-import metpy.calc as mpcalc
 from metpy.units import units
-from .utils import (
-    extract_coordinates,
-    extract_latlons,
-)
+
+from .utils import extract_coordinates, extract_latlons
 
 xr.set_options(keep_attrs=True)
 

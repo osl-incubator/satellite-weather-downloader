@@ -1,14 +1,17 @@
-# Create app celery to start satellite_weather_downloader
+# Create app celery to start satellite_downloader
 
 import json
-from pathlib import Path
-from celeryapp import Celery
 from datetime import timedelta
+from pathlib import Path
+from celery.schedules import crontab
+from loguru import logger
+
+from celery import Celery
 from celery.signals import worker_ready
 
 app = Celery('beat_downloader')
 
-app.config_from_object('satellite_celeryapp.downloader.config')
+app.config_from_object('satellite.celeryapp.downloader.config')
 
 delay_file = Path(__file__).parent.parent / 'delay_controller.json'
 
@@ -20,29 +23,50 @@ Responsible for communicating with `delay_controller.json`,
  setting or getting the task delay in it. Ideally will be used
  to give control to the task define its own delay, depending if 
  rather there is data to fetch or not. 
- @Warning All delays in the file must be in minutes. 
 """
 
 
-# def get_task_delay(task):
-#     # WARNING: Every delay in `delay_controller.json` must be in minutes
-#     with open(delay_file, 'r') as d:
-#         delays = json.load(d)
+def get_task_delay(task: str) -> crontab:
+    with open(delay_file, 'r') as d:
+        tasks = json.load(d)
 
-#     delay = [d['delay'] for d in delays if d['task'] == task].pop()
-#     return timedelta(minutes=int(delay))
+    for t in tasks:
+        if t['task'] == task:
+            cron = t['crontab']
+
+    return crontab(
+        minute = cron['minute'],
+        hour = cron['hour'],
+        day_of_week = cron['day_of_week'],
+        day_of_month = cron['day_of_month'],
+        month_of_year = cron['month_of_year']
+    )
 
 
-# def update_task_delay(task, minutes):
-#     with open(delay_file, 'r') as d:
-#         delays = json.load(d)
+def update_task_delay(task, **kwargs) -> None:
+    cron = dict(
+        minute='*', 
+        hour='*', 
+        day_of_week='*',
+        day_of_month='*', 
+        month_of_year='*'
+    )
+    
+    for kw in kwargs:
+        if kw in cron.keys():
+            cron[kw] = kwargs[kw]
 
-#     for tsk in delays:
-#         if tsk['task'] == task:
-#             tsk['delay'] = minutes
+    with open(delay_file, 'r') as d:
+        tasks = json.load(d)
 
-#     with open(delay_file, 'w') as d:
-#         json.dump(delays, d)
+    for t in tasks:
+        if t['task'] == task:
+            t['crontab'] = cron
+
+    logger.info(f'Task {task} has a new delay: {cron}')
+
+    with open(delay_file, 'w') as d:
+        json.dump(tasks, d, indent=2)
 
 
 # """

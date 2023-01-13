@@ -1,1 +1,22 @@
-[{"task": "fetch_brasil_weather", "delay": 5}, {"task": "fetch_foz_weather", "delay": 2}]
+[
+  {
+    "task": "test",
+    "crontab": {
+      "minute": 1,
+      "hour": "*",
+      "day_of_week": "*",
+      "day_of_month": "*",
+      "month_of_year": "*"
+    }
+  },
+  {
+    "task": "test1",
+    "crontab": {
+      "minute": 1,
+      "hour": "*",
+      "day_of_week": "*",
+      "day_of_month": "*",
+      "month_of_year": "*"
+    }
+  }
+]

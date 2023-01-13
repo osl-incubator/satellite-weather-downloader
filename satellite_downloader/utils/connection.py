@@ -33,8 +33,8 @@ connect(opt[uid], opt[key]) : If none credentials are passed, it will request
 """
 import logging
 import uuid
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
 import cdsapi
 
