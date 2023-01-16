@@ -35,8 +35,8 @@ def download_netcdf_monthly() -> None:
     API for Brasil. It will runs continously until there is no more months
     to fetch, then self-update the delay to run monthly.
     """
-    schema = '' #TODO: define a psql table and schema
-    table = ''
+    schema = 'weather'
+    table = 'copernicus_downloader'
     with engine.connect() as conn:
         try:
             next_date = _produce_next_date(conn, schema, table)
