@@ -41,8 +41,10 @@ python-dotenv = "^0.21.0"
 psycopg2-binary = "^2.9.4"
 netCDF4 = "^1.6.1"
 tqdm = "^4.64.1"
-flower = "^1.2.0"
 loguru = "^0.6.0"
+flower = "^1.2.0"
+amqp = "^5.1.1"
+celery = "^5.2.7"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

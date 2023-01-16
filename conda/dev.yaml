@@ -7,7 +7,6 @@ dependencies:
   - pip
   - docker-compose
   - make
-  - celery
   # - satellite-weather-downloader
   - pip:
     - git+https://github.com/luabida/satellite-weather-downloader.git@xarray-refactor #TODO: remove it when bumping version

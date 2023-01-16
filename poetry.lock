@@ -2008,7 +2008,7 @@ viz = ["matplotlib", "nc-time-axis", "seaborn"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.11"
-content-hash = "d5ed4d10d1fff58cf7e1f90285bc88c88b3d7494b93e620a5dbae7ce14dea402"
+content-hash = "3674bdbbc2d1b09bf0f941f39ae7d724b2e9a1707a7753179fbde70accab813a"
 
 [metadata.files]
 amqp = [

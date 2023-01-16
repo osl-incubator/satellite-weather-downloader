@@ -6,15 +6,16 @@ services:
     ports:
       - ${RBTMQAMQP_PORT}:${RBTMQAMQP_PORT}
       - ${RBTMQHTTP_PORT}:${RBTMQHTTP_PORT}
-      - ${RBTMQ_PORT}:${RBTMQ_PORT}
     volumes:
       - ${RBTMQ_CONFIG_DIR}/rabbitmq.conf:/var/lib/rabbitmq/rabbitmq.conf
     environment:
       - RABBITMQ_CONFIG_FILE=/var/lib/rabbitmq/rabbitmq.conf
+      - RABBITMQ_DEFAULT_USER=${RBTMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RBTMQ_PASSWORD}
     networks:
       - satellite
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "${RBTMQ_PORT}"]
+      test: ["CMD", "curl", "-f", "-u", "${RBTMQ_USER}:${RBTMQ_PASSWORD}", "http://localhost:${RBTMQHTTP_PORT}/api/healthchecks/node"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -28,6 +29,8 @@ services:
         HOST_UID: ${HOST_UID}
         HOST_GID: ${HOST_GID}
     user: "satellite:satellite"
+    networks:
+      - satellite
     env_file:
       - ../.env
     environment:
@@ -46,7 +49,7 @@ services:
       - rabbitmq
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", 'celery --app satellite_celeryapp.weather.beat.app inspect ping -d "celery@$${HOSTNAME}"']
+      test: ["CMD-SHELL", 'celery --app celeryapp.weather.beat.app inspect ping -d "celery@$${HOSTNAME}"']
       interval: 60s
       timeout: 10s
       retries: 5
@@ -63,7 +66,7 @@ services:
       - rabbitmq
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", 'celery --app satellite_celeryapp.downloader.beat.app inspect ping -d "celery@$${HOSTNAME}"']
+      test: ["CMD-SHELL", 'celery --app celeryapp.downloader.beat.app inspect ping -d "celery@$${HOSTNAME}"']
       interval: 60s
       timeout: 10s
       retries: 5
