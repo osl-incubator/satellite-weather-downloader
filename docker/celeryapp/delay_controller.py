@@ -15,7 +15,7 @@ Responsible for communicating with `delays.json`,
  cron format: https://crontab.guru/
 """
 
-def get_task_delay(task: str) -> crontab:
+def get_task_schedule(task: str) -> crontab:
     with open(delay_file, 'r') as d:
         tasks = json.load(d)
 
@@ -32,7 +32,7 @@ def get_task_delay(task: str) -> crontab:
     )
 
 
-def update_task_delay(task, **kwargs) -> None:
+def update_task_schedule(task, **kwargs) -> None:
     cron = dict(
         minute='*',
         hour='*',

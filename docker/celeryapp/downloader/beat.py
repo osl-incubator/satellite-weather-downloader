@@ -7,17 +7,11 @@ app = Celery('beat_downloader')
 
 app.config_from_object('satellite.celeryapp.downloader.config')
 
-
-
-
-
-# -----------------
-# Celery Beat
-
+# Beat tasks schedules
 app.conf.beat_schedule = {
     'download-brasil-copernicus-netcdf': {
         'task': 'extract_br_netcdf_monthly',
-        'schedule': delay.get_task_delay('extract_br_netcdf_monthly'),
+        'schedule': delay.get_task_schedule('extract_br_netcdf_monthly'),
     }
 }
 

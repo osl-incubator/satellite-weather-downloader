@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from .beat import app
 
 import os
 import calendar
@@ -7,10 +8,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from dotenv import find_dotenv, load_dotenv
 from satellite_downloader import extract_reanalysis as ex
-from .beat import (
-    app,
-    update_task_delay,
-)
+from celeryapp.delay_controller import update_task_schedule
 
 load_dotenv(find_dotenv())
 
@@ -43,7 +41,7 @@ def download_netcdf_monthly() -> None:
         except ValueError as e:
             # When finish fetching previously months, self update
             # delay to run only at first day of each month
-            update_task_delay(
+            update_task_schedule(
                 task = 'extract_br_netcdf_monthly',
                 minute = 1,
                 hour = 1,
