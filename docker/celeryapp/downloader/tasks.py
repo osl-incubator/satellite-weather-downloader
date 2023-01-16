@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from .beat import app
+from celeryapp.downloader.beat import app
 
 import os
 import calendar
@@ -27,14 +27,14 @@ engine = create_engine(
 
 
 @app.task(name='extract_br_netcdf_monthly', retry_kwargs={'max_retries': 5})
-def download_netcdf_monthly() -> None:
+def download_br_netcdf_monthly() -> None:
     """
     This task will be responsible for downloading every data in copernicus
     API for Brasil. It will runs continously until there is no more months
     to fetch, then self-update the delay to run monthly.
     """
     schema = 'weather'
-    table = 'copernicus_downloader'
+    table = 'cope_download_status'
     with engine.connect() as conn:
         try:
             next_date = _produce_next_date(conn, schema, table)
@@ -47,6 +47,7 @@ def download_netcdf_monthly() -> None:
                 hour = 1,
                 day_of_month = 1
             )
+            logger.error(e)
             raise e
 
     with engine.connect() as conn:
@@ -83,8 +84,9 @@ def download_netcdf_monthly() -> None:
 
 @app.task(name='initialize_satellite_download_db')
 def initialize_db() -> None:
-    schema = ''
-    table = ''
+    # Runs at container Startup
+    schema = 'weather'
+    table = 'cope_download_status'
     sql = _sql_create_table(schema, table)
     with engine.connect() as conn:
         conn.execute(sql)
@@ -96,9 +98,12 @@ def initialize_db() -> None:
 def _sql_create_table(schema:str, table:str) -> str:
     sql = (
         f'CREATE TABLE IF NOT EXISTS {schema}.{table} ('
-        ' date DATETIME PRIMARY KEY UNIQUE NOT NULL,'
+        ' id SERIAL,'
+        ' date DATE NOT NULL,'
         ' path TEXT DEFAULT NULL,'
         ' downloading BOOLEAN NOT NULL DEFAULT false,'
+        ' task_brasil_status TEXT DEFAULT NULL,'
+        ' task_foz_status TEXT DEFAULT NULL'
     ')')
     return sql
 

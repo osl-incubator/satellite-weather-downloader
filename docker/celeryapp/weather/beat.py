@@ -10,45 +10,6 @@ app = Celery('beat_weather')
 
 app.config_from_object('satellite.celeryapp.weather.config')
 
-delay_file = Path(__file__).parent.parent / 'delay_controller.json'
-
-
-"""
-Delay Controllers
------------------
-Responsible for communicating with `delay_controller.json`,
- setting or getting the task delay in it. Ideally will be used
- to give control to the task define its own delay, depending if 
- rather there is data to fetch or not. 
- @Warning All delays in the file must be in minutes. 
-"""
-
-
-# def get_task_delay(task):
-#     # WARNING: Every delay in `delay_controller.json` must be in minutes
-#     with open(delay_file, 'r') as d:
-#         delays = json.load(d)
-
-#     delay = [d['delay'] for d in delays if d['task'] == task].pop()
-#     return timedelta(minutes=int(delay))
-
-
-# def update_task_delay(task, minutes):
-#     with open(delay_file, 'r') as d:
-#         delays = json.load(d)
-
-#     for tsk in delays:
-#         if tsk['task'] == task:
-#             tsk['delay'] = minutes
-
-#     with open(delay_file, 'w') as d:
-#         json.dump(delays, d)
-
-
-# """
-# -----------------
-# """
-
 
 # app.conf.beat_schedule = {
 #     'fetch-brasil-weather': {
