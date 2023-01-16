@@ -3,7 +3,7 @@ from pathlib import Path
 from loguru import logger
 from celery.schedules import crontab
 
-delay_file = Path(__file__).parent.parent / 'delays.json'
+delay_file = Path(__file__).parent / 'delays.json'
 
 """
 Delay Controllers

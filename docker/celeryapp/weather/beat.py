@@ -8,7 +8,7 @@ from celery.signals import worker_ready
 
 app = Celery('beat_weather')
 
-app.config_from_object('satellite.celeryapp.weather.config')
+app.config_from_object('celeryapp.weather.config')
 
 
 # app.conf.beat_schedule = {

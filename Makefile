@@ -18,7 +18,7 @@ CONSOLE:=bash
 # DOCKER
 .PHONY:docker-build
 docker-build:
-	$(DOCKER) build downloader weather
+	$(DOCKER) build downloader weather flower
 
 .PHONY:docker-start
 docker-start:

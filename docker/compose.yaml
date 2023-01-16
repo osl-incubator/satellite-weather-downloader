@@ -31,7 +31,8 @@ services:
     env_file:
       - ../.env
     environment:
-      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:${RBTMQAMQP_PORT}
+      - CELERY_BROKER_URL=amqp://${RBTMQ_USER}:${RBTMQ_PASSWORD}@rabbitmq:${RBTMQAMQP_PORT}
+      - PYTHONPATH=/opt/services/satellite
     volumes:
       - ../../logs:/var/log/
       - ./celeryapp:/opt/services/satellite/celeryapp
@@ -79,8 +80,6 @@ services:
         - 5555:5555
     depends_on:
       - rabbitmq
-      - weather
-      - downloader
 
 networks:
   satellite:

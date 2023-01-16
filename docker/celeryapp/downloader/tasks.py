@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from celeryapp.downloader.beat import app
+from beat import app
 
 import os
 import calendar
