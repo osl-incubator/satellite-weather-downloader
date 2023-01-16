@@ -1,21 +1,16 @@
 from __future__ import absolute_import
 
-import calendar
 import os
-from datetime import datetime, timedelta
-from types import NoneType
-
+import calendar
+from loguru import logger
+from datetime import datetime
+from sqlalchemy import create_engine
 from dotenv import find_dotenv, load_dotenv
 from satellite_downloader import extract_reanalysis as ex
-
-# import tqdm
-# import calendar
-# import subprocess
-# import pandas as pd
-# from loguru import logger
-from sqlalchemy import create_engine
-
-from .beat import app, update_task_delay
+from .beat import (
+    app,
+    update_task_delay,
+)
 
 load_dotenv(find_dotenv())
 
@@ -33,230 +28,170 @@ engine = create_engine(
 )
 
 
-def _get_last_available_date(conn, schema: str, table: str) -> datetime:
-    sql = f'SELECT MIN(date) FROM {schema}.{table}'
+@app.task(name='extract_br_netcdf_monthly', retry_kwargs={'max_retries': 5})
+def download_netcdf_monthly() -> None:
+    """
+    This task will be responsible for downloading every data in copernicus
+    API for Brasil. It will runs continously until there is no more months
+    to fetch, then self-update the delay to run monthly.
+    """
+    schema = '' #TODO: define a psql table and schema
+    table = ''
+    with engine.connect() as conn:
+        try:
+            next_date = _produce_next_date(conn, schema, table)
+        except ValueError as e:
+            # When finish fetching previously months, self update
+            # delay to run only at first day of each month
+            update_task_delay(
+                task = 'extract_br_netcdf_monthly',
+                minute = 1,
+                hour = 1,
+                day_of_month = 1
+            )
+            raise e
+
+    with engine.connect() as conn:
+        conn.execute(
+            f'INSERT INTO {schema}.{table} (date, downloading)'
+            f' VALUES ({next_date}, true)'
+        )
+    
+    ini_date, end_date = calc_last_month_range(next_date)
+
+    try:
+        file_path = ex.download_br_netcdf(ini_date, end_date)
+        with engine.connect() as conn:
+            conn.execute(
+                f'UPDATE {schema}.{table}'
+                 ' SET (path, downloading)'
+                f' VALUES ({file_path}, false)'
+                f" WHERE date = '{ini_date}'"
+            )
+
+    except Exception as e:
+        logger.error(e)
+        raise e
+
+    finally:
+        with engine.connect() as conn:
+            conn.execute(
+                f'UPDATE {schema}.{table}'
+                 ' SET (downloading)'
+                 ' VALUES (false)'
+                f" WHERE date = '{ini_date}'"
+            )
+
+
+@app.task(name='initialize_satellite_download_db')
+def initialize_db() -> None:
+    schema = ''
+    table = ''
+    sql = _sql_create_table(schema, table)
+    with engine.connect() as conn:
+        conn.execute(sql)
+    logger.info(f'{table} on {schema} created.')
+
+
+# ---
+# initialize_satellite_db task:
+def _sql_create_table(schema:str, table:str) -> str:
+    sql = (
+        f'CREATE TABLE IF NOT EXISTS {schema}.{table} ('
+        ' date DATETIME PRIMARY KEY UNIQUE NOT NULL,'
+        ' path TEXT DEFAULT NULL,'
+        ' downloading BOOLEAN NOT NULL DEFAULT false,'
+    ')')
+    return sql
+
+
+# ---
+# extract_br_netcdf_monthly task:
+def _produce_next_date(conn, schema: str, table: str) -> datetime:
+    """
+    Rules for next available date to download:
+    1. If last update isn't last month, return last month
+    2. If there is a null `path` and is not `downloading`, return this date
+    3. If the `path` is null, but it's `downloading`, return the previously month
+    4. Has to be lesser than the current month and bigger than 1999/12/01
+    5. Cannot, in any ways, have a `path`
+    6. Has to return the first day of the month
+    """
+    cur_date = datetime.now()
+    cur_date_to_update, _ = calc_last_month_range(cur_date)
+    _table = f'{schema}.{table}'
+
+    # Rule 1
     with conn:
-        cur = conn.execute(sql)
-        res = cur.fetchone()
-        if not res:  # Will run only at system initialization
-            current = datetime.now()
-            return datetime(current.year, current.month, 1)
-        return res[0]
+        cur = conn.execute(
+            f'SELECT MAX(date) FROM {_table}'
+        )
+        last_update_date = cur.fetchone()
+    
+    # DB is empty; Runs only at first initialization
+    if not last_update_date:
+        return cur_date_to_update
+
+    elif last_update_date[0] != cur_date_to_update:
+        return cur_date_to_update
+
+    # Rule 2
+    # This case will ensure there are no dates left to update,
+    # prioritizing the most recent date
+    with conn:
+        cur = conn.execute(
+            f'SELECT MAX(date) FROM {_table} WHERE'
+            ' path IS NULL AND'
+            ' NOT downloading'
+        )
+        next_avail_date = cur.fetchone()
+    
+    if next_avail_date:
+        return next_avail_date[0]
+
+    # Rule 3
+    with conn:
+        cur = conn.execute(
+            f'SELECT MIN(date) FROM {_table} WHERE'
+            ' path IS NULL AND'
+            ' downloading IS true'
+        )
+        is_downloading = cur.fetchone()
+
+    if is_downloading:
+        previous_date, _ = calc_last_month_range(is_downloading[0])
+        # Rule 4
+        if previous_date < datetime(2000, 1, 1):
+            raise ValueError('Date limit reached')
+        return previous_date
+
+    else:
+        raise ValueError('Could not generate next date to download')
 
 
-def _calc_last_month_range(date: datetime) -> tuple(datetime, datetime):
+def calc_last_month_range(date: datetime) -> tuple:
+    """
+    This returns the date range for the last month of
+    the datetime provided.
+    Usage:
+        from datetime import datetime; import calendar
+        date = datetime(2023, 1, 1)
+        calc_last_month_range(date)
+    Output:
+        (datetime(2022, 12, 1, 0, 0), datetime(2022, 12, 31, 0, 0))
+    """
     if date.month == 1:
         ini_date = datetime(date.year - 1, 12, 1)
     else:
         ini_date = datetime(date.year, date.month - 1, 1)
-
+    
     end_date = datetime(
         ini_date.year,
         ini_date.month,
-        calendar.monthrange(ini_date.year, ini_date.month)[1],
+        calendar.monthrange(
+            ini_date.year, 
+            ini_date.month
+        )[1]
     )
 
     return ini_date, end_date
-
-
-def _download_monthly_file(ini_date: datetime, end_date: datetime) -> str:
-    return ex.download_br_netcdf(ini_date, end_date)
-
-
-def _create_file_query(
-    schema: str, table: str, date: datetime, file_path: str
-) -> str:
-    sql = f'INSERT INTO {schema}.{table} (date, path, in_progress, done) VALUES ({date}, {file_path}, false, false)'
-    return sql
-
-
-@app.task
-def download_netcdf_monthly():
-    schema = ''  # TODO: define a psql table and schema
-    table = ''
-    with engine.connect() as conn:
-        next_date = _get_last_available_date(conn, schema, table)
-
-    ini_date, end_date = _calc_last_month_range(next_date)
-
-    try:
-        file = _download_monthly_file(ini_date, end_date)
-    except Exception as e:
-        ...  # Retry task & log
-
-    if file:
-        sql = _create_file_query(schema, table, ini_date, file)
-        with engine.connect() as conn:
-            conn.execute(sql)
-            ...  # log
-    else:
-        ...  # Retry task & log
-
-
-@app.task
-def initialize_db() -> None:
-    ...  # Runs at startup
-    # CREATE TABLE IF NOT EXISTS (
-    # date: date (primeiro dia de cada mes)
-    # path: str (path do arquivo netcdf)
-    # in progress: bool
-    # done: bool)
-
-
-# @app.task
-# def update_db_with_task_dates(task):
-#     today = datetime.now()
-#     db = BackfillDB()
-
-#     match task:
-#         case 'fetch_brasil_weather':
-#             next_update_date = today - timedelta(days=9)   # safety margin
-#             date = next_update_date.strftime('%Y-%m-%d')
-#             db.update_table(date=date, table='brasil')
-
-#         case 'fetch_foz_weather':
-#             cur = db.conn.cursor()
-#             cur.execute('SELECT MAX(date) FROM foz')
-#             last_update = cur.fetchone()[0]
-#             last_update = datetime.fromisoformat(last_update).strftime(
-#                 '%Y-%m-%d'
-#             )
-
-#             first_monthday = today - timedelta(days=today.day)
-#             last_day = first_monthday.replace(
-#                 day=calendar.monthrange(
-#                     first_monthday.year, first_monthday.month
-#                 )[1]
-#             ).strftime('%Y-%m-%d')
-
-#             if last_update != last_day:
-#                 db.update_table(date=last_day, table='foz')
-
-
-# @app.task
-# def reanalysis_download_data(date, date_end=None) -> str:
-
-#     connection.connect(UUID, KEY)
-
-#     data_file = download_br_netcdf(
-#         date=date,
-#         date_end=date_end
-#         # data_dir = '/tmp'
-#     )
-
-#     return data_file
-
-
-# @app.task
-# def reanalysis_create_dataframe(data: str, task: str) -> pd.DataFrame:
-#     match task:
-#         case 'fetch_brasil_weather':
-#             total_cities = 5570
-#             with tqdm.tqdm(total=total_cities, disable=None) as pbar:
-#                 for geocode in geocodes:
-#                     row = netcdf_to_dataframe(data, geocode)
-#                     tmp_df = COPE_DF.merge(
-#                         row, on=list(COPE_DF.columns), how='outer'
-#                     )
-#                     pbar.update(1)
-#                     df = tmp_df.set_index('date')
-
-#         case 'fetch_foz_weather':
-#             df = netcdf_to_dataframe(data, 4108304)
-
-#     return df
-
-
-# @app.task
-# def reanalysis_insert_into_db(df: pd.DataFrame, tablename: str):
-
-#     df.to_sql(
-#         tablename,
-#         engine,
-#         schema='Municipio',
-#         if_exists='append',
-#     )
-
-#     logger.info(f'{len(df)} rows updated on "Municipios".{tablename}')
-
-
-# @app.task
-# def reanalysis_delete_netcdf(file: str):
-
-#     subprocess.run(['rm', '-rf', file])
-
-#     logger.info(f'{file.split("/")[-1]} removed.')
-
-
-# @app.task
-# def fetch_weather(task: str, tablename: str):
-#     match task:
-#         case 'fetch_brasil_weather':
-#             db = BackfillHandler('brasil')
-#             date = db.next_date()
-#             ini_date = datetime.fromisoformat(date).strftime('%Y-%m-%d')
-#             end_date = None
-
-#             if not date:
-#                 logger.warning(
-#                     'None task was found to fetch.'
-#                     ' Setting task delay to a day'
-#                 )
-#                 update_task_delay('fetch_brasil_weather', 1440)
-#                 return None
-
-#         case 'fetch_foz_weather':
-#             db = BackfillHandler('foz')
-#             date = db.next_date()
-#             e_date = datetime.fromisoformat(date)
-#             end_date = e_date.strftime('%Y-%m-%d')
-#             ini_date = datetime(
-#                 year=e_date.year, month=e_date.month, day=1
-#             ).strftime('%Y-%m-%d')
-
-#             if not date:
-#                 logger.warning(
-#                     'None task was found to fetch.'
-#                     ' Setting task delay to a month'
-#                 )
-#                 update_task_delay('fetch_foz_weather', 43830)
-#                 return None
-
-#     try:
-#         data = reanalysis_download_data(ini_date, end_date)
-#         cope_df = reanalysis_create_dataframe(data, task)
-#         reanalysis_insert_into_db(cope_df, tablename)
-#         reanalysis_delete_netcdf(data)
-#         db.set_task_done(date)
-
-#     except Exception as e:
-#         db.set_task_unfinished(date)
-#         logger.error(e)
-
-
-# @app.task(name='initialize_backfill_db')
-# def initialize_backfill_db():
-#     db = BackfillDB()
-#     db.populate_tables()
-
-
-# @app.task(
-#     name='fetch_brasil_weather',
-# )
-# def reanalysis_fetch_brasil_data():
-#     fetch_weather('fetch_brasil_weather', 'cope_brasil_weather')
-
-
-# @app.task(name='fetch_foz_weather')
-# def backfill_analysis_data():
-#     fetch_weather('fetch_foz_weather', 'cope_foz_weather')
-
-
-# @app.task(name='update_brasil_fetch_date')
-# def update_br_date():
-#     update_db_with_task_dates('fetch_brasil_weather')
-
-
-# @app.task(name='update_foz_fetch_date')
-# def update_foz_date():
-#     update_db_with_task_dates('fetch_foz_weather')

@@ -1,18 +1,8 @@
 [
   {
-    "task": "test",
+    "task": "extract_br_netcdf_monthly",
     "crontab": {
-      "minute": 1,
-      "hour": "*",
-      "day_of_week": "*",
-      "day_of_month": "*",
-      "month_of_year": "*"
-    }
-  },
-  {
-    "task": "test1",
-    "crontab": {
-      "minute": 1,
+      "minute": "*",
       "hour": "*",
       "day_of_week": "*",
       "day_of_month": "*",
