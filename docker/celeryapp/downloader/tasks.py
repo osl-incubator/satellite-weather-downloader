@@ -14,7 +14,7 @@ load_dotenv(find_dotenv())
 
 PSQL_USER = os.getenv('POSTGRES_USER')
 PSQL_PASSWORD = os.getenv('POSTGRES_PASSWORD')
-HOST = os.getenv('PSQL_HOST')
+HOST = os.getenv('POSTGRES_HOST')
 PORT = os.getenv('POSTGRES_PORT')
 DBASE = os.getenv('POSTGRES_DATABASE')
 UUID = os.getenv('API_UUID')
