@@ -12,7 +12,11 @@ app.conf.beat_schedule = {
     'download-brasil-copernicus-netcdf': {
         'task': 'extract_br_netcdf_monthly',
         'schedule': delay.get_task_schedule('extract_br_netcdf_monthly'),
-    }
+    },
+    'scan-for-new-dates-to-fetch': {
+        'task': 'scan_for_missing_dates',
+        'schedule': delay.get_task_schedule('scan_for_missing_dates'),
+    },
 }
 
 

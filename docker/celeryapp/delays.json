@@ -3,9 +3,19 @@
     "task": "extract_br_netcdf_monthly",
     "crontab": {
       "minute": "*",
-      "hour": "*",
+      "hour": "20-23,0-7",
       "day_of_week": "*",
       "day_of_month": "*",
+      "month_of_year": "*"
+    }
+  },
+  {
+    "task": "scan_for_missing_dates",
+    "crontab": {
+      "minute": "0",
+      "hour": "0",
+      "day_of_week": "*",
+      "day_of_month": "14",
       "month_of_year": "*"
     }
   }

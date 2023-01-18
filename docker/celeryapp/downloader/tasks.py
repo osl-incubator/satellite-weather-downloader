@@ -50,9 +50,9 @@ def download_br_netcdf_monthly() -> None:
             # delay to run only at first day of each month
             update_task_schedule(
                 task='extract_br_netcdf_monthly',
-                minute=1,
-                hour=1,
-                day_of_month=1,
+                minute=0,
+                hour=0,
+                day_of_month=15,
             )
             logger.error(e)
             raise e
@@ -74,6 +74,10 @@ def download_br_netcdf_monthly() -> None:
                 f" WHERE date = '{end_date}'"
             )
 
+        logger.info(
+            f'Data for {ini_date} until {end_date} downloaded at {file_path}'
+        )
+
     except Exception as e:
         logger.error(e)
         raise e
@@ -87,8 +91,48 @@ def download_br_netcdf_monthly() -> None:
             )
 
 
+@app.task(name='scan_for_missing_dates')
+def insert_missing_dates() -> None:
+    """
+    This task will look up for missing dates in database,
+    if any missing date is find, update table with them.
+    """
+    table = 'cope_download_status'
+    schema = 'weather'
+
+    db_dates = pd.read_sql(
+        sql=('SELECT date' f' FROM {schema}.{table}'),
+        con=engine,
+    )
+
+    cur_date = datetime.now().date()
+    cur_date_range = pd.date_range(
+        start=datetime(2000, 1, 1).date(), end=cur_date, freq='M'
+    )
+
+    df = pd.DataFrame()
+    df['date'] = pd.DataFrame(cur_date_range, columns=['date'])['date'].apply(
+        lambda d: d.date()
+    )
+
+    missing_dates = df[~df['date'].isin(db_dates['date'])]
+
+    if not missing_dates.empty:
+        logger.warning(f'Missing dates found, inserting:\n{missing_dates}')
+        missing_dates.to_sql(
+            name=table, con=engine, schema=schema, if_exists='append'
+        )
+    else:
+        logger.info(f'Table {table} up-to-date')
+
+
 @app.task(name='initialize_satellite_download_db')
 def initialize_db() -> None:
+    """
+    This task runs at every container startup. Will create the table
+    structure if it doesn't exist and populate it with dates if no data
+    is present. Will do nothing if there is any data in the table.
+    """
     # Store cdsapi credentials:
     connection.connect(uid=UUID, key=KEY)
     # Runs at container Startup
