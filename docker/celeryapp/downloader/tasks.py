@@ -38,8 +38,6 @@ def download_br_netcdf_monthly() -> None:
     API for Brasil. It will runs continously until there is no more months
     to fetch, then self-update the delay to run monthly.
     """
-    schema = 'weather'
-    table = 'cope_download_status'
     with engine.connect() as conn:
         try:
             ini_date, end_date = _produce_next_month_to_update(
@@ -66,6 +64,9 @@ def download_br_netcdf_monthly() -> None:
             )
 
         file_path = ex.download_br_netcdf(date=ini_date, date_end=end_date)
+
+        if not file_path:
+            raise Exception('File was not downloading, exiting task.')
 
         with engine.connect() as conn:
             conn.execute(
