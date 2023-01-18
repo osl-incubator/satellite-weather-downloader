@@ -177,7 +177,7 @@ def download_br_netcdf(
 
 
 def _format_dates(
-    date: str or datetime,
+    date: str or datetime.date,
     date_end: Optional[str or datetime] = None,
 ) -> Tuple[Union[str, list], Union[str, list], Union[str, list]]:
     """
@@ -194,65 +194,61 @@ def _format_dates(
         month (str or list): The month(s) related to date provided.
         day (str or list)  : The day(s) related to date provided.
     """
-    if type(date) == datetime:
-        year, month, day = (date.year, date.month, date.day)
-    elif type(date) == str:
-        ini_date = datetime.strptime(date, date_format)
-        year, month, day = date.split('-')
+    if type(date) == str:
+        if not re.match(date_re_format, date):
+            raise Exception(
+                f"""
+                    Invalid initial date. Format:
+                    {date_iso_format}
+                    {help_d}
+            """
+            )
+        date = datetime.strptime(date, date_format).date()
 
-    if ini_date > max_update_delay:
+
+    if date > max_update_delay.date():
         raise Exception(
             f"""
                 Invalid date. The last update date is:
                 {max_update_delay_f}
                 {help_d}
-        """
+            """
         )
 
-    # check for right initial date format
-    if not re.match(date_re_format, date):
-        raise Exception(
-            f"""
-                Invalid initial date. Format:
-                {date_iso_format}
-                {help_d}
-        """
-        )
+    year, month, day = (date.year, date.month, date.day)
 
     # an end date can be passed to define the date range
     # if there is no end date, only the day specified on
     # `date` will be downloaded
     if date_end:
         if type(date_end) == str:
-            end_date = datetime.strptime(date_end, date_format)
-
-        # check for right end date format
-        if not re.match(date_re_format, date_end):
-            raise Exception(
-                f"""
-                    Invalid end date. Format:
-                    {date_iso_format}
-                    {help_d}
-            """
-            )
+            if not re.match(date_re_format, date_end):
+                raise Exception(
+                    f"""
+                        Invalid end date. Format:
+                        {date_iso_format}
+                        {help_d}
+                    """
+                )
+            date_end = datetime.strptime(date_end, date_format).date()
 
         # safety limit for Copernicus limit and file size: 1 year
         max_api_query = timedelta(days=367)
-        if end_date - ini_date > max_api_query:
+        if date_end - date > max_api_query:
             raise Exception(
                 f"""
                     Maximum query reached (limit: {max_api_query.days} days).
                     {help_d}
-            """
+                """
             )
 
         # end date can't be bigger than initial date
-        if end_date < ini_date:
+        if date_end < date:
             raise Exception(
                 f"""
                     Please select a valid date range.
                     {help_d}
-            """
+                """
             )
 
         # the date range will be responsible for match the requests
