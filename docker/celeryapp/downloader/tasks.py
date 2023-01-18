@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-# from beat import app
+from beat import app
 
 import os
 import calendar
@@ -8,8 +8,9 @@ from loguru import logger
 from datetime import datetime
 from sqlalchemy import create_engine
 from dotenv import find_dotenv, load_dotenv
+from satellite_downloader.utils import connection
 from satellite_downloader import extract_reanalysis as ex
-# from celeryapp.delay_controller import update_task_schedule
+from celeryapp.delay_controller import update_task_schedule
 
 load_dotenv(find_dotenv())
 
@@ -28,7 +29,7 @@ engine = create_engine(
 schema = 'weather'
 table = 'cope_download_status'
 
-# @app.task(name='extract_br_netcdf_monthly', retry_kwargs={'max_retries': 5})
+@app.task(name='extract_br_netcdf_monthly', retry_kwargs={'max_retries': 5})
 def download_br_netcdf_monthly() -> None:
     """
     This task will be responsible for downloading every data in copernicus
@@ -39,53 +40,60 @@ def download_br_netcdf_monthly() -> None:
     table = 'cope_download_status'
     with engine.connect() as conn:
         try:
-            next_date = _produce_next_date(conn, schema, table)
+            ini_date, end_date = _produce_next_month_to_update(
+                conn, 
+                schema, 
+                table
+            )
         except ValueError as e:
             # When finish fetching previously months, self update
             # delay to run only at first day of each month
-            # update_task_schedule(
-            #     task = 'extract_br_netcdf_monthly',
-            #     minute = 1,
-            #     hour = 1,
-            #     day_of_month = 1
-            # )
+            update_task_schedule(
+                task = 'extract_br_netcdf_monthly',
+                minute = 1,
+                hour = 1,
+                day_of_month = 1
+            )
             logger.error(e)
             raise e
- 
-    ini_date, end_date = calc_last_month_range(next_date)
 
     try:
         with engine.connect() as conn:
             conn.execute(
-                f'INSERT INTO {schema}.{table} (date, downloading)'
-                f" VALUES ('{next_date}', true)"
+                f'UPDATE {schema}.{table}'
+                ' SET downloading = true'
+                f" WHERE date = '{end_date}'"
             )
 
-        file_path = ex.download_br_netcdf(ini_date, end_date)
+        file_path = ex.download_br_netcdf(
+            date=ini_date, 
+            date_end=end_date
+        )
 
         with engine.connect() as conn:
             conn.execute(
                 f'UPDATE {schema}.{table}'
-                 ' SET (path, downloading)'
-                f' VALUES ({file_path}, false)'
-                f" WHERE date = '{ini_date}'"
+                f" SET path = '{file_path}'"
+                f" WHERE date = '{end_date}'"
             )
 
     except Exception as e:
         logger.error(e)
+        raise e
 
     finally:
-        breakpoint()
         with engine.connect() as conn:
             conn.execute(
                 f'UPDATE {schema}.{table}'
-                 ' SET downloading = false'
-                f" WHERE date = '{ini_date}'"
+                ' SET downloading = false'
+                f" WHERE date = '{end_date}'"
             )
 
 
-# @app.task(name='initialize_satellite_download_db')
+@app.task(name='initialize_satellite_download_db')
 def initialize_db() -> None:
+    # Store cdsapi credentials:
+    connection.connect(uid=UUID, key=KEY)
     # Runs at container Startup
     schema = 'weather'
     table = 'cope_download_status'
@@ -107,7 +115,7 @@ def initialize_db() -> None:
 def _sql_create_table(schema:str, table:str) -> str:
     sql = (
         f'CREATE TABLE IF NOT EXISTS {schema}.{table} ('
-        ' index SERIAL,'
+        ' index SERIAL PRIMARY KEY UNIQUE,'
         ' date DATE NOT NULL,'
         ' path TEXT DEFAULT NULL,'
         ' downloading BOOLEAN NOT NULL DEFAULT false,'
@@ -140,32 +148,34 @@ def _populate_table(conn, schema: str, table: str) -> None:
 
 # ---
 # extract_br_netcdf_monthly task:
-def _produce_next_date(conn, schema: str, table: str) -> datetime:
+def _produce_next_month_to_update(conn, schema: str, table: str) -> tuple:
     """
-    Rules for next available date to download:
-    1. If last update isn't last month, return last month
-    2. If there is a null `path` and is not `downloading`, return this date
-    3. If the `path` is null, but it's `downloading`, return the previously month
-    4. Has to be lesser than the current month and bigger than 1999/12/01
-    5. Cannot, in any ways, have a `path`
-    6. Has to return the first day of the month
+    This method will produce the next day to be updated.
+    Rules for next available month to download:
+    1. If last update isn't last month, return last month range to be 
+       inserted in the table
+    2. If there is a null `path` and is not `downloading`, 
+       return the max date
+    3. Has to be lesser than the current month and bigger than 1999/12/01
+    Returns:
+        tuple (datetime.date, datetime.date): First and last day of month.
     """
     cur_date = datetime.now().date()
-    cur_date_to_update, _ = calc_last_month_range(cur_date)
+    _, date_to_update = _last_month_range(cur_date)
     _table = f'{schema}.{table}'
 
     # Rule 1
     cur = conn.execute(
         f'SELECT MAX(date) FROM {_table}'
     )
-    last_update_date = cur.fetchone()
+    last_update_date = cur.fetchone()[0]
     
     # DB is empty; Runs only at first initialization
     if not last_update_date:
-        return cur_date_to_update
+        raise RuntimeError('No data found on DB')
 
-    elif last_update_date[0] != cur_date_to_update:
-        return cur_date_to_update
+    elif last_update_date != date_to_update:
+        return _month_range(date_to_update)
 
     # Rule 2
     # This case will ensure there are no dates left to update,
@@ -175,38 +185,46 @@ def _produce_next_date(conn, schema: str, table: str) -> datetime:
         ' path IS NULL AND'
         ' NOT downloading'
     )
-    next_avail_date = cur.fetchone()
+    next_avail_date = cur.fetchone()[0]
     
-    if next_avail_date[0]:
-        return next_avail_date[0]
-
-    # Rule 3
-    cur = conn.execute(
-        f'SELECT MIN(date) FROM {_table} WHERE'
-        ' path IS NULL AND'
-        ' downloading IS true'
-    )
-    is_downloading = cur.fetchone()
-
-    if is_downloading:
-        previous_date, _ = calc_last_month_range(is_downloading[0])
-        # Rule 4
-        if previous_date < datetime(2000, 1, 1).date():
+    if next_avail_date:
+        month_first, month_last = _month_range(next_avail_date)
+        # Rule 3
+        if month_first < datetime(2000, 1, 1).date():
             raise ValueError('Date limit reached')
-        return previous_date
-
+        else:
+            return month_first, month_last
     else:
-        raise ValueError('Could not generate next date to download')
+        raise RuntimeError('Could not generate next date to download')
 
 
-def calc_last_month_range(date: datetime.date) -> tuple:
+def _month_range(date: datetime.date) -> tuple:
+    """
+    This returns the date range for the current month of
+    the datetime provided.
+    Usage:
+        from datetime import datetime; import calendar
+        date = datetime.date(2023, 1, 14)
+        last_month_range(date)
+    Output:
+        (datetime.date(2023, 1, 1), datetime.date(2023, 1, 31))
+    """
+    first = datetime(date.year, date.month, 1).date()
+    last = datetime(
+        date.year,
+        date.month,
+        calendar.monthrange(date.year, date.month)[1]).date()
+    return first, last
+
+
+def _last_month_range(date: datetime.date) -> tuple:
     """
     This returns the date range for the last month of
     the datetime provided.
     Usage:
         from datetime import datetime; import calendar
         date = datetime.date(2023, 1, 1)
-        calc_last_month_range(date)
+        last_month_range(date)
     Output:
         (datetime.date(2022, 12, 1), datetime.date(2022, 12, 31))
     """
