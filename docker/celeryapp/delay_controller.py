@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
-from loguru import logger
+
 from celery.schedules import crontab
+from loguru import logger
 
 delay_file = Path(__file__).parent / 'delays.json'
 
@@ -14,6 +15,7 @@ Responsible for communicating with `delays.json`,
  rather there is data to fetch or not. The controllers use the
  cron format: https://crontab.guru/
 """
+
 
 def get_task_schedule(task: str) -> crontab:
     with open(delay_file, 'r') as d:

@@ -205,7 +205,6 @@ def _format_dates(
             )
         date = datetime.strptime(date, date_format).date()
 
-
     if date > max_update_delay.date():
         raise Exception(
             f"""
@@ -214,8 +213,6 @@ def _format_dates(
                 {help_d}
             """
         )
-
-    year, month, day = (date.year, date.month, date.day)
 
     # an end date can be passed to define the date range
     # if there is no end date, only the day specified on

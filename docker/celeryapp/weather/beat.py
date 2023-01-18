@@ -1,9 +1,10 @@
 # Create app celery to start satellite_weather
 
 import json
-from pathlib import Path
-from celery import Celery
 from datetime import timedelta
+from pathlib import Path
+
+from celery import Celery
 from celery.signals import worker_ready
 
 app = Celery('beat_weather')

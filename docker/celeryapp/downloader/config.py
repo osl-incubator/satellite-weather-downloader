@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-## Broker settings.
+# Broker settings.
 broker_url = os.getenv('CELERY_BROKER_URL')
 
 # List of modules to import when the Celery worker starts.
