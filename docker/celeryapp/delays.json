@@ -18,5 +18,25 @@
       "day_of_month": "14",
       "month_of_year": "*"
     }
+  },
+  {
+    "task": "fetch_copernicus_brasil",
+    "crontab": {
+      "minute": "*",
+      "hour": "21-23,0-7",
+      "day_of_week": "*",
+      "day_of_month": "*",
+      "month_of_year": "*"
+    }
+  },
+  {
+    "task": "fetch_copernicus_foz",
+    "crontab": {
+      "minute": "*",
+      "hour": "21-23,0-7",
+      "day_of_week": "*",
+      "day_of_month": "*",
+      "month_of_year": "*"
+    }
   }
 ]

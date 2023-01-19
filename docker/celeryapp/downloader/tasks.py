@@ -22,13 +22,13 @@ PORT = os.getenv('POSTGRES_PORT')
 DBASE = os.getenv('POSTGRES_DATABASE')
 UUID = os.getenv('API_UUID')
 KEY = os.getenv('API_KEY')
-
+DATA_DIR = os.getenv('COPER_DATA_DIR_CONT')
+STATUS_TABLE = 'cope_download_status'
+SCHEMA = 'weather'
 
 engine = create_engine(
     f'postgresql://{PSQL_USER}:{PSQL_PASSWORD}@{HOST}:{PORT}/{DBASE}'
 )
-schema = 'weather'
-table = 'cope_download_status'
 
 
 @app.task(name='extract_br_netcdf_monthly', retry_kwargs={'max_retries': 5})
@@ -41,7 +41,7 @@ def download_br_netcdf_monthly() -> None:
     with engine.connect() as conn:
         try:
             ini_date, end_date = _produce_next_month_to_update(
-                conn, schema, table
+                conn, SCHEMA, STATUS_TABLE
             )
         except ValueError as e:
             # When finish fetching previously months, self update
@@ -52,25 +52,31 @@ def download_br_netcdf_monthly() -> None:
                 hour=0,
                 day_of_month=15,
             )
+            logger.warning(
+                'Task `extract_br_netcdf_monthly` delay updated'
+                ' to run every day 15 of month'
+            )
             logger.error(e)
             raise e
 
     try:
         with engine.connect() as conn:
             conn.execute(
-                f'UPDATE {schema}.{table}'
+                f'UPDATE {SCHEMA}.{STATUS_TABLE}'
                 ' SET downloading = true'
                 f" WHERE date = '{end_date}'"
             )
 
-        file_path = ex.download_br_netcdf(date=ini_date, date_end=end_date)
+        file_path = ex.download_br_netcdf(
+            date=ini_date, date_end=end_date, data_dir=DATA_DIR
+        )
 
         if not file_path:
-            raise Exception('File was not downloading, exiting task.')
+            raise Exception('File was not downloaded, exiting task.')
 
         with engine.connect() as conn:
             conn.execute(
-                f'UPDATE {schema}.{table}'
+                f'UPDATE {SCHEMA}.{STATUS_TABLE}'
                 f" SET path = '{file_path}'"
                 f" WHERE date = '{end_date}'"
             )
@@ -86,7 +92,7 @@ def download_br_netcdf_monthly() -> None:
     finally:
         with engine.connect() as conn:
             conn.execute(
-                f'UPDATE {schema}.{table}'
+                f'UPDATE {SCHEMA}.{STATUS_TABLE}'
                 ' SET downloading = false'
                 f" WHERE date = '{end_date}'"
             )

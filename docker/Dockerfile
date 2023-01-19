@@ -23,9 +23,9 @@ RUN addgroup --gid ${HOST_GID} satellite \
   && echo "satellite ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/satellite \
   && chmod 0440 /etc/sudoers.d/satellite \
   && export ENV_NAME="$ENV_NAME" \
-  && mkdir -p /opt/conda /opt/services/logs /opt/services/satellite/ /home/satellite/copernicus_data \
+  && mkdir -p /opt/conda /opt/services/logs /opt/services/satellite/ /opt/services/satellite/data/ \
+  && chown satellite:satellite /opt/services/ /opt/services/satellite/ /opt/services/satellite/data/ /tmp \
   && chmod -R a+rwx /opt/conda \
-  && chown satellite:satellite /opt/services/ /opt/services/satellite/ /home/satellite/copernicus_data /tmp \
   && echo 'source /opt/conda/bin/activate "$ENV_NAME" && exec "$@"' > /activate.sh \
   && echo 'source activate "$ENV_NAME"' >  /home/satellite/.bashrc \
   && chmod +x /activate.sh

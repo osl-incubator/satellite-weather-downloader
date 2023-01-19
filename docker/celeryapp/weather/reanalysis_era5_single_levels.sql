@@ -1,4 +1,5 @@
-CREATE TABLE "Municipio".copernicus_br (
+CREATE TABLE IF NOT EXISTS weather.copernicus_brasil (
+    index SERIAL UNIQUE PRIMARY KEY,
     date TIMESTAMP WITHOUT TIME ZONE,
     geocodigo BIGINT,
     temp_min FLOAT(23),
@@ -15,18 +16,13 @@ CREATE TABLE "Municipio".copernicus_br (
     umid_max FLOAT(23)
 );
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS date_idx ON "Municipio".copernicus_br (date);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS geocodigo_idx ON "Municipio".copernicus_br (geocodigo);
-
 -- Foz do Iguaçu
-CREATE TABLE "Municipio".copernicus_foz (
-    date TIMESTAMP WITHOUT TIME ZONE,
-    geocodigo BIGINT,
-    temp FLOAT(23),
-    precip FLOAT(23),
-    pressao FLOAT(23),
-    umid FLOAT(23)
+CREATE TABLE IF NOT EXISTS weather.copernicus_foz_do_iguacu (
+    index SERIAL UNIQUE PRIMARY KEY,
+    date DATETIME NOT NULL,
+    geocodigo BIGINT NOT NULL,
+    temp FLOAT(23) NOT NULL,
+    precip FLOAT(23) NOT NULL,
+    pressao FLOAT(23) NOT NULL,
+    umid FLOAT(23) NOT NULL,
 );
-
-CREATE INDEX CONCURRENTLY IF NOT EXISTS date_idx ON "Municipio".copernicus_foz (date);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS geocodigo_idx ON "Municipio".copernicus_foz (geocodigo);

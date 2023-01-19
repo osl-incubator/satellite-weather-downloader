@@ -59,8 +59,9 @@ services:
     hostname: downloader
     extends:
       service: satellite-base
+    user: ${HOST_UID}:${HOST_GID}
     volumes:
-      - ${COPERNICUS_DATA}:/home/satellite/copernicus_data
+      - ${COPER_DATA_DIR_HOST}:${COPER_DATA_DIR_CONT}
     command: /beat_downloader.sh
     depends_on:
       - rabbitmq

@@ -1,40 +1,30 @@
-# Create app celery to start satellite_weather
-
-import json
-from datetime import timedelta
-from pathlib import Path
-
+# Create app celery to start _downloader
 from celery import Celery
 from celery.signals import worker_ready
+from celeryapp import delay_controller as delay
 
-app = Celery('beat_weather')
+app = Celery('beat_downloader')
 
-app.config_from_object('celeryapp.weather.config')
+app.config_from_object('celeryapp.downloader.config')
 
-
-# app.conf.beat_schedule = {
-#     'fetch-brasil-weather': {
-#         'task': 'fetch_brasil_weather',
-#         'schedule': get_task_delay('fetch_brasil_weather'),
-#     },
-#     'fetch-foz-weather': {
-#         'task': 'fetch_foz_weather',
-#         'schedule': get_task_delay('fetch_foz_weather'),
-#     },
-#     'add-date-to-fetch-br': {
-#         'task': 'update_brasil_fetch_date',
-#         'schedule': timedelta(days=1),
-#     },
-#     'add-date-to-fetch-foz': {
-#         'task': 'update_foz_fetch_date',
-#         'schedule': timedelta(days=14),
-#     },
-# }
+# Beat tasks schedules
+app.conf.beat_schedule = {
+    'fetch-copernicus-data-for-brasil': {
+        'task': 'fetch_copernicus_brasil',
+        'schedule': delay.get_task_schedule('fetch_copernicus_brasil'),
+    },
+    'fetch-copernicus-data-for-foz-do-iguacu': {
+        'task': 'fetch_copernicus_foz',
+        'schedule': delay.get_task_schedule('fetch_copernicus_foz'),
+    },
+}
 
 
-# # Send signal to run at worker startup
-# @worker_ready.connect
-# def at_start(sender, **kwargs):
-#     """Run tasks at startup"""
-#     with sender.app.connection() as conn:
-#         sender.app.send_task('initialize_backfill_db', connection=conn)
+# Send signal to run at worker startup
+@worker_ready.connect
+def at_start(sender, **kwargs):
+    """Run tasks at startup"""
+    with sender.app.connection() as conn:
+        sender.app.send_task(
+            'create_copernicus_data_tables', connection=conn
+        )
