@@ -1,6 +1,6 @@
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.2.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
@@ -31,7 +31,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10"
+python = ">=3.10,<4"
 cdsapi = "^0.5.1"
 pandas = "^1.5.0"
 numpy = "^1.23.3"
@@ -45,13 +45,12 @@ loguru = "^0.6.0"
 flower = "^1.2.0"
 amqp = "^5.1.1"
 celery = "^5.2.7"
+requests = "^2.28.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^5.2"
 jupyterlab = "^3.4.8"
 seaborn = "^0.12.1"
-
-[tool.poetry.group.pre-commit.dependencies]
 pre-commit = "^2.20.0"
 flake8 = ">=3.8,<5.0.0"
 isort = "^5.10.1"

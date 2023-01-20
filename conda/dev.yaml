@@ -1,12 +1,13 @@
 name: env-satellite
 channels:
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
   - python >=3.9
   - pip
   - docker-compose
   - make
-  # - satellite-weather-downloader
+  - poetry >=1.2
   - pip:
     - git+https://github.com/luabida/satellite-weather-downloader.git@xarray-refactor #TODO: remove it when bumping version
+    # - satellite-weather-downloader

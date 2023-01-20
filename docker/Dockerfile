@@ -49,8 +49,12 @@ RUN mamba env create -n $ENV_NAME \
   && find /opt/conda/ -type f,l -name '*.pyc' -delete \
   && find /opt/conda/ -type f,l -name '*.js.map' -delete
 
-RUN mkdir -p /opt/services/satellite/celeryapp
+COPY --chown=satellite:satellite satellite_weather /opt/services/satellite_weather
+COPY --chown=satellite:satellite satellite_downloader /opt/services/satellite_downloader
 
 WORKDIR /opt/services/satellite/
+
+RUN poetry config virtualenvs.create false \
+  && poetry install
 
 ENTRYPOINT ["bash", "/activate.sh"]

@@ -32,6 +32,10 @@ docker-stop:
 docker-exec:
 	$(DOCKER) exec ${SERVICES} bash
 
+.PHONY:docker-run
+docker-run:
+	$(DOCKER) run ${SERVICE} bash
+
 .PHONY:docker-logs-follow
 docker-logs-follow:
 	$(DOCKER) logs --follow --tail 300 ${SERVICES}
