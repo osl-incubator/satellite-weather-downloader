@@ -6,8 +6,8 @@ dependencies:
   - python >=3.9
   - pip
   - docker-compose
+  - celery
   - make
-  - poetry >=1.2
   - pip:
     - git+https://github.com/luabida/satellite-weather-downloader.git@xarray-refactor #TODO: remove it when bumping version
     # - satellite-weather-downloader

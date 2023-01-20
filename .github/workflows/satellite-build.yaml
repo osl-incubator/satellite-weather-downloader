@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.10"]
     concurrency:
       group: ci-${{ github.ref }}
       cancel-in-progress: true
@@ -34,13 +34,6 @@ jobs:
         use-mamba: true
         miniforge-variant: Mambaforge
 
-    - name: Install dependencies
-      run: |
-        poetry config experimental.new-installer false
-        poetry config virtualenvs.create false
-        poetry build
-        poetry install
-
     - name: Build docker images
       run: |
          make docker-build
@@ -52,9 +45,3 @@ jobs:
     - name: Docker start satellite
       run: |
         make docker-start SERVICES="weather downloader" 
-
-
-
-    # - name: Test with pytest
-    #   run: |
-    #     make test
