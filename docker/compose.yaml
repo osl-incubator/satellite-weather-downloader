@@ -61,6 +61,9 @@ services:
     extends:
       service: satellite-base
     user: satellite:satellite
+    environment:
+      - HOST_UID=${HOST_UID}
+      - HOST_GID=${HOST_GID}
     volumes:
       - ${COPER_DATA_DIR_HOST}:${COPER_DATA_DIR_CONT}
     command: /beat_downloader.sh
