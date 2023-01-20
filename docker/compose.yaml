@@ -39,6 +39,7 @@ services:
     volumes:
       - ../../logs:/var/log/
       - ./celeryapp:/opt/services/satellite/celeryapp
+      - ${COPER_DATA_DIR_HOST}:${COPER_DATA_DIR_CONT}
 
   weather:
     hostname: weather
@@ -61,11 +62,6 @@ services:
     extends:
       service: satellite-base
     user: satellite:satellite
-    environment:
-      - HOST_UID=${HOST_UID}
-      - HOST_GID=${HOST_GID}
-    volumes:
-      - ${COPER_DATA_DIR_HOST}:${COPER_DATA_DIR_CONT}
     command: /beat_downloader.sh
     depends_on:
       - rabbitmq
