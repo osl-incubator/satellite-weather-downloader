@@ -6,6 +6,7 @@ import satellite_weather as sat
 
 from pathlib import Path
 from loguru import logger
+from datetime import datetime
 from sqlalchemy import create_engine
 from dotenv import find_dotenv, load_dotenv
 from celeryapp.delay_controller import update_task_schedule
@@ -169,7 +170,8 @@ def fetch_cope_monthly_data(task: str) -> None:
             )
             conn.execute(
                 f'DELETE FROM weather.{data_table}'
-                f" WHERE date = '{date}'"
+                 ' WHERE date BETWEEN'
+                f' {datetime(date.year, date.month, 1)} AND {date}'
             )
         Path(path).unlink()
         raise e
@@ -257,11 +259,24 @@ def _produce_next_path(conn, task_status) -> str:
     return path
 
 
-def scan_for_wrong_values(data_table: str) -> None:
+def scan_and_remove_inconsistent_data(tasks: list) -> None:
     # each month has 5570 values per day (copernicus_brasil)
     # each month has 8 values per day (copernicus_foz_do_iguacu)
     # if month in incomplete:
     # - drop all rows within this month range
     # - delete local file
     # - clean path from table
-    ...
+    match tasks:
+        case 'fetch_copernicus_brasil':
+"""
+delete from "Municipio".weather_copernicus
+  where date in 
+  (select res.date from 
+    (select date, count(*) 
+      from "Municipio".weather_copernicus 
+      group by date 
+      having count(*) <> 5570
+    ) as res
+  );
+
+"""

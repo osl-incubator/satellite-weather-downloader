@@ -28,7 +28,7 @@ services:
       args:
         HOST_UID: ${HOST_UID}
         HOST_GID: ${HOST_GID}
-    user: "satellite:satellite"
+    user: satellite:satellite
     networks:
       - satellite
     env_file:
@@ -45,6 +45,7 @@ services:
     extends:
       service: satellite-base
     command: /beat_weather.sh
+    user: satellite:satellite
     depends_on:
       - rabbitmq
     restart: always
@@ -59,7 +60,7 @@ services:
     hostname: downloader
     extends:
       service: satellite-base
-    user: ${HOST_UID}:${HOST_GID}
+    user: satellite:satellite
     volumes:
       - ${COPER_DATA_DIR_HOST}:${COPER_DATA_DIR_CONT}
     command: /beat_downloader.sh

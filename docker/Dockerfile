@@ -49,6 +49,8 @@ RUN mamba env create -n $ENV_NAME \
   && find /opt/conda/ -type f,l -name '*.pyc' -delete \
   && find /opt/conda/ -type f,l -name '*.js.map' -delete
 
+RUN mkdir -p /opt/services/satellite/celeryapp
+
 WORKDIR /opt/services/satellite/
 
 ENTRYPOINT ["bash", "/activate.sh"]
