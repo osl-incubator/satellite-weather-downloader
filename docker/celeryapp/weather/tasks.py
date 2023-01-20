@@ -106,9 +106,9 @@ def fetch_cope_monthly_data(task: str) -> None:
             )
             date = cur.fetchone()[0]
             conn.execute(
-                f'UPDATE weather.{STATUS_TABLE}'
-                f" SET (path, {task_status})"
-                 ' VALUES (NULL, NULL)'
+                f'UPDATE weather.{STATUS_TABLE} SET'
+                f' path = NULL,'
+                f' {task_status} = NULL'
                 f" WHERE path = '{path}'"
             )
             conn.execute(
