@@ -211,15 +211,16 @@ def scan_and_remove_inconsistent_data(tasks: list) -> None:
     # - clean path from table
     match tasks:
         case 'fetch_copernicus_brasil':
-"""
-delete from "Municipio".weather_copernicus
-  where date in 
-  (select res.date from 
-    (select date, count(*) 
-      from "Municipio".weather_copernicus 
-      group by date 
-      having count(*) <> 5570
-    ) as res
-  );
+            ...
+    """
+    delete from "Municipio".weather_copernicus
+    where date in 
+    (select res.date from 
+        (select date, count(*) 
+        from "Municipio".weather_copernicus 
+        group by date 
+        having count(*) <> 5570
+        ) as res
+    );
 
-"""
+    """

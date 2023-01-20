@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import calendar
 import os
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 from beat import app
@@ -23,6 +24,7 @@ DBASE = os.getenv('POSTGRES_DATABASE')
 UUID = os.getenv('API_UUID')
 KEY = os.getenv('API_KEY')
 DATA_DIR = os.getenv('COPER_DATA_DIR_CONT')
+HOST_DATA_DIR = os.getenv('COPER_DATA_DIR_HOST')
 STATUS_TABLE = 'cope_download_status'
 SCHEMA = 'weather'
 
@@ -75,9 +77,10 @@ def download_br_netcdf_monthly() -> None:
             raise Exception('File was not downloaded, exiting task.')
 
         with engine.connect() as conn:
+            path = Path(HOST_DATA_DIR) / file_path.split('/')[-1]
             conn.execute(
                 f'UPDATE {SCHEMA}.{STATUS_TABLE}'
-                f" SET path = '{file_path}'"
+                f" SET path = '{str(path)}'"
                 f" WHERE date = '{end_date}'"
             )
 
