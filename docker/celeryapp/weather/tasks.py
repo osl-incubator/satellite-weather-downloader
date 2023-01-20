@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from .beat import app
+from beat import app
 
 import os
 import satellite_weather as sat
@@ -78,7 +78,7 @@ def fetch_cope_monthly_data(task: str) -> None:
         sql = (
             f'UPDATE weather.{STATUS_TABLE}'
             f" SET {task_status} = '{status}'"
-            f' WHERE path = {path}'
+            f" WHERE path = '{path}'"
         )
         return sql
 
@@ -102,14 +102,14 @@ def fetch_cope_monthly_data(task: str) -> None:
         with engine.connect() as conn:
             cur = conn.execute(
                 f'SELECT date FROM weather.{STATUS_TABLE}'
-                f' WHERE path = {path}'
+                f" WHERE path = '{path}'"
             )
             date = cur.fetchone()[0]
             conn.execute(
                 f'UPDATE weather.{STATUS_TABLE}'
                 f" SET (path, {task_status})"
                  ' VALUES (NULL, NULL)'
-                f' WHERE path = {path}'
+                f" WHERE path = '{path}'"
             )
             conn.execute(
                 f'DELETE FROM weather.{data_table}'
