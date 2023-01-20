@@ -44,9 +44,11 @@ docker-logs-follow:
 docker-down:
 	$(DOCKER) down -v --remove-orphans
 
-.PHONY: prepare_environment
-prepare_environment:
+.PHONY: prepare-environment
+prepare-environment:
+	touch .env
 	envsubst < env.tpl > .env
+	echo "HOST_UID=`id -u`\nHOST_GID=`id -g`" > .env
 
 # Python
 .PHONY: clean

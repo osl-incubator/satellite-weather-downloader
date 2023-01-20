@@ -49,7 +49,7 @@ jobs:
         RBTMQ_USER: guest
         RBTMQ_PASSWORD: guest
         RBTMQ_CONFIG_DIR: /home/runner/work/satellite-weather-downloader/docker/rabbitmq/
-      run: envsubst < env.tpl > .env
+      run: make prepare-environment
 
     - name: Build docker images
       run: |
