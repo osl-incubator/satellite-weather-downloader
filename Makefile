@@ -46,7 +46,6 @@ docker-down:
 
 .PHONY: prepare-environment
 prepare-environment:
-	touch .env
 	envsubst < env.tpl > .env
 	echo "HOST_UID=`id -u`\nHOST_GID=`id -g`" > .env
 
