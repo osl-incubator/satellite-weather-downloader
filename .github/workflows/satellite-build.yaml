@@ -34,6 +34,9 @@ jobs:
         use-mamba: true
         miniforge-variant: Mambaforge
 
+    - name: Create env file
+      run: envsubst < env.tpl > .env
+
     - name: Build docker images
       run: |
          make docker-build

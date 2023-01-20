@@ -34,6 +34,7 @@ RUN addgroup --gid ${HOST_GID} satellite \
 COPY --chown=satellite:satellite conda/dev.yaml /opt/services/satellite/environment.yaml
 COPY --chown=satellite:satellite docker/scripts/beat_weather.sh /beat_weather.sh
 COPY --chown=satellite:satellite docker/scripts/beat_downloader.sh  /beat_downloader.sh
+COPY --chown=satellite:satellite env.tpl README.md /opt/services/
 
 ENV PATH "$PATH:/home/satellite/.local/bin"
 ENV PATH /opt/conda/envs/$ENV_NAME/bin:$PATH
