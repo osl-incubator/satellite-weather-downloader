@@ -47,7 +47,7 @@ docker-down:
 .PHONY: prepare-environment
 prepare-environment:
 	envsubst < env.tpl > .env
-	echo "HOST_UID=`id -u`\nHOST_GID=`id -g`" > .env
+	echo "HOST_UID=`id -u`\nHOST_GID=`id -g`" >> .env
 
 # Python
 .PHONY: clean

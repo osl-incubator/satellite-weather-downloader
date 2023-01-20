@@ -6,20 +6,20 @@ jobs:
   build:
     environment: env-satellite
     env:
-      POSTGRES_USER: $POSTGRES_USER
-      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-      POSTGRES_HOST: $POSTGRES_HOST
-      POSTGRES_PORT: $POSTGRES_PORT
-      POSTGRES_DATABASE: $POSTGRES_DATABASE
-      API_UUID: $API_UUID
-      API_KEY: $API_KEY
-      COPER_DATA_DIR_HOST: /home/runner/work/satellite-weather-downloader/data
+      POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ vars.POSTGRES_PASSWORD }}
+      POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
+      POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
+      POSTGRES_DATABASE: ${{ vars.POSTGRES_DATABASE }}
+      API_UUID: ${{ vars.API_UUID }}
+      API_KEY: ${{ vars.API_KEY }}
+      COPER_DATA_DIR_HOST: /home/runner/work/satellite-weather-downloader/satellite-weather-downloader/data
       COPER_DATA_DIR_CONT: /opt/services/satellite/data
       RBTMQHTTP_PORT: 14672
       RBTMQAMQP_PORT: 5672
       RBTMQ_USER: guest
       RBTMQ_PASSWORD: guest
-      RBTMQ_CONFIG_DIR: /home/runner/work/satellite-weather-downloader/docker/rabbitmq/
+      RBTMQ_CONFIG_DIR: /home/runner/work/satellite-weather-downloader/satellite-weather-downloader/docker/rabbitmq/
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
