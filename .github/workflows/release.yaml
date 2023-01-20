@@ -35,6 +35,8 @@ jobs:
         activate-environment: env-satellite
         use-mamba: true
         miniforge-variant: Mambaforge
+    
+    - name: Install poetry
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
 
