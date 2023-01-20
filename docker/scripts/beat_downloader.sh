@@ -5,5 +5,5 @@ exec celery \
     --config beat \
     -A tasks worker -B \
     -s /tmp/celerybeat-schedule \
-    --pidfile /tmp/celerybeat.pid
-    --loglevel=INFO \
+    --pidfile /tmp/celerybeat.pid \
+    --loglevel=INFO
