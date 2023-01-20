@@ -58,9 +58,6 @@ jobs:
       run: |
         make docker-build
 
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-
     - name: Docker start satellite
       run: |
         make docker-start SERVICES="weather downloader" 
