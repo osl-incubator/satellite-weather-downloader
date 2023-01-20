@@ -6,13 +6,13 @@ jobs:
   build:
     environment: env-satellite
     env:
-      POSTGRES_USER: ${{ vars.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ vars.POSTGRES_PASSWORD }}
-      POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
-      POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
-      POSTGRES_DATABASE: ${{ vars.POSTGRES_DATABASE }}
-      API_UUID: ${{ vars.API_UUID }}
-      API_KEY: ${{ vars.API_KEY }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+      POSTGRES_DATABASE: ${{ secrets.POSTGRES_DATABASE }}
+      API_UUID: ${{ secrets.API_UUID }}
+      API_KEY: ${{ secrets.API_KEY }}
       COPER_DATA_DIR_HOST: /home/runner/work/satellite-weather-downloader/satellite-weather-downloader/data
       COPER_DATA_DIR_CONT: /opt/services/satellite/data
       RBTMQHTTP_PORT: 14672

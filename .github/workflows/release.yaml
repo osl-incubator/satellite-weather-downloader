@@ -26,7 +26,6 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
-
     - uses: conda-incubator/setup-miniconda@v2
       with:
         miniconda-version: "latest"
@@ -36,6 +35,8 @@ jobs:
         activate-environment: env-satellite
         use-mamba: true
         miniforge-variant: Mambaforge
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
 
     - name: Release
       env:
