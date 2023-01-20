@@ -19,7 +19,6 @@ app.conf.beat_schedule = {
     },
 }
 
-
 # Send signal to run at worker startup
 @worker_ready.connect
 def at_start(sender, **kwargs):
@@ -27,4 +26,7 @@ def at_start(sender, **kwargs):
     with sender.app.connection() as conn:
         sender.app.send_task(
             'initialize_satellite_download_db', connection=conn
+        )
+        sender.app.send_task(
+            'create_copernicus_data_tables', connection=conn
         )

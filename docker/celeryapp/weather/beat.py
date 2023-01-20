@@ -18,13 +18,3 @@ app.conf.beat_schedule = {
         'schedule': delay.get_task_schedule('fetch_copernicus_foz'),
     },
 }
-
-
-# Send signal to run at worker startup
-@worker_ready.connect
-def at_start(sender, **kwargs):
-    """Run tasks at startup"""
-    with sender.app.connection() as conn:
-        sender.app.send_task(
-            'create_copernicus_data_tables', connection=conn
-        )

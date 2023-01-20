@@ -160,6 +160,66 @@ def initialize_db() -> None:
         )
 
 
+@app.task(name='create_copernicus_data_tables')
+def initialize_db() -> None:
+    """
+    Runs at Beat startup. Create tables if they don't exist.
+    Municipal tables will have `copernicus_` prefix added before
+    it's city name.
+    Tables:
+        copernicus_brasil: Nacional level data table.
+        copernicus_foz_do_iguacu: Foz do Iguaçu data.
+    """
+    municipal_tables = [
+        'foz_do_iguacu',
+    ]
+
+    with engine.connect() as conn:
+        conn.execute(_create_national_table_sql())
+        logger.info('Table copernicus_brasil initialized')
+        for mun_name in municipal_tables:
+            conn.execute(_create_municipal_table_sql(mun_name))
+            logger.info(f'Table copernicus_{mun_name} initialized')
+
+
+# ---
+# create_copernicus_data_tables task:
+def _create_national_table_sql() -> str:
+    sql = (
+        'CREATE TABLE IF NOT EXISTS weather.copernicus_brasil ('
+        'index SERIAL UNIQUE PRIMARY KEY,'
+        'time DATE NOT NULL,'
+        'geocodigo BIGINT NOT NULL,'
+        'temp_min FLOAT(23) NOT NULL,'
+        'temp_med FLOAT(23) NOT NULL,'
+        'temp_max FLOAT(23) NOT NULL,'
+        'precip_min FLOAT(23) NOT NULL,'
+        'precip_med FLOAT(23) NOT NULL,'
+        'precip_max FLOAT(23) NOT NULL,'
+        'pressao_min FLOAT(23) NOT NULL,'
+        'pressao_med FLOAT(23) NOT NULL,'
+        'pressao_max FLOAT(23) NOT NULL,'
+        'umid_min FLOAT(23) NOT NULL,'
+        'umid_med FLOAT(23) NOT NULL,'
+        'umid_max FLOAT(23) NOT NULL);'
+    )
+    return sql
+
+
+def _create_municipal_table_sql(name: str) -> str:
+    sql = (
+        f'CREATE TABLE IF NOT EXISTS weather.copernicus_{name} ('
+        'index SERIAL UNIQUE PRIMARY KEY,'
+        'time TIMESTAMP WITHOUT TIME ZONE NOT NULL,'
+        'geocodigo BIGINT NOT NULL,'
+        'temp FLOAT(23) NOT NULL,'
+        'precip FLOAT(23) NOT NULL,'
+        'pressao FLOAT(23) NOT NULL,'
+        'umid FLOAT(23) NOT NULL);'
+    )
+    return sql
+
+
 # ---
 # initialize_satellite_db task:
 def _sql_create_table(schema: str, table: str) -> str:
