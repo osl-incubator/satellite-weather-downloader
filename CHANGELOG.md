@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.4.2](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.1...1.4.2) (2023-01-23)
+
+
+### Bug Fixes
+
+* **downloader:** minor fix on transforming dates ([#23](https://github.com/osl-incubator/satellite-weather-downloader/issues/23)) ([7f56054](https://github.com/osl-incubator/satellite-weather-downloader/commit/7f56054202e0336d3f7a791baec380c8c2596f92))
+
 ## [1.4.1](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.0...1.4.1) (2023-01-23)
 
 
