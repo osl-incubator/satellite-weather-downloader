@@ -18,9 +18,10 @@ For downloading data from Copernicus API, it is required an account. The credent
 
 ## Notes
 Python Versions = [3.10, 3.11]
+
 Version 1.X includes only methods for Brazil's data format and cities.
 
-## Usage of `copebr` extensions
+## Usage of `copebr` extension
 ``` python
 import satellite_downloader
 import satellite_weather
