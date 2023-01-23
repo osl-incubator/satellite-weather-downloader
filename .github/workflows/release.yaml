@@ -21,12 +21,12 @@ jobs:
         shell: bash -l {0}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         submodules: recursive
 
-    - uses: conda-incubator/setup-miniconda@v2
+    - uses: conda-incubator/setup-miniconda@v3
       with:
         miniconda-version: "latest"
         mamba-version: "*"
@@ -39,6 +39,10 @@ jobs:
     - name: Install poetry
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
 
     - name: Release
       env:
