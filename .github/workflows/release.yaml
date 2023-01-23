@@ -21,12 +21,12 @@ jobs:
         shell: bash -l {0}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         submodules: recursive
 
-    - uses: conda-incubator/setup-miniconda@v2
+    - uses: conda-incubator/setup-miniconda@v3
       with:
         miniconda-version: "latest"
         mamba-version: "*"
@@ -40,6 +40,10 @@ jobs:
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
 
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
     - name: Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -47,7 +51,6 @@ jobs:
       run: |
         poetry config pypi-token.pypi ${PYPI_TOKEN}
         npx --yes \
-          -p node@v18-lts \ 
           -p semantic-release \
           -p "@semantic-release/commit-analyzer" \
           -p "@semantic-release/release-notes-generator" \
