@@ -1,6 +1,14 @@
 Release Notes
 ---
 
+## [1.4.4](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.3...1.4.4) (2023-01-23)
+
+
+### Bug Fixes
+
+* **downloader:** date column is called time ([#24](https://github.com/osl-incubator/satellite-weather-downloader/issues/24)) ([c1b16ff](https://github.com/osl-incubator/satellite-weather-downloader/commit/c1b16ff8875c85f55d4e861f61d72fc8f41b33b9))
+* **readme:** typo ([ea46efc](https://github.com/osl-incubator/satellite-weather-downloader/commit/ea46efce2b8a9d5e21733a9dcbd99c7b2bd22dad))
+
 ## [1.4.3](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.2...1.4.3) (2023-01-23)
 
 
