@@ -113,7 +113,7 @@ def fetch_cope_monthly_data(task: str) -> None:
             )
             conn.execute(
                 f'DELETE FROM weather.{data_table}'
-                 ' WHERE date BETWEEN'
+                 ' WHERE time BETWEEN'
                 f' {datetime(date.year, date.month, 1)} AND {date}'
             )
         Path(path).unlink()

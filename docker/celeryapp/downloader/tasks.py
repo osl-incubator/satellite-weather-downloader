@@ -374,7 +374,11 @@ def _delete_entries_for(date_ranges: list[tuple], conn) -> None:
         path = cur.fetchone()[0]
         conn.execute(
             'DELETE FROM weather.copernicus_brasil'
-            f' WHERE date BETWEEN {ini_m} AND {end_m}'
+            f' WHERE time BETWEEN {ini_m} AND {end_m}'
+        )
+        conn.execute(
+            'DELETE FROM weather.copernicus_foz_do_iguacu'
+            f' WHERE time BETWEEN {ini_m} AND {end_m}'
         )
         conn.execute(
             f'UPDATE weather.{STATUS_TABLE} SET'
@@ -395,12 +399,12 @@ def _get_inconsistent_months(conn) -> list:
         '  res.end_m' 
         ' FROM ('
         '    SELECT' 
-        "    DATE_TRUNC('month', date) AS ini_m,"
-        "    (DATE_TRUNC('month', date) + interval '1 month - 1 day')::date "
+        "    DATE_TRUNC('month', time) AS ini_m,"
+        "    (DATE_TRUNC('month', time) + interval '1 month - 1 day')::date "
         'AS end_m,'
         '    count(*) AS tot'
         '  FROM weather.copernicus_brasil'   
-        "  GROUP BY DATE_TRUNC('month', date)) AS res" 
+        "  GROUP BY DATE_TRUNC('month', time)) AS res" 
         " WHERE to_char(((res.end_m - res.ini_m) * 5570), 'DD')::integer != res.tot;"
     )
     br_dates = cur.fetchall()
@@ -412,12 +416,12 @@ def _get_inconsistent_months(conn) -> list:
         '  res.end_m' 
         ' FROM ('
         '    SELECT' 
-        "    DATE_TRUNC('month', date) AS ini_m,"
-        "    (DATE_TRUNC('month', date) + interval '1 month - 1 day')::date "
+        "    DATE_TRUNC('month', time) AS ini_m,"
+        "    (DATE_TRUNC('month', time) + interval '1 month - 1 day')::date "
         'AS end_m,'
         '    count(*) AS tot'
         '  FROM weather.copernicus_foz_do_iguacu'   
-        "  GROUP BY DATE_TRUNC('month', date)) AS res" 
+        "  GROUP BY DATE_TRUNC('month', time)) AS res" 
         " WHERE to_char(((res.end_m - res.ini_m) * 8), 'DD')::integer != res.tot;"
     )
     foz_dates = cur.fetchall()
