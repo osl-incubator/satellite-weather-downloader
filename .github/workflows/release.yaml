@@ -47,6 +47,7 @@ jobs:
       run: |
         poetry config pypi-token.pypi ${PYPI_TOKEN}
         npx --yes \
+          -p node@v18-lts \ 
           -p semantic-release \
           -p "@semantic-release/commit-analyzer" \
           -p "@semantic-release/release-notes-generator" \
