@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.4.3](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.2...1.4.3) (2023-01-23)
+
+
+### Bug Fixes
+
+* **conda:** use SWD pypi package ([9014f91](https://github.com/osl-incubator/satellite-weather-downloader/commit/9014f91825ca10a966d99d0687fc847b44630e3a))
+
 ## [1.4.2](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.1...1.4.2) (2023-01-23)
 
 
