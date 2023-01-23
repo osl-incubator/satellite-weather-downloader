@@ -1,0 +1,90 @@
+version: "3.4"
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbitmq
+    ports:
+      - ${RBTMQAMQP_PORT}:${RBTMQAMQP_PORT}
+      - ${RBTMQHTTP_PORT}:${RBTMQHTTP_PORT}
+    volumes:
+      - ${RBTMQ_CONFIG_DIR}/rabbitmq.conf:/var/lib/rabbitmq/rabbitmq.conf
+    environment:
+      - RABBITMQ_CONFIG_FILE=/var/lib/rabbitmq/rabbitmq.conf
+      - RABBITMQ_DEFAULT_USER=${RBTMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RBTMQ_PASSWORD}
+    networks:
+      - satellite
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-u", "${RBTMQ_USER}:${RBTMQ_PASSWORD}", "http://localhost:${RBTMQHTTP_PORT}/api/healthchecks/node"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  satellite-base:
+    build:
+      context: ".."
+      dockerfile: "docker/Dockerfile"
+      args:
+        HOST_UID: ${HOST_UID}
+        HOST_GID: ${HOST_GID}
+    user: satellite:satellite
+    networks:
+      - satellite
+    env_file:
+      - ../.env
+    environment:
+      - CELERY_BROKER_URL=amqp://${RBTMQ_USER}:${RBTMQ_PASSWORD}@rabbitmq:${RBTMQAMQP_PORT}
+      - PYTHONPATH=/opt/services/satellite
+    volumes:
+      - ../../logs:/var/log/
+      - ./celeryapp:/opt/services/satellite/celeryapp
+      - ${COPER_DATA_DIR_HOST}:${COPER_DATA_DIR_CONT}
+
+  weather:
+    hostname: weather
+    extends:
+      service: satellite-base
+    command: /beat_weather.sh
+    user: satellite:satellite
+    depends_on:
+      - rabbitmq
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", 'celery --app celeryapp.weather.beat.app inspect ping -d "celery@$${HOSTNAME}"']
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  downloader:
+    hostname: downloader
+    extends:
+      service: satellite-base
+    user: satellite:satellite
+    command: /beat_downloader.sh
+    depends_on:
+      - rabbitmq
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", 'celery --app celeryapp.downloader.beat.app inspect ping -d "celery@$${HOSTNAME}"']
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  flower:
+    image: mher/flower
+    environment: 
+        - CELERY_BROKER_URL=amqp://${RBTMQ_USER}:${RBTMQ_PASSWORD}@rabbitmq:${RBTMQAMQP_PORT}
+        - FLOWER_PORT=5555
+    networks:
+      - satellite
+    ports:
+        - 5555:5555
+    depends_on:
+      - rabbitmq
+
+networks:
+  satellite:
+      driver: bridge

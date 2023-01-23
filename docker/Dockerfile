@@ -1,4 +1,4 @@
-FROM condaforge/mambaforge
+FROM condaforge/mambaforge as satellite-base
 
 ARG HOST_UID
 ARG HOST_GID
@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -qq update --yes \
   && apt-get -qq install --yes --no-install-recommends \
   build-essential git make postgresql-client vim \
-  ca-certificates wget locales cron sudo \
+  ca-certificates wget locales curl cron sudo \
   && rm -rf /var/lib/apt/lists/*
 
 #Set locale
@@ -23,19 +23,18 @@ RUN addgroup --gid ${HOST_GID} satellite \
   && echo "satellite ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/satellite \
   && chmod 0440 /etc/sudoers.d/satellite \
   && export ENV_NAME="$ENV_NAME" \
-  && mkdir -p /opt/conda /opt/services/logs /opt/services/satellite_weather_downloader/ \
-  && chmod -R a+rwx /opt/conda /opt/services/satellite_weather_downloader/ /tmp \
-  && chown satellite:satellite /opt/services/ /tmp \
+  && mkdir -p /opt/conda /opt/services/logs /opt/services/satellite/ /opt/services/satellite/data/ \
+  && chown satellite:satellite /opt/services/ /opt/services/satellite/ /opt/services/satellite/data/ /tmp \
+  && chmod -R a+rwx /opt/conda \
   && echo 'source /opt/conda/bin/activate "$ENV_NAME" && exec "$@"' > /activate.sh \
   && echo 'source activate "$ENV_NAME"' >  /home/satellite/.bashrc \
   && chmod +x /activate.sh
 
 # Copy dependencies file
-COPY --chown=satellite:satellite conda/dev.yaml /tmp/environment.yaml
-COPY --chown=satellite:satellite satellite_weather_downloader /opt/services/satellite_weather_downloader/
-COPY --chown=satellite:satellite docker/scripts/run_celery.sh  /opt/services/celery-run.sh
-COPY --chown=satellite:satellite env.tpl pyproject.toml poetry.lock README.md /opt/services/
-COPY --chown=satellite:satellite docker/scripts/poetry-install.sh /tmp/poetry-install.sh
+COPY --chown=satellite:satellite conda/dev.yaml /opt/services/satellite/environment.yaml
+COPY --chown=satellite:satellite docker/scripts/beat_weather.sh /beat_weather.sh
+COPY --chown=satellite:satellite docker/scripts/beat_downloader.sh  /beat_downloader.sh
+COPY --chown=satellite:satellite env.tpl README.md /opt/services/
 
 ENV PATH "$PATH:/home/satellite/.local/bin"
 ENV PATH /opt/conda/envs/$ENV_NAME/bin:$PATH
@@ -44,16 +43,15 @@ USER satellite
 
 # Use environment to create the env-satellite
 RUN mamba env create -n $ENV_NAME \
-    --file /tmp/environment.yaml \
-  && cd /opt/services/ \
-  && . /tmp/poetry-install.sh \
+    --file /opt/services/satellite/environment.yaml \
   && conda clean --all \
   && find /opt/conda/ -type f,l -name '*.a' -delete \
   && find /opt/conda/ -type f,l -name '*.pyc' -delete \
-  && find /opt/conda/ -type f,l -name '*.js.map' -delete \
-  && rm -rf /opt/conda/pkgs
+  && find /opt/conda/ -type f,l -name '*.js.map' -delete
 
-WORKDIR /opt/services/satellite_weather_downloader/
+COPY --chown=satellite:satellite satellite_weather /opt/services/satellite_weather
+COPY --chown=satellite:satellite satellite_downloader /opt/services/satellite_downloader
+
+WORKDIR /opt/services/satellite/
 
 ENTRYPOINT ["bash", "/activate.sh"]
-CMD ["/opt/services/celery-run.sh"]

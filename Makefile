@@ -10,7 +10,7 @@ SERVICE:=
 DOCKER=docker-compose \
 	--env-file .env \
 	--project-name satellite \
-	--file docker/compose-base.yaml \
+	--file docker/compose.yaml \
 
 CONSOLE:=bash
 
@@ -18,7 +18,7 @@ CONSOLE:=bash
 # DOCKER
 .PHONY:docker-build
 docker-build:
-	$(DOCKER) build worker
+	$(DOCKER) build downloader weather flower
 
 .PHONY:docker-start
 docker-start:
@@ -32,6 +32,10 @@ docker-stop:
 docker-exec:
 	$(DOCKER) exec ${SERVICES} bash
 
+.PHONY:docker-run
+docker-run:
+	$(DOCKER) run ${SERVICE} bash
+
 .PHONY:docker-logs-follow
 docker-logs-follow:
 	$(DOCKER) logs --follow --tail 300 ${SERVICES}
@@ -40,9 +44,10 @@ docker-logs-follow:
 docker-down:
 	$(DOCKER) down -v --remove-orphans
 
-.PHONY: prepare_environment
-prepare_environment:
+.PHONY: prepare-environment
+prepare-environment:
 	envsubst < env.tpl > .env
+	echo "HOST_UID=`id -u`\nHOST_GID=`id -g`" >> .env
 
 # Python
 .PHONY: clean

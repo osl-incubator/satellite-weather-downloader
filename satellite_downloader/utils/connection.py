@@ -33,12 +33,13 @@ connect(opt[uid], opt[key]) : If none credentials are passed, it will request
 """
 import logging
 import uuid
+from pathlib import Path
 from typing import Optional
 
 import cdsapi
-from satellite_weather_downloader.utils.globals import CDSAPIRC_PATH
 
-credentials = "url: https://cds.climate.copernicus.eu/api/v2\n" "key: "
+CDSAPIRC_PATH = Path.home() / '.cdsapirc'
+credentials = 'url: https://cds.climate.copernicus.eu/api/v2\n' 'key: '
 
 
 def _interactive_con(answer):
@@ -52,13 +53,13 @@ def _interactive_con(answer):
         uid (input) : UID before verification.
         key (input) : API Key before verification.
     """
-    no = ["N", "n", "No", "no", "NO"]
+    no = ['N', 'n', 'No', 'no', 'NO']
     if answer not in no:
-        uid = str(input("Insert UID: "))
-        key = str(input("Insert API Key: "))
+        uid = str(input('Insert UID: '))
+        key = str(input('Insert API Key: '))
         return uid, key
     else:
-        logging.info("Usage: `cds_weather.connect(uid, key)`")
+        logging.info('Usage: `cds_weather.connect(uid, key)`')
 
 
 def _check_credentials(uid, key):
@@ -73,12 +74,12 @@ def _check_credentials(uid, key):
         uid (str): UID ready to be stored at $HOME/.cdsapirc.
         key (str): API ready to be stored at $HOME/.cdsapirc.
     """
-    valid_uid = eval("len(uid) == 6")
-    valid_key = eval("uuid.UUID(key).version == 4")
+    valid_uid = eval('len(uid) == 6')
+    valid_key = eval('uuid.UUID(key).version == 4')
     if not valid_uid:
-        return logging.error("Invalid UID.")
+        return logging.error('Invalid UID.')
     if not valid_key:
-        return logging.error("Invalid API Key.")
+        return logging.error('Invalid API Key.')
     return uid, key
 
 
@@ -105,30 +106,30 @@ def connect(
     if not uid and not key:
         try:
             status = cdsapi.Client().status()
-            logging.info("Credentials file configured.")
-            logging.info(status["info"])
-            logging.warning(status["warning"])
+            logging.info('Credentials file configured.')
+            logging.info(status['info'])
+            logging.warning(status['warning'])
 
         except Exception as e:
             logging.error(e)
 
-            answer = input("Enter interactive mode? (y/n): ")
+            answer = input('Enter interactive mode? (y/n): ')
             uid_answer, key_answer = _interactive_con(answer)
             uid, key = _check_credentials(uid_answer, key_answer)
 
-            with open(CDSAPIRC_PATH, "w") as f:
-                f.write(credentials + f"{uid}:{key}")
-                logging.info(f"Credentials stored at {CDSAPIRC_PATH}")
-                logging.info(cdsapi.Client().status()["info"])
+            with open(CDSAPIRC_PATH, 'w') as f:
+                f.write(credentials + f'{uid}:{key}')
+                logging.info(f'Credentials stored at {CDSAPIRC_PATH}')
+                logging.info(cdsapi.Client().status()['info'])
 
         finally:
             return cdsapi.Client()
 
     try:
         uid, key = _check_credentials(uid, key)
-        with open(CDSAPIRC_PATH, "w") as f:
-            f.write(credentials + f"{uid}:{key}")
-            logging.info(f"Credentials stored at {CDSAPIRC_PATH}")
+        with open(CDSAPIRC_PATH, 'w') as f:
+            f.write(credentials + f'{uid}:{key}')
+            logging.info(f'Credentials stored at {CDSAPIRC_PATH}')
 
         return cdsapi.Client()
 

@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.9
+  python: python3.10
 
 default_stages: [commit, push]
 
@@ -12,12 +12,12 @@ repos:
 
   - repo: local
     hooks:
-    - entry: black
+    - entry: blue
       exclude: ^$
       files: ""
-      id: black
+      id: blue
       language: system
-      name: black
+      name: blue
       pass_filenames: true
       stages:
         - commit

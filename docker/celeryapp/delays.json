@@ -1,0 +1,42 @@
+[
+  {
+    "task": "extract_br_netcdf_monthly",
+    "crontab": {
+      "minute": "*",
+      "hour": "20-23,0-7",
+      "day_of_week": "*",
+      "day_of_month": "*",
+      "month_of_year": "*"
+    }
+  },
+  {
+    "task": "scan_for_missing_dates",
+    "crontab": {
+      "minute": "0",
+      "hour": "0",
+      "day_of_week": "*",
+      "day_of_month": "14",
+      "month_of_year": "*"
+    }
+  },
+  {
+    "task": "fetch_copernicus_brasil",
+    "crontab": {
+      "minute": "*",
+      "hour": "21-23,0-7",
+      "day_of_week": "*",
+      "day_of_month": "*",
+      "month_of_year": "*"
+    }
+  },
+  {
+    "task": "fetch_copernicus_foz",
+    "crontab": {
+      "minute": "*",
+      "hour": "21-23,0-7",
+      "day_of_week": "*",
+      "day_of_month": "*",
+      "month_of_year": "*"
+    }
+  }
+]
