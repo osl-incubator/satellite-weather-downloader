@@ -200,27 +200,3 @@ def _produce_next_path(conn, task_status) -> str:
     logger.info(f'Next date to fetch: {to_update}\nFile: {path}')
 
     return path
-
-
-def scan_and_remove_inconsistent_data(tasks: list) -> None:
-    # each month has 5570 values per day (copernicus_brasil)
-    # each month has 8 values per day (copernicus_foz_do_iguacu)
-    # if month in incomplete:
-    # - drop all rows within this month range
-    # - delete local file
-    # - clean path from table
-    match tasks:
-        case 'fetch_copernicus_brasil':
-            ...
-    """
-    delete from "Municipio".weather_copernicus
-    where date in 
-    (select res.date from 
-        (select date, count(*) 
-        from "Municipio".weather_copernicus 
-        group by date 
-        having count(*) <> 5570
-        ) as res
-    );
-
-    """

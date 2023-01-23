@@ -9,6 +9,7 @@ from beat import app
 from celeryapp.delay_controller import update_task_schedule
 from dotenv import find_dotenv, load_dotenv
 from loguru import logger
+from pathlib import Path
 from satellite_downloader import extract_reanalysis as ex
 from satellite_downloader.utils import connection
 from sqlalchemy import create_engine
@@ -35,7 +36,7 @@ engine = create_engine(
 def download_br_netcdf_monthly() -> None:
     """
     This task will be responsible for downloading every data in copernicus
-    API for Brasil. It will runs continously until there is no more months
+    API for Brasil. It will runs continuously until there is no more months
     to fetch, then self-update the delay to run monthly.
     """
     with engine.connect() as conn:
@@ -338,3 +339,90 @@ def _last_month_range(date: datetime.date) -> tuple:
     )
 
     return ini_date.date(), end_date.date()
+
+
+# ---
+# 
+def scan_and_remove_inconsistent_data() -> None:
+    # each month has 5570 values per day (copernicus_brasil)
+    # each month has 8 values per day (copernicus_foz_do_iguacu)
+    # if month in incomplete:
+    # - drop all rows within this month range
+    # - delete local file
+    # - clean path from table
+
+    with engine.connect() as conn:
+        date_ranges =_get_inconsistent_months(conn)
+        if any(date_ranges):
+            try:
+                _delete_entries_for(date_ranges, conn)
+            except Exception as e:
+                logger.error(e)
+                raise e
+        else:
+            logger.info('[SCAN] No inconsistent date were found')
+
+
+def _delete_entries_for(date_ranges: list[tuple], conn) -> None:
+    for date_range in date_ranges:
+        ini_m, end_m = date_range
+        cur = conn.execute(
+            'SELECT path, task_brasil_status, task_foz_status'
+            f' FROM weather.{STATUS_TABLE}'
+            f" WHERE date = '{end_m}'"
+        )
+        path = cur.fetchone()[0]
+        conn.execute(
+            'DELETE FROM weather.copernicus_brasil'
+            f' WHERE date BETWEEN {ini_m} AND {end_m}'
+        )
+        conn.execute(
+            f'UPDATE weather.{STATUS_TABLE} SET'
+            ' path = NULL,'
+            ' task_brasil_status = NULL'
+            f" WHERE date = '{end_m}'"
+        )
+        Path(path).unlink()
+        logger.warning(f'[SCAN] All data entries for {path} was deleted.')
+
+
+def _get_inconsistent_months(conn) -> list:
+    date_ranges = []
+
+    cur = conn.execute(
+        ' SELECT' 
+        '  res.ini_m,' 
+        '  res.end_m' 
+        ' FROM ('
+        '    SELECT' 
+        "    DATE_TRUNC('month', date) AS ini_m,"
+        "    (DATE_TRUNC('month', date) + interval '1 month - 1 day')::date "
+        'AS end_m,'
+        '    count(*) AS tot'
+        '  FROM weather.copernicus_brasil'   
+        "  GROUP BY DATE_TRUNC('month', date)) AS res" 
+        " WHERE to_char(((res.end_m - res.ini_m) * 5570), 'DD')::integer != res.tot;"
+    )
+    br_dates = cur.fetchall()
+    date_ranges.extend(br_dates)
+
+    cur = conn.execute(
+        ' SELECT' 
+        '  res.ini_m,' 
+        '  res.end_m' 
+        ' FROM ('
+        '    SELECT' 
+        "    DATE_TRUNC('month', date) AS ini_m,"
+        "    (DATE_TRUNC('month', date) + interval '1 month - 1 day')::date "
+        'AS end_m,'
+        '    count(*) AS tot'
+        '  FROM weather.copernicus_foz_do_iguacu'   
+        "  GROUP BY DATE_TRUNC('month', date)) AS res" 
+        " WHERE to_char(((res.end_m - res.ini_m) * 8), 'DD')::integer != res.tot;"
+    )
+    foz_dates = cur.fetchall()
+    for date in foz_dates:
+        if date not in date_ranges:
+            date_ranges.append(date)
+
+    return date_ranges

@@ -1,6 +1,5 @@
 # Create app celery to start _downloader
 from celery import Celery
-from celery.signals import worker_ready
 from celeryapp import delay_controller as delay
 
 app = Celery('beat_weather')
