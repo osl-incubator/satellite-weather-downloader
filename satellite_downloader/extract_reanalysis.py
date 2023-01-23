@@ -177,75 +177,76 @@ def download_br_netcdf(
 
 
 def _format_dates(
-    date: str or datetime.date,
-    date_end: Optional[str or datetime] = None,
+    date: str,
+    date_end: Optional[str] = None,
 ) -> Tuple[Union[str, list], Union[str, list], Union[str, list]]:
     """
     Returns the days, months and years by given a date or
     a date range.
-
     Attrs:
-        date (str or datetime)    : Initial date.
-        date_end (str or datetime): If provided, defines a date
-                                    range to be extracted.
-
+        date (str)    : Initial date.
+        date_end (str): If provided, defines a date range to be extracted.
     Returns:
         year (str or list) : The year(s) related to date provided.
         month (str or list): The month(s) related to date provided.
         day (str or list)  : The day(s) related to date provided.
     """
-    if type(date) == str:
-        if not re.match(date_re_format, date):
-            raise Exception(
-                f"""
-                    Invalid initial date. Format:
-                    {date_iso_format}
-                    {help_d}
-            """
-            )
-        date = datetime.strptime(date, date_format).date()
 
-    if date > max_update_delay.date():
+    ini_date = datetime.strptime(date, date_format)
+    year, month, day = date.split("-")
+
+    if ini_date > max_update_delay:
         raise Exception(
             f"""
                 Invalid date. The last update date is:
                 {max_update_delay_f}
                 {help_d}
-            """
+        """
+        )
+
+    # check for right initial date format
+    if not re.match(date_re_format, date):
+        raise Exception(
+            f"""
+                Invalid initial date. Format:
+                {date_iso_format}
+                {help_d}
+        """
         )
 
     # an end date can be passed to define the date range
     # if there is no end date, only the day specified on
     # `date` will be downloaded
     if date_end:
-        if type(date_end) == str:
-            if not re.match(date_re_format, date_end):
-                raise Exception(
-                    f"""
-                        Invalid end date. Format:
-                        {date_iso_format}
-                        {help_d}
-                    """
-                )
-            date_end = datetime.strptime(date_end, date_format).date()
+        end_date = datetime.strptime(date_end, date_format)
+
+        # check for right end date format
+        if not re.match(date_re_format, date_end):
+            raise Exception(
+                f"""
+                    Invalid end date. Format:
+                    {date_iso_format}
+                    {help_d}
+            """
+            )
 
         # safety limit for Copernicus limit and file size: 1 year
         max_api_query = timedelta(days=367)
-        if date_end - date > max_api_query:
+        if end_date - ini_date > max_api_query:
             raise Exception(
                 f"""
                     Maximum query reached (limit: {max_api_query.days} days).
                     {help_d}
-                """
+            """
             )
 
         # end date can't be bigger than initial date
-        if date_end < date:
+        if end_date < ini_date:
             raise Exception(
                 f"""
                     Please select a valid date range.
                     {help_d}
-                """
+            """
             )
 
         # the date range will be responsible for match the requests
@@ -257,23 +258,22 @@ def _format_dates(
         day_set = set()
         for date in df:
             date_f = str(date)
-            iso_form = date_f.split(' ')[0]
-            year_, month_, day_ = iso_form.split('-')
+            iso_form = date_f.split(" ")[0]
+            year_, month_, day_ = iso_form.split("-")
             year_set.add(year_)
             month_set.add(month_)
             day_set.add(day_)
-
         # parsing the correct types
-        months = list(month_set)
-        days = list(day_set)
+        month = list(month_set)
+        day = list(day_set)
         # sorting them (can't do inline)
-        months.sort()
-        days.sort()
+        month.sort()
+        day.sort()
 
         if len(year_set) == 1:
             year = str(year_set.pop())
         else:
-            year = list(year)
+            year = list(year_set)
             year.sort()
 
-    return year, months, days
+    return year, month, day
