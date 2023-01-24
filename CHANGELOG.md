@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.4.6](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.5...1.4.6) (2023-01-24)
+
+
+### Bug Fixes
+
+* **weather:** fix the raised exception when fetch task fails ([#27](https://github.com/osl-incubator/satellite-weather-downloader/issues/27)) ([59c780c](https://github.com/osl-incubator/satellite-weather-downloader/commit/59c780cfa3f68f7877c661c870929d09bbc1a181))
+
 ## [1.4.5](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.4...1.4.5) (2023-01-24)
 
 
