@@ -1,18 +1,21 @@
 from __future__ import absolute_import
 
-import calendar
-import os
-from datetime import datetime
-from pathlib import Path
-
-import pandas as pd
 from beat import app
+from celery import Celery, states
+from celery.exceptions import Ignore
 from celeryapp.delay_controller import update_task_schedule
-from dotenv import find_dotenv, load_dotenv
+
+import os
+import calendar
+import pandas as pd
+from pathlib import Path
 from loguru import logger
-from satellite_downloader import extract_reanalysis as ex
-from satellite_downloader.utils import connection
+from datetime import datetime
 from sqlalchemy import create_engine
+from dotenv import find_dotenv, load_dotenv
+
+from satellite_downloader.utils import connection
+from satellite_downloader import extract_reanalysis as ex
 
 load_dotenv(find_dotenv())
 
@@ -32,8 +35,8 @@ engine = create_engine(
 )
 
 
-@app.task(name='extract_br_netcdf_monthly', retry_kwargs={'max_retries': 5})
-def download_br_netcdf_monthly() -> None:
+@app.task(bind=True, name='extract_br_netcdf_monthly', retry_kwargs={'max_retries': 5})
+def download_br_netcdf_monthly(self) -> None:
     """
     This task will be responsible for downloading every data in copernicus
     API for Brasil. It will runs continuously until there is no more months
@@ -58,6 +61,11 @@ def download_br_netcdf_monthly() -> None:
                 'Task `extract_br_netcdf_monthly` delay updated'
                 ' to run every day 15 of month'
             )
+            self.update_state(
+                state = states.FAILURE,
+                meta = 'No date found to fetch in status table.'
+            )
+            raise Ignore()
 
     try:
         with engine.connect() as conn:
