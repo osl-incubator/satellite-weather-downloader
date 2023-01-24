@@ -3,13 +3,13 @@ from __future__ import absolute_import
 import calendar
 import os
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 from beat import app
 from celeryapp.delay_controller import update_task_schedule
 from dotenv import find_dotenv, load_dotenv
 from loguru import logger
-from pathlib import Path
 from satellite_downloader import extract_reanalysis as ex
 from satellite_downloader.utils import connection
 from sqlalchemy import create_engine
@@ -342,7 +342,7 @@ def _last_month_range(date: datetime.date) -> tuple:
 
 
 # ---
-# 
+#
 def scan_and_remove_inconsistent_data() -> None:
     # each month has 5570 values per day (copernicus_brasil)
     # each month has 8 values per day (copernicus_foz_do_iguacu)
@@ -352,7 +352,7 @@ def scan_and_remove_inconsistent_data() -> None:
     # - clean path from table
 
     with engine.connect() as conn:
-        date_ranges =_get_inconsistent_months(conn)
+        date_ranges = _get_inconsistent_months(conn)
         if any(date_ranges):
             try:
                 _delete_entries_for(date_ranges, conn)
@@ -394,34 +394,34 @@ def _get_inconsistent_months(conn) -> list:
     date_ranges = []
 
     cur = conn.execute(
-        ' SELECT' 
-        '  res.ini_m,' 
-        '  res.end_m' 
+        ' SELECT'
+        '  res.ini_m,'
+        '  res.end_m'
         ' FROM ('
-        '    SELECT' 
+        '    SELECT'
         "    DATE_TRUNC('month', time) AS ini_m,"
         "    (DATE_TRUNC('month', time) + interval '1 month - 1 day')::date "
         'AS end_m,'
         '    count(*) AS tot'
-        '  FROM weather.copernicus_brasil'   
-        "  GROUP BY DATE_TRUNC('month', time)) AS res" 
+        '  FROM weather.copernicus_brasil'
+        "  GROUP BY DATE_TRUNC('month', time)) AS res"
         " WHERE to_char(((res.end_m - res.ini_m) * 5570), 'DD')::integer != res.tot;"
     )
     br_dates = cur.fetchall()
     date_ranges.extend(br_dates)
 
     cur = conn.execute(
-        ' SELECT' 
-        '  res.ini_m,' 
-        '  res.end_m' 
+        ' SELECT'
+        '  res.ini_m,'
+        '  res.end_m'
         ' FROM ('
-        '    SELECT' 
+        '    SELECT'
         "    DATE_TRUNC('month', time) AS ini_m,"
         "    (DATE_TRUNC('month', time) + interval '1 month - 1 day')::date "
         'AS end_m,'
         '    count(*) AS tot'
-        '  FROM weather.copernicus_foz_do_iguacu'   
-        "  GROUP BY DATE_TRUNC('month', time)) AS res" 
+        '  FROM weather.copernicus_foz_do_iguacu'
+        "  GROUP BY DATE_TRUNC('month', time)) AS res"
         " WHERE to_char(((res.end_m - res.ini_m) * 8), 'DD')::integer != res.tot;"
     )
     foz_dates = cur.fetchall()

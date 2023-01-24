@@ -193,7 +193,7 @@ def _format_dates(
     """
 
     ini_date = datetime.strptime(date, date_format)
-    year, month, day = date.split("-")
+    year, month, day = date.split('-')
 
     if ini_date > max_update_delay:
         raise Exception(
@@ -258,8 +258,8 @@ def _format_dates(
         day_set = set()
         for date in df:
             date_f = str(date)
-            iso_form = date_f.split(" ")[0]
-            year_, month_, day_ = iso_form.split("-")
+            iso_form = date_f.split(' ')[0]
+            year_, month_, day_ = iso_form.split('-')
             year_set.add(year_)
             month_set.add(month_)
             day_set.add(day_)

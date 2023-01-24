@@ -1,15 +1,15 @@
 from __future__ import absolute_import
-from beat import app
 
 import os
-import satellite_weather as sat
-
-from pathlib import Path
-from loguru import logger
 from datetime import datetime
-from sqlalchemy import create_engine
-from dotenv import find_dotenv, load_dotenv
+from pathlib import Path
+
+import satellite_weather as sat
+from beat import app
 from celeryapp.delay_controller import update_task_schedule
+from dotenv import find_dotenv, load_dotenv
+from loguru import logger
+from sqlalchemy import create_engine
 
 load_dotenv(find_dotenv())
 
