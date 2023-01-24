@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from beat import app
-from celery import Celery, states
+from celery import states
 from celery.exceptions import Ignore
 from celeryapp.delay_controller import update_task_schedule
 
@@ -76,7 +76,9 @@ def download_br_netcdf_monthly(self) -> None:
             )
 
         file_path = ex.download_br_netcdf(
-            date=ini_date, date_end=end_date, data_dir=DATA_DIR
+            date=ini_date.strftime('%Y-%m-%d'), 
+            date_end=end_date.strftime('%Y-%m-%d'), 
+            data_dir=DATA_DIR
         )
 
         if not file_path:
