@@ -14,3 +14,4 @@ worker_concurrency = 15
 worker_max_tasks_per_child = 10
 timezone = 'America/Sao_Paulo'
 task_always_eager = False
+task_create_missing_queues = True

@@ -11,9 +11,11 @@ app.conf.beat_schedule = {
     'fetch-copernicus-data-for-brasil': {
         'task': 'fetch_copernicus_brasil',
         'schedule': delay.get_task_schedule('fetch_copernicus_brasil'),
+        'options': {'queue' : 'weather.fetch'},
     },
     'fetch-copernicus-data-for-foz-do-iguacu': {
         'task': 'fetch_copernicus_foz',
         'schedule': delay.get_task_schedule('fetch_copernicus_foz'),
+        'options': {'queue' : 'weather.fetch'},
     },
 }
