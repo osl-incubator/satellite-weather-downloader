@@ -53,12 +53,11 @@ def download_br_netcdf_monthly() -> None:
                 hour=0,
                 day_of_month=15,
             )
+            logger.error(e)
             logger.warning(
                 'Task `extract_br_netcdf_monthly` delay updated'
                 ' to run every day 15 of month'
             )
-            logger.error(e)
-            raise e
 
     try:
         with engine.connect() as conn:
@@ -295,7 +294,7 @@ def _produce_next_month_to_update(conn, schema: str, table: str) -> tuple:
         else:
             return month_first, month_last
     else:
-        raise RuntimeError('Could not generate next date to download')
+        raise ValueError('Could not generate next date to download')
 
 
 def _month_range(date: datetime.date) -> tuple:
