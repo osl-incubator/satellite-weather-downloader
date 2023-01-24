@@ -58,7 +58,7 @@ date_iso_format = 'YYYY-MM-DD'
 max_update_delay = date_today - timedelta(days=8)
 max_update_delay_f = datetime.strftime(max_update_delay, date_format)
 
-
+# TODO: make download_br_netcdf accepts date and datetime types. 
 def download_br_netcdf(
     date: Optional[str] = None,
     date_end: Optional[str] = None,

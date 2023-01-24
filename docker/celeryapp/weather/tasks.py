@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from celery import states
+from celery.exceptions import Ignore
 
 import os
 from datetime import datetime
@@ -25,17 +27,17 @@ engine = create_engine(
 )
 
 
-@app.task(name='fetch_copernicus_brasil')
-def brasil_monthly_data():
-    fetch_cope_monthly_data(task='fetch_copernicus_brasil')
+@app.task(bind=True, name='fetch_copernicus_brasil')
+def brasil_monthly_data(self):
+    fetch_cope_monthly_data(self=self, task='fetch_copernicus_brasil')
 
 
-@app.task(name='fetch_copernicus_foz')
-def foz_do_iguacu_montly_data():
-    fetch_cope_monthly_data(task='fetch_copernicus_foz')
+@app.task(bind=True, name='fetch_copernicus_foz')
+def foz_do_iguacu_montly_data(self):
+    fetch_cope_monthly_data(self=self, task='fetch_copernicus_foz')
 
 
-def fetch_cope_monthly_data(task: str) -> None:
+def fetch_cope_monthly_data(self, task: str) -> None:
     """
     This is the main method for the fetching tasks. It will look up 
     for the next available data to fetch in the status task table. 
@@ -72,7 +74,13 @@ def fetch_cope_monthly_data(task: str) -> None:
             ' to run every day 20 of month'
         )
         logger.error(err)
-        raise err
+
+        self.update_state(
+            state = states.FAILURE,
+            meta = 'No date found to fetch.'
+        )
+
+        raise Ignore()
 
     def change_status_to(status: str) -> str:
         sql = (
@@ -114,10 +122,19 @@ def fetch_cope_monthly_data(task: str) -> None:
             conn.execute(
                 f'DELETE FROM weather.{data_table}'
                  ' WHERE time BETWEEN'
-                f' {datetime(date.year, date.month, 1)} AND {date}'
+                f" '{datetime(date.year, date.month, 1)}' AND '{date}'"
             )
-        Path(path).unlink()
-        raise e
+
+        Path(path).unlink(missing_ok=True)
+
+    finally:
+
+        self.update_state(
+            state = states.FAILURE,
+            meta = 'An error occurred when inserting data into DB.'
+        )
+
+        raise Ignore()
 
     
 def _insert_data_into_table(data: str, table: str, conn) -> None:
