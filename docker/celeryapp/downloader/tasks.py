@@ -35,7 +35,7 @@ engine = create_engine(
 )
 
 
-@app.task(bind=True, name='extract_br_netcdf_monthly', retry_kwargs={'max_retries': 5})
+@app.task(bind=True, name='extract_br_netcdf_monthly', retry_kwargs={'max_retries': 2})
 def download_br_netcdf_monthly(self) -> None:
     """
     This task will be responsible for downloading every data in copernicus
