@@ -26,6 +26,7 @@ repos:
         - file
         - python
       types_or: []
+      target_version: py310
     - entry: flake8
       exclude: ^$
       files: ""

@@ -12,10 +12,12 @@ app.conf.beat_schedule = {
     'download-brasil-copernicus-netcdf': {
         'task': 'extract_br_netcdf_monthly',
         'schedule': delay.get_task_schedule('extract_br_netcdf_monthly'),
+        'options': {'queue': 'downloader.extract'},
     },
     'scan-for-new-dates-to-fetch': {
         'task': 'scan_for_missing_dates',
         'schedule': delay.get_task_schedule('scan_for_missing_dates'),
+        'options': {'queue': 'downloader.extract'},
     },
 }
 
@@ -25,8 +27,12 @@ def at_start(sender, **kwargs):
     """Run tasks at startup"""
     with sender.app.connection() as conn:
         sender.app.send_task(
-            'initialize_satellite_download_db', connection=conn
+            'initialize_satellite_download_db',
+            connection=conn,
+            queue='downloader.extract',
         )
         sender.app.send_task(
-            'create_copernicus_data_tables', connection=conn
+            'create_copernicus_data_tables',
+            connection=conn,
+            queue='downloader.extract',
         )
