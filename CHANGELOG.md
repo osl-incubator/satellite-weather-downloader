@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.4.5](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.4...1.4.5) (2023-01-24)
+
+
+### Bug Fixes
+
+* **celery:** create different queues to their own tasks ([39e4e40](https://github.com/osl-incubator/satellite-weather-downloader/commit/39e4e409076deec4da005cd7437ec54dddaab7d0))
+
 ## [1.4.4](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.3...1.4.4) (2023-01-23)
 
 
