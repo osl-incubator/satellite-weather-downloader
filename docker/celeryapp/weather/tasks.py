@@ -27,12 +27,12 @@ engine = create_engine(
 )
 
 
-@app.task(bind=True, name='fetch_copernicus_brasil')
+@app.task(bind=True, name='fetch_copernicus_brasil', retry_kwargs={'max_retries': 1})
 def brasil_monthly_data(self):
     fetch_cope_monthly_data(self=self, task='fetch_copernicus_brasil')
 
 
-@app.task(bind=True, name='fetch_copernicus_foz')
+@app.task(bind=True, name='fetch_copernicus_foz', retry_kwargs={'max_retries': 1})
 def foz_do_iguacu_montly_data(self):
     fetch_cope_monthly_data(self=self, task='fetch_copernicus_foz')
 

@@ -414,7 +414,7 @@ def _get_inconsistent_months(conn) -> list:
         '    count(*) AS tot'
         '  FROM weather.copernicus_brasil'
         "  GROUP BY DATE_TRUNC('month', time)) AS res"
-        " WHERE to_char(((res.end_m - res.ini_m) * 5570), 'DD')::integer != res.tot;"
+        " WHERE to_char(((res.end_m - res.ini_m + '1 day') * 5570), 'DD')::integer != res.tot;"
     )
     br_dates = cur.fetchall()
     date_ranges.extend(br_dates)
@@ -431,7 +431,7 @@ def _get_inconsistent_months(conn) -> list:
         '    count(*) AS tot'
         '  FROM weather.copernicus_foz_do_iguacu'
         "  GROUP BY DATE_TRUNC('month', time)) AS res"
-        " WHERE to_char(((res.end_m - res.ini_m) * 8), 'DD')::integer != res.tot;"
+        " WHERE to_char(((res.end_m - res.ini_m + '1 day') * 8), 'DD')::integer != res.tot;"
     )
     foz_dates = cur.fetchall()
     for date in foz_dates:

@@ -12,10 +12,10 @@
   {
     "task": "scan_for_missing_dates",
     "crontab": {
-      "minute": "0",
+      "minute": "13",
       "hour": "0",
       "day_of_week": "*",
-      "day_of_month": "14",
+      "day_of_month": "*/14",
       "month_of_year": "*"
     }
   },
