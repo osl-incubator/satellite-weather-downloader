@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.4.8](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.7...1.4.8) (2023-01-25)
+
+
+### Bug Fixes
+
+* **weather:** task was always marking as failed ([#31](https://github.com/osl-incubator/satellite-weather-downloader/issues/31)) ([7fb200e](https://github.com/osl-incubator/satellite-weather-downloader/commit/7fb200e0d67b4638861f880ac6a4dc241e4afa23))
+
 ## [1.4.7](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.6...1.4.7) (2023-01-25)
 
 
