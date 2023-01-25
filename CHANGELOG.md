@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.4.9](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.8...1.4.9) (2023-01-25)
+
+
+### Bug Fixes
+
+* **scan:** missing path from status table ([#32](https://github.com/osl-incubator/satellite-weather-downloader/issues/32)) ([0b9a55e](https://github.com/osl-incubator/satellite-weather-downloader/commit/0b9a55e56528cbb250b2dda561d382376a345570))
+
 ## [1.4.8](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.7...1.4.8) (2023-01-25)
 
 
