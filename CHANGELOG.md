@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.4.7](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.6...1.4.7) (2023-01-25)
+
+
+### Bug Fixes
+
+* **downloader:** inconsistent data scans were getting wrong values ([#30](https://github.com/osl-incubator/satellite-weather-downloader/issues/30)) ([fdde533](https://github.com/osl-incubator/satellite-weather-downloader/commit/fdde533718e64c6a3d03264ad4f8b885f6664b78))
+
 ## [1.4.6](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.5...1.4.6) (2023-01-24)
 
 
