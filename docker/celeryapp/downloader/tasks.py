@@ -171,7 +171,7 @@ def initialize_db() -> None:
 
 
 @app.task(name='create_copernicus_data_tables')
-def initialize_db() -> None:
+def initialize_data_tables() -> None:
     """
     Runs at Beat startup. Create tables if they don't exist.
     Municipal tables will have `copernicus_` prefix added before
@@ -190,6 +190,27 @@ def initialize_db() -> None:
         for mun_name in municipal_tables:
             conn.execute(_create_municipal_table_sql(mun_name))
             logger.info(f'Table copernicus_{mun_name} initialized')
+
+
+@app.task(name='remove_inconsistent_data')
+def scan_and_remove_inconsistent_data() -> None:
+    # each month has 5570 values per day (copernicus_brasil)
+    # each month has 8 values per day (copernicus_foz_do_iguacu)
+    # if month in incomplete:
+    # - drop all rows within this month range
+    # - delete local file
+    # - clean path from table
+
+    with engine.connect() as conn:
+        date_ranges = _get_inconsistent_months(conn)
+        if any(date_ranges):
+            try:
+                _delete_entries_for(date_ranges, conn)
+            except Exception as e:
+                logger.error(e)
+                raise e
+        else:
+            logger.info('[SCAN] No inconsistent date were found')
 
 
 # ---
@@ -351,27 +372,7 @@ def _last_month_range(date: datetime.date) -> tuple:
 
 
 # ---
-#
-def scan_and_remove_inconsistent_data() -> None:
-    # each month has 5570 values per day (copernicus_brasil)
-    # each month has 8 values per day (copernicus_foz_do_iguacu)
-    # if month in incomplete:
-    # - drop all rows within this month range
-    # - delete local file
-    # - clean path from table
-
-    with engine.connect() as conn:
-        date_ranges = _get_inconsistent_months(conn)
-        if any(date_ranges):
-            try:
-                _delete_entries_for(date_ranges, conn)
-            except Exception as e:
-                logger.error(e)
-                raise e
-        else:
-            logger.info('[SCAN] No inconsistent date were found')
-
-
+# remove_inconsistent_data task
 def _delete_entries_for(date_ranges: list[tuple], conn) -> None:
     for date_range in date_ranges:
         ini_m, end_m = date_range
@@ -383,11 +384,11 @@ def _delete_entries_for(date_ranges: list[tuple], conn) -> None:
         path = cur.fetchone()[0]
         conn.execute(
             'DELETE FROM weather.copernicus_brasil'
-            f' WHERE time BETWEEN {ini_m} AND {end_m}'
+            f" WHERE time BETWEEN '{ini_m}' AND '{end_m}'"
         )
         conn.execute(
             'DELETE FROM weather.copernicus_foz_do_iguacu'
-            f' WHERE time BETWEEN {ini_m} AND {end_m}'
+            f" WHERE time BETWEEN '{ini_m}' AND '{end_m}'"
         )
         conn.execute(
             f'UPDATE weather.{STATUS_TABLE} SET'
@@ -414,10 +415,17 @@ def _get_inconsistent_months(conn) -> list:
         '    count(*) AS tot'
         '  FROM weather.copernicus_brasil'
         "  GROUP BY DATE_TRUNC('month', time)) AS res"
-        " WHERE to_char(((res.end_m - res.ini_m) * 5570), 'DD')::integer != res.tot;"
+        " WHERE to_char(((res.end_m - res.ini_m + '1 day') * 5570), 'DD')::integer != res.tot;"
     )
     br_dates = cur.fetchall()
     date_ranges.extend(br_dates)
+
+    normalize = lambda dt: (
+        datetime(dt[0].year, dt[0].month, dt[0].day),
+        datetime(dt[1].year, dt[1].month, dt[1].day).date()
+    )
+
+    date_ranges = [normalize(dt) for dt in date_ranges]
 
     cur = conn.execute(
         ' SELECT'
@@ -431,7 +439,7 @@ def _get_inconsistent_months(conn) -> list:
         '    count(*) AS tot'
         '  FROM weather.copernicus_foz_do_iguacu'
         "  GROUP BY DATE_TRUNC('month', time)) AS res"
-        " WHERE to_char(((res.end_m - res.ini_m) * 8), 'DD')::integer != res.tot;"
+        " WHERE to_char(((res.end_m - res.ini_m + '1 day') * 8), 'DD')::integer != res.tot;"
     )
     foz_dates = cur.fetchall()
     for date in foz_dates:

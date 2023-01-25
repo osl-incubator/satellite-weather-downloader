@@ -13,7 +13,7 @@ $ pip install satellite-weather-downloader
 ```
 
 ## Requirements
-For downloading data from Copernicus API, it is required an account. The credentials for your account can be found in Copernicus' User Page, in the `API key` section. User UID and API Key will be needed in order to request data. Paste them when asked in `satellite_downloader` connection methods.
+For downloading data from [Copernicus API](https://cds.climate.copernicus.eu/#!/home), it is required an account. The credentials for your account can be found in Copernicus' User Page, in the `API key` section. User UID and API Key will be needed in order to request data. Paste them when asked in `satellite_downloader` connection methods.
 
 
 ## Notes
@@ -33,12 +33,12 @@ rio_dataframe = rio_dataset.to_dataframe()
 ```
 
 It is also possible to create a dataframe directly from the National-wide dataset:
-```
+``` python
 br_dataset.copebr.to_dataframe(3304557)
 ```
 
 All Xarray methods are extended when using the `copebr` extension:
-```
+``` python
 rio_dataset.precip_med.to_array()
 rio_dataset.temp_med.plot()
 ```

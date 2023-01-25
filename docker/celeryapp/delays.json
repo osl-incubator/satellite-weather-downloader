@@ -13,9 +13,19 @@
     "task": "scan_for_missing_dates",
     "crontab": {
       "minute": "0",
-      "hour": "0",
+      "hour": "15",
       "day_of_week": "*",
-      "day_of_month": "14",
+      "day_of_month": "*/14",
+      "month_of_year": "*"
+    }
+  },
+  {
+    "task": "remove_inconsistent_data",
+    "crontab": {
+      "minute": "0",
+      "hour": "13",
+      "day_of_week": "*",
+      "day_of_month": "*/14",
       "month_of_year": "*"
     }
   },
