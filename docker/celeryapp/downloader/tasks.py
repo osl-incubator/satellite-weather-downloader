@@ -396,8 +396,9 @@ def _delete_entries_for(date_ranges: list[tuple], conn) -> None:
             ' task_brasil_status = NULL'
             f" WHERE date = '{end_m}'"
         )
-        Path(path).unlink()
-        logger.warning(f'[SCAN] All data entries for {path} was deleted.')
+        if path:
+            Path(path).unlink()
+            logger.warning(f'[SCAN] All data entries for {path} was deleted.')
 
 
 def _get_inconsistent_months(conn) -> list:
