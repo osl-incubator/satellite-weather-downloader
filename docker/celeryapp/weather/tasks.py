@@ -27,12 +27,12 @@ engine = create_engine(
 )
 
 
-@app.task(bind=True, name='fetch_copernicus_brasil', retry_kwargs={'max_retries': 1})
+@app.task(bind=True, name='fetch_copernicus_brasil', retry_kwargs={'max_retries': 0})
 def brasil_monthly_data(self):
     fetch_cope_monthly_data(self=self, task='fetch_copernicus_brasil')
 
 
-@app.task(bind=True, name='fetch_copernicus_foz', retry_kwargs={'max_retries': 1})
+@app.task(bind=True, name='fetch_copernicus_foz', retry_kwargs={'max_retries': 0})
 def foz_do_iguacu_montly_data(self):
     fetch_cope_monthly_data(self=self, task='fetch_copernicus_foz')
 
@@ -126,15 +126,6 @@ def fetch_cope_monthly_data(self, task: str) -> None:
             )
 
         Path(path).unlink(missing_ok=True)
-
-    finally:
-
-        self.update_state(
-            state = states.FAILURE,
-            meta = 'An error occurred when inserting data into DB.'
-        )
-
-        raise Ignore()
 
     
 def _insert_data_into_table(data: str, table: str, conn) -> None:
