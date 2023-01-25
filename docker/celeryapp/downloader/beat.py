@@ -36,3 +36,8 @@ def at_start(sender, **kwargs):
             connection=conn,
             queue='downloader.extract',
         )
+        sender.app.send_task(
+            'remove_inconsistent_data',
+            connection=conn,
+            queue='downloader.extract',
+        )
