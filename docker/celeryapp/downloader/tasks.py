@@ -419,6 +419,13 @@ def _get_inconsistent_months(conn) -> list:
     br_dates = cur.fetchall()
     date_ranges.extend(br_dates)
 
+    normalize = lambda dt: (
+        datetime(dt[0].year, dt[0].month, dt[0].day),
+        datetime(dt[1].year, dt[1].month, dt[1].day).date()
+    )
+
+    date_ranges = [normalize(dt) for dt in date_ranges]
+
     cur = conn.execute(
         ' SELECT'
         '  res.ini_m,'
