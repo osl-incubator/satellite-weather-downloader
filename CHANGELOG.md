@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.4.10](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.9...1.4.10) (2023-01-26)
+
+
+### Bug Fixes
+
+* **scanner:** make scanner more flexible and remove its coupling ([#36](https://github.com/osl-incubator/satellite-weather-downloader/issues/36)) ([56e1f57](https://github.com/osl-incubator/satellite-weather-downloader/commit/56e1f57cfe04783f82308e2850aa413a398c1d55))
+
 ## [1.4.9](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.8...1.4.9) (2023-01-25)
 
 
