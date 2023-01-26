@@ -13,7 +13,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from dotenv import find_dotenv, load_dotenv
 
-from satellite_downloader.utils import connection
+from satellite_downloader import connection
 from satellite_downloader import extract_reanalysis as ex
 
 load_dotenv(find_dotenv())
