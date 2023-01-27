@@ -1,3 +1,4 @@
+import calendar
 from datetime import datetime, timedelta
 import re
 from prompt_toolkit import PromptSession
@@ -150,7 +151,7 @@ def reanalysis_cli():
     variable = _variable_prompt()
     year = _year_prompt()
     month = _month_prompt(year)
-    day = _day_prompt()
+    day = _day_prompt(year, month)
     time = _time_prompt()
     print(product_type)
     print(variable)
@@ -324,7 +325,7 @@ def _month_prompt(year=None):
         return sorted(list(map(lambda s: f'{int(s):02d}', months)))
 
 
-def _day_prompt(month=None):
+def _day_prompt(year=None, month=None):
     vars = api_vars.DAY
     default = DefaultDate().day
 
@@ -341,14 +342,23 @@ def _day_prompt(month=None):
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=('Select a days range using (-): 1-31')
+        rprompt=('Select a days range using (-): 1-31 or `all`')
     )
 
     if not session:
         return default
 
     elif session == 'all' or session.replace('\n', '') == 'all':
-        ... # calculate month days
+        days = set()
+        year = [year] if isinstance(year, str) else year
+        month = [month] if isinstance(month, str) else month
+        for year in year:
+            for month in month:
+                if f'{year}-{month}' > f'{DefaultDate().year}-{DefaultDate().month}':
+                    continue
+                _, end = calendar.monthrange(int(year), int(month))
+                [days.add(day) for day in list(range(1, end+1))]
+        return sorted(list(map(lambda s: f'{int(s):02d}', days)))
     
     elif '-' in session:
         days = api_vars.str_range(str(session).replace('\n', '').strip())
