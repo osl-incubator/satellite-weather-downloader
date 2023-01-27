@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import re
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.validation import Validator, ValidationError
@@ -11,6 +12,10 @@ CLI = PromptSession()
 
 
 class VarValidator(Validator):
+    """ 
+    This class validates each variable at runtime.
+    #TODO: docstring
+    """
     var_type: str = None
 
     vars = dict(
@@ -53,8 +58,8 @@ class VarValidator(Validator):
                 if not var:
                     pass
                 else:
-                    vars = TO_LIST(var)
-                    for v in vars:
+                    variables = TO_LIST(var)
+                    for v in variables:
                         if v not in self.vars['variable']:
                             error.message += ' Type only a variable name by line.'
                             raise error
@@ -118,19 +123,41 @@ class VarValidator(Validator):
                                 f' {min(api_vars.DAY)} and {max(api_vars.DAY)}.'
                             )
                             raise error
+            case 'time':
+                if not var:
+                    pass
+                elif var == 'all' or var.replace('\n', '') == 'all':
+                    pass
+                else:
+                    times = _time_regex_search(var)
+                    if times:
+                        for time in times:
+                            if time not in self.vars['time']:
+                                error.message = (
+                                    f'{time} is invalid, please select between'
+                                    f' {min(api_vars.TIME)} and {max(api_vars.TIME)}'
+                                )
+                                raise error
+                    else:
+                        error.message = (
+                            f'{var} expression is incorrect. Format: `ini:end, _ hours`'
+                        )
+
 
 
 def reanalysis_cli():
-    # product_type = _product_type_prompt()
-    # variable = _variable_prompt()
+    product_type = _product_type_prompt()
+    variable = _variable_prompt()
     year = _year_prompt()
     month = _month_prompt(year)
     day = _day_prompt()
-    # print(product_type)
-    # print(variable)
+    time = _time_prompt()
+    print(product_type)
+    print(variable)
     print(year)
     print(month)
     print(day)
+    print(time)
     reanalysis_cli()
 
 
@@ -349,7 +376,7 @@ def _time_prompt():
 
     def prompt_continuation(width, line_number, is_soft_wrap):
         return ('> ')
-
+    
     session = CLI.prompt(
         f"Select the Hour(s) or Interval {default}:\n> ",
         completer=WordCompleter(vars),
@@ -360,26 +387,76 @@ def _time_prompt():
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=('Type the hour or select a interval with `_ hours`')
+        rprompt=('Type the hour or select skipping `_ hours`. Default: `3 hours`')
     )
 
     if not session:
         return default
 
-    elif session == 'all':
+    elif session == 'all' or session.replace('\n', '') == 'all':
         return vars
     
-    elif 'hours' in session:
-        days = api_vars.str_range(str(session).replace('\n', '').strip())
-        return sorted(list(map(lambda s: f'{int(s):02d}', days)))
-
     else:
-        days = TO_LIST(session)
-        if len(days) == 1:
-            return f'{int(days[0]):02d}'
-        return sorted(list(map(lambda s: f'{int(s):02d}', days)))
+        times = _time_regex_search(session)
+        if len(times) == 1:
+            return times[0]
+        return times
+
+
+def _time_regex_search(text: str):
+    times: list = api_vars.TIME
+
+    regex = re.compile(
+        '^[\n]*?((\d?\d:\d\d[\n]?)*?-?(\d\d:\d\d?)?)?,? ?(\d\d?)? ?[hours]*?[\n]*?$'
+    )
+
+    matches: list = re.match(regex, text).groups()
+
+    if any(matches):
+        if '\n' in matches[0][2:-2]:
+            return sorted(list(set(str(matches[0]).split('\n'))))
+        expr = [match for match in matches[1:] if match]
+        if len(expr) == 1:
+            if expr[0] in times:
+                return list(expr[0])
+            elif str(expr[0]).isdigit():
+                return times[::int(expr[0])]
+            else:
+                return None
+        elif len(expr) == 2:
+            if expr[0] in times and expr[1] in times:
+                ini: int = times.index(expr[0])
+                end: int = times.index(expr[1])
+                if ini < end:
+                    return times[ini:end+1] # Inclusive
+                elif ini > end:
+                    res = []
+                    res.extend(times[ini:])
+                    res.extend(times[:end+1])
+                    return sorted(res)
+                else:
+                    return None
+            else:
+                return None
+        elif len(expr) == 3:
+            if expr[0] in times and expr[1] in times and str(expr[2]).isdigit():
+                ini: int = times.index(expr[0])
+                end: int = times.index(expr[1])
+                step: int = int(expr[2])
+                if ini < end:
+                    return times[ini:end+1:step]
+                elif ini > end:
+                    res = []
+                    res.extend(times[ini:])
+                    res.extend(times[:end+1])
+                    return sorted(res)[::step]
+                else:
+                    return None
+            else:
+                return None
+        else:
+            return None
 
 
 if __name__ == "__main__":
-    
     reanalysis_cli()
