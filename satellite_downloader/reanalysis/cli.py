@@ -59,54 +59,37 @@ class VarValidator(Validator):
                             error.message += ' Type only a variable name by line.'
                             raise error
             case 'year':
+                years = []
                 if not var:
                     pass
                 elif '-' in var:
-                    if self._not_digit(var):
-                        error.message += self._not_digit(var)
-                        raise error
                     years = api_vars.str_range(var)
-                    for year in years:
-                        if year not in self.vars['year']:
-                            error.message = (
-                                'Invalid years range, please select between'
-                                f' {min(api_vars.YEAR)} and {max(api_vars.YEAR)}.'
-                            )
-                            raise error
                 else:
-                    if self._not_digit(var):
-                        error.message += self._not_digit(var)
-                        raise error
                     years = TO_LIST(var)
-                    for year in years:
-                        if year not in self.vars['year']:
-                            error.message = (
-                                f'`{year}` is invalid, please select between'
-                                f' {min(api_vars.YEAR)} and {max(api_vars.YEAR)}.'
-                            )
-                            raise error
+                if self._not_digit(var):
+                    error.message += self._not_digit(var)
+                    raise error                
+                for year in years:
+                    if year not in self.vars['year']:
+                        error.message = (
+                            f'`{year}` is invalid, please select between'
+                            f' {min(api_vars.YEAR)} and {max(api_vars.YEAR)}.'
+                        )
+                        raise error
             case 'month':
+                months = []
                 if not var:
                     pass
-                elif var == 'all':
-                    pass
                 elif '-' in var:
-                    if self._not_digit(var):
-                        error.message += self._not_digit(var)
-                        raise error
                     months = api_vars.str_range(var)
-                    for month in months:
-                        if f'{int(month):02d}' not in self.vars['month']:
-                            error.message = (
-                                'Invalid months range, please select between'
-                                f' {min(api_vars.MONTH)} and {max(api_vars.MONTH)}.'
-                            )
-                            raise error  
                 else:
-                    if self._not_digit(var):
-                        error.message += self._not_digit(var)
-                        raise error
-                    months = TO_LIST(var)                        
+                    months = TO_LIST(var)
+                if var == 'all' or var.replace('\n', '') == 'all':
+                    pass
+                elif self._not_digit(var):
+                    error.message += self._not_digit(var)
+                    raise error
+                else:
                     for month in months:
                         if f'{int(month):02d}' not in self.vars['month']:
                             error.message = (
@@ -115,27 +98,19 @@ class VarValidator(Validator):
                             )
                             raise error
             case 'day':
+                days = []
                 if not var:
                     pass
-                elif var == 'all':
-                    pass
                 elif '-' in var:
-                    if self._not_digit(var):
-                        error.message += self._not_digit(var)
-                        raise error
                     days = api_vars.str_range(var)
-                    for day in days:
-                        if f'{int(day):02d}' not in self.vars['day']:
-                            error.message = (
-                                'Invalid day range, please select between'
-                                f' {min(api_vars.DAY)} and {max(api_vars.DAY)}.'
-                            )
-                            raise error 
                 else:
-                    if self._not_digit(var):
-                        error.message += self._not_digit(var)
-                        raise error
-                    days = TO_LIST(var)                        
+                    days = TO_LIST(var)
+                if var == 'all' or var.replace('\n', '') == 'all':
+                    pass
+                elif self._not_digit(var):
+                    error.message += self._not_digit(var)
+                    raise error   
+                else:                    
                     for day in days:
                         if f'{int(day):02d}' not in self.vars['day']:
                             error.message = (
@@ -143,7 +118,6 @@ class VarValidator(Validator):
                                 f' {min(api_vars.DAY)} and {max(api_vars.DAY)}.'
                             )
                             raise error
-
 
 
 def reanalysis_cli():
@@ -304,7 +278,7 @@ def _month_prompt(year=None):
     if not session:
         return default
     
-    elif session == 'all':
+    elif session == 'all' or session.replace('\n', '') == 'all':
         if year == DefaultDate().year:
             year_months = api_vars.str_range(f'01-{DefaultDate().month}')
             if len(year_months) == 1:
@@ -346,10 +320,56 @@ def _day_prompt(month=None):
     if not session:
         return default
 
-    elif session == 'all':
+    elif session == 'all' or session.replace('\n', '') == 'all':
         ... # calculate month days
     
     elif '-' in session:
+        days = api_vars.str_range(str(session).replace('\n', '').strip())
+        return sorted(list(map(lambda s: f'{int(s):02d}', days)))
+
+    else:
+        days = TO_LIST(session)
+        if len(days) == 1:
+            return f'{int(days[0]):02d}'
+        return sorted(list(map(lambda s: f'{int(s):02d}', days)))
+
+
+def _time_prompt():
+    vars = api_vars.TIME
+    default = [
+        '00:00',
+        '03:00',
+        '06:00',
+        '09:00',
+        '12:00',
+        '15:00',
+        '18:00',
+        '21:00',
+    ]
+
+    def prompt_continuation(width, line_number, is_soft_wrap):
+        return ('> ')
+
+    session = CLI.prompt(
+        f"Select the Hour(s) or Interval {default}:\n> ",
+        completer=WordCompleter(vars),
+        complete_while_typing=True,
+        placeholder='',
+        validator=VarValidator('time'),
+        validate_while_typing=False,
+        multiline=True,
+        prompt_continuation=prompt_continuation,
+        mouse_support=True,
+        rprompt=('Type the hour or select a interval with `_ hours`')
+    )
+
+    if not session:
+        return default
+
+    elif session == 'all':
+        return vars
+    
+    elif 'hours' in session:
         days = api_vars.str_range(str(session).replace('\n', '').strip())
         return sorted(list(map(lambda s: f'{int(s):02d}', days)))
 
