@@ -150,7 +150,7 @@ def reanalysis_cli():
     # product_type = _product_type_prompt()
     # variable = _variable_prompt()
     year = _year_prompt()
-    month = _month_prompt()
+    month = _month_prompt(year)
     day = _day_prompt()
     # print(product_type)
     # print(variable)
@@ -182,6 +182,10 @@ class DefaultDate:
     @property
     def day(self):
         return f'{self.delay.day:02d}'
+
+    @property
+    def last_update(self):
+        return self.delay.date().strftime('%Y-%m-%d')
 
 
 def _product_type_prompt():
@@ -297,14 +301,15 @@ def _month_prompt(year=None):
         rprompt=('Type `all` to select the entire year')
     )
 
-    if len(year) == 1:
-        if not DefaultDate().validate_month(session):
-
-
     if not session:
         return default
     
     elif session == 'all':
+        if year == DefaultDate().year:
+            year_months = api_vars.str_range(f'01-{DefaultDate().month}')
+            if len(year_months) == 1:
+                return f'{int(year_months[0]):02d}'
+            return year_months
         return vars
 
     elif '-' in session:
