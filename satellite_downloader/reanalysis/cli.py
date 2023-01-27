@@ -3,6 +3,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.validation import Validator, ValidationError
 from prompt_toolkit import print_formatted_text as print
+from loguru import logger
 import api_vars
 
 TO_LIST = lambda v: ''.join(list(v)).replace('\n', ' ').strip().split(' ')
@@ -24,6 +25,15 @@ class VarValidator(Validator):
 
     def __init__(self, var_type):
         self.var_type = var_type
+
+    def _not_digit(self, text: str):
+        digits = list(text.replace('\n', '').strip('-').strip())
+        for d in digits:
+            if not d.isdigit():
+                if d == '-':
+                    continue
+                else:
+                    return f'`{d}` is not a valid digit'
 
 
     def validate(self, document):
@@ -52,38 +62,102 @@ class VarValidator(Validator):
                 if not var:
                     pass
                 elif '-' in var:
-                    digits = list(var.strip('\n').strip('-').strip())
-                    for d in digits:
-                        if not d.isdigit():
-                            if d == '-':
-                                continue
-                            else:
-                                error.message = f'`{d}` is not a valid digit'
-                                raise error
-                    years = api_vars.years_range(var)
+                    if self._not_digit(var):
+                        error.message += self._not_digit(var)
+                        raise error
+                    years = api_vars.str_range(var)
                     for year in years:
                         if year not in self.vars['year']:
                             error.message = (
-                                'Invalid date range, please select years between'
+                                'Invalid years range, please select between'
                                 f' {min(api_vars.YEAR)} and {max(api_vars.YEAR)}.'
                             )
                             raise error
                 else:
+                    if self._not_digit(var):
+                        error.message += self._not_digit(var)
+                        raise error
                     years = TO_LIST(var)
                     for year in years:
                         if year not in self.vars['year']:
-                            error.message += ' Type only a year by line.'
+                            error.message = (
+                                f'`{year}` is invalid, please select between'
+                                f' {min(api_vars.YEAR)} and {max(api_vars.YEAR)}.'
+                            )
+                            raise error
+            case 'month':
+                if not var:
+                    pass
+                elif var == 'all':
+                    pass
+                elif '-' in var:
+                    if self._not_digit(var):
+                        error.message += self._not_digit(var)
+                        raise error
+                    months = api_vars.str_range(var)
+                    for month in months:
+                        if f'{int(month):02d}' not in self.vars['month']:
+                            error.message = (
+                                'Invalid months range, please select between'
+                                f' {min(api_vars.MONTH)} and {max(api_vars.MONTH)}.'
+                            )
+                            raise error  
+                else:
+                    if self._not_digit(var):
+                        error.message += self._not_digit(var)
+                        raise error
+                    months = TO_LIST(var)                        
+                    for month in months:
+                        if f'{int(month):02d}' not in self.vars['month']:
+                            error.message = (
+                                f'`{month}` is invalid, please select between'
+                                f' {min(api_vars.MONTH)} and {max(api_vars.MONTH)}.'
+                            )
+                            raise error
+            case 'day':
+                if not var:
+                    pass
+                elif var == 'all':
+                    pass
+                elif '-' in var:
+                    if self._not_digit(var):
+                        error.message += self._not_digit(var)
+                        raise error
+                    days = api_vars.str_range(var)
+                    for day in days:
+                        if f'{int(day):02d}' not in self.vars['day']:
+                            error.message = (
+                                'Invalid day range, please select between'
+                                f' {min(api_vars.DAY)} and {max(api_vars.DAY)}.'
+                            )
+                            raise error 
+                else:
+                    if self._not_digit(var):
+                        error.message += self._not_digit(var)
+                        raise error
+                    days = TO_LIST(var)                        
+                    for day in days:
+                        if f'{int(day):02d}' not in self.vars['day']:
+                            error.message = (
+                                f'`{day}` is invalid, please select between'
+                                f' {min(api_vars.DAY)} and {max(api_vars.DAY)}.'
+                            )
                             raise error
 
 
 
 def reanalysis_cli():
-    product_type = _product_type_prompt()
-    variable = _variable_prompt()
+    # product_type = _product_type_prompt()
+    # variable = _variable_prompt()
     year = _year_prompt()
-    print(product_type)
-    print(variable)
+    month = _month_prompt()
+    day = _day_prompt()
+    # print(product_type)
+    # print(variable)
     print(year)
+    print(month)
+    print(day)
+    reanalysis_cli()
 
 
 class DefaultDate:
@@ -135,7 +209,8 @@ def _product_type_prompt():
 
 
 def _variable_prompt():
-    vars = api_vars.VARIABLE
+    vars: list = api_vars.VARIABLE
+
     defaults = [
         '2m_temperature',
         'total_precipitation',
@@ -186,14 +261,14 @@ def _year_prompt():
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=('You can select a range using (-): 2020-2023')
+        rprompt=('Select a year range using (-): 2020-2023')
     )
 
     if not session:
         return default
     
     elif '-' in session:
-        return api_vars.years_range(str(session).replace('\n', '').strip())
+        return api_vars.str_range(str(session).replace('\n', '').strip())
 
     else:
         years = TO_LIST(session)
@@ -202,5 +277,84 @@ def _year_prompt():
         return years
 
 
+def _month_prompt(year=None):
+    vars = api_vars.MONTH
+    default = DefaultDate().month
+
+    def prompt_continuation(width, line_number, is_soft_wrap):
+        return ('> ')
+
+    session = CLI.prompt(
+        f"Select the Month(s) ['{default}']:\n> ",
+        completer=WordCompleter(vars),
+        complete_while_typing=True,
+        placeholder=default,
+        validator=VarValidator('month'),
+        validate_while_typing=False,
+        multiline=True,
+        prompt_continuation=prompt_continuation,
+        mouse_support=True,
+        rprompt=('Type `all` to select the entire year')
+    )
+
+    if len(year) == 1:
+        if not DefaultDate().validate_month(session):
+
+
+    if not session:
+        return default
+    
+    elif session == 'all':
+        return vars
+
+    elif '-' in session:
+        months = api_vars.str_range(str(session).replace('\n', '').strip())
+        return sorted(list(map(lambda s: f'{int(s):02d}', months)))
+
+    else:
+        months = TO_LIST(session)
+        if len(months) == 1:
+            return f'{int(months[0]):02d}'
+        return sorted(list(map(lambda s: f'{int(s):02d}', months)))
+
+
+def _day_prompt(month=None):
+    vars = api_vars.DAY
+    default = DefaultDate().day
+
+    def prompt_continuation(width, line_number, is_soft_wrap):
+        return ('> ')
+
+    session = CLI.prompt(
+        f"Select the Day(s) ['{default}']:\n> ",
+        completer=WordCompleter(vars),
+        complete_while_typing=True,
+        placeholder=default,
+        validator=VarValidator('day'),
+        validate_while_typing=False,
+        multiline=True,
+        prompt_continuation=prompt_continuation,
+        mouse_support=True,
+        rprompt=('Select a days range using (-): 1-31')
+    )
+
+    if not session:
+        return default
+
+    elif session == 'all':
+        ... # calculate month days
+    
+    elif '-' in session:
+        days = api_vars.str_range(str(session).replace('\n', '').strip())
+        return sorted(list(map(lambda s: f'{int(s):02d}', days)))
+
+    else:
+        days = TO_LIST(session)
+        if len(days) == 1:
+            return f'{int(days[0]):02d}'
+        return sorted(list(map(lambda s: f'{int(s):02d}', days)))
+
+
 if __name__ == "__main__":
+    
     reanalysis_cli()

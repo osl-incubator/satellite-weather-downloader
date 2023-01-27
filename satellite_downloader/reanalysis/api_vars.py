@@ -1,19 +1,18 @@
 from datetime import datetime
 
-def years_range(range: str) -> list:
+def str_range(range: str) -> list:
     """ 
-    Returns a list of sorted years given a str range.
-    Usage: years_range('2020-2023') 
+    Returns a list of sorted digits given a str range with `-`.
+    Usage: str_range('2023-2020') 
     Output: ['2020', '2021', '2022', '2023']
     """
-    ini_year, end_year = sorted(map(int, range.split('-')))
-    years = []
+    ini, end = sorted(map(int, range.split('-')))
+    range_list = []
+    while ini <= end:
+        range_list.append(str(ini))
+        ini += 1
 
-    while ini_year <= end_year:
-        years.append(str(ini_year))
-        ini_year += 1
-
-    return years
+    return range_list
 
 
 NAME = 'reanalysis-era5-single-levels'
@@ -290,7 +289,7 @@ VARIABLE = [
     'zero_degree_level',
 ]
 
-YEAR = years_range(f'{datetime.now().year}-1959')
+YEAR = sorted(str_range(f'{datetime.now().year}-1959'), reverse=True)
 
 MONTH = [
     '01',
