@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+# [1.5.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.10...1.5.0) (2023-01-30)
+
+
+### Features
+
+* **cli:** start working in CLI menu to API request ([#37](https://github.com/osl-incubator/satellite-weather-downloader/issues/37)) ([b3b43ad](https://github.com/osl-incubator/satellite-weather-downloader/commit/b3b43ad226b410cb20ac4f73f0962f06eb2f36ae))
+
 ## [1.4.10](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.4.9...1.4.10) (2023-01-26)
 
 
