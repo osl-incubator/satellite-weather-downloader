@@ -38,9 +38,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
+import connection
 import pandas as pd
-
-from .utils import connection
 
 BR_AREA = {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
 DATA_DIR = Path.home() / 'copernicus_data'
@@ -58,7 +57,7 @@ date_iso_format = 'YYYY-MM-DD'
 max_update_delay = date_today - timedelta(days=8)
 max_update_delay_f = datetime.strftime(max_update_delay, date_format)
 
-# TODO: make download_br_netcdf accepts date and datetime types. 
+# TODO: make download_br_netcdf accepts date and datetime types.
 def download_br_netcdf(
     date: Optional[str] = None,
     date_end: Optional[str] = None,

@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from celery import states
-from celery.exceptions import Ignore
 
 import os
 from datetime import datetime
@@ -8,6 +6,8 @@ from pathlib import Path
 
 import satellite_weather as sat
 from beat import app
+from celery import states
+from celery.exceptions import Ignore
 from celeryapp.delay_controller import update_task_schedule
 from dotenv import find_dotenv, load_dotenv
 from loguru import logger

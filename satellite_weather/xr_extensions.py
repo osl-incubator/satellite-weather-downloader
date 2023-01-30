@@ -79,6 +79,7 @@ class CopeBRDatasetExtension:
         if raw:
             return geocode_ds
 
+        geocode_ds = geocode_ds.sortby('time')
         gb = geocode_ds.resample(time='1D')
 
         gmin, gmean, gmax = (
