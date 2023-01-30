@@ -1,32 +1,71 @@
 import calendar
-from datetime import datetime, timedelta
 import re
-from prompt_toolkit import PromptSession
-from prompt_toolkit.completion import WordCompleter
-from prompt_toolkit.validation import Validator, ValidationError
-from prompt_toolkit import print_formatted_text as print
+from datetime import datetime, timedelta
+from typing import Optional, Union
+
 from loguru import logger
-import api_vars
+from prompt_toolkit import PromptSession
+from prompt_toolkit import print_formatted_text as print
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.validation import ValidationError, Validator
+
+from . import api_vars
 
 TO_LIST = lambda v: ''.join(list(v)).replace('\n', ' ').strip().split(' ')
-CLI = PromptSession()
+SESSION = PromptSession()
+
+
+def reanalysis_prompt(
+    product_type: Optional[str] = None,
+    variable: Optional[Union[str, list]] = None,
+    year: Optional[Union[str, list]] = None,
+    month: Optional[Union[str, list]] = None,
+    day: Optional[Union[str, list]] = None,
+    time: Optional[Union[str, list]] = None,
+    format: Optional[str] = None,
+):
+    try:
+        product_type = _product_type_prompt() if not product_type else product_type
+        variable = _variable_prompt() if not variable else variable
+        year = _year_prompt() if not year else year
+        month = _month_prompt(year) if not month else month
+        day = _day_prompt(year, month) if not day else day
+        time = _time_prompt() if not time else time
+        format = _format_prompt() if not format else format
+
+        options = dict(
+            product_type=product_type,
+            variable=variable,
+            year=year,
+            month=month,
+            day=day,
+            time=time,
+            format=format,
+        )
+
+    except KeyboardInterrupt:
+        print('exit')
+        return None
+
+    return options
 
 
 class VarValidator(Validator):
-    """ 
+    """
     This class validates each variable at runtime.
     #TODO: docstring
     """
+
     var_type: str = None
 
     vars = dict(
-        product_type = api_vars.PRODUCT_TYPE,
-        variable = api_vars.VARIABLE,
-        year = api_vars.YEAR,
-        month = api_vars.MONTH,
-        day = api_vars.DAY,
-        time = api_vars.TIME,
-        format = api_vars.FORMAT
+        product_type=api_vars.PRODUCT_TYPE,
+        variable=api_vars.VARIABLE,
+        year=api_vars.YEAR,
+        month=api_vars.MONTH,
+        day=api_vars.DAY,
+        time=api_vars.TIME,
+        format=api_vars.FORMAT,
     )
 
     def __init__(self, var_type):
@@ -41,12 +80,11 @@ class VarValidator(Validator):
                 else:
                     return f'`{d}` is not a valid digit'
 
-
     def validate(self, document):
         var = document.text
         error = ValidationError(
             message='Invalid input. Press <Tab> to display all options.',
-            cursor_position=0
+            cursor_position=0,
         )
 
         match self.var_type:
@@ -62,7 +100,9 @@ class VarValidator(Validator):
                     variables = TO_LIST(var)
                     for v in variables:
                         if v not in self.vars['variable']:
-                            error.message += ' Type only a variable name by line.'
+                            error.message += (
+                                ' Type only a variable name by line.'
+                            )
                             raise error
             case 'year':
                 years = []
@@ -74,7 +114,7 @@ class VarValidator(Validator):
                     years = TO_LIST(var)
                 if self._not_digit(var):
                     error.message += self._not_digit(var)
-                    raise error                
+                    raise error
                 for year in years:
                     if year not in self.vars['year']:
                         error.message = (
@@ -115,8 +155,8 @@ class VarValidator(Validator):
                     pass
                 elif self._not_digit(var):
                     error.message += self._not_digit(var)
-                    raise error   
-                else:                    
+                    raise error
+                else:
                     for day in days:
                         if f'{int(day):02d}' not in self.vars['day']:
                             error.message = (
@@ -140,43 +180,31 @@ class VarValidator(Validator):
                                 )
                                 raise error
                     else:
-                        error.message = (
-                            f'{var} expression is incorrect. Format: `ini:end, _ hours`'
-                        )
-
-
-
-def reanalysis_cli():
-    product_type = _product_type_prompt()
-    variable = _variable_prompt()
-    year = _year_prompt()
-    month = _month_prompt(year)
-    day = _day_prompt(year, month)
-    time = _time_prompt()
-    print(product_type)
-    print(variable)
-    print(year)
-    print(month)
-    print(day)
-    print(time)
-    reanalysis_cli()
+                        error.message = f'{var} expression is incorrect. Format: `ini:end, _ hours`'
+            case 'format':
+                if not var:
+                    pass
+                elif var not in self.vars['format']:
+                    error.message += 'Select between grib and netcdf'
+                    raise error
 
 
 class DefaultDate:
-    """ 
+    """
     Ensures the default date is available to download.
     The Copernicus delays between 5 to 8 days to update
     it's database.
     This method returns the (year, month and date) - 9
     days from present's date.
     """
+
     today = datetime.now()
     delay = today - timedelta(days=9)
-    
+
     @property
     def year(self):
         return f'{self.delay.year}'
-    
+
     @property
     def month(self):
         return f'{self.delay.month:02d}'
@@ -195,9 +223,9 @@ def _product_type_prompt():
     default = 'reanalysis'
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return ('> ')
+        return '> '
 
-    session = CLI.prompt(
+    session = SESSION.prompt(
         f"Select the Product Type ['{default}']:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
@@ -206,6 +234,7 @@ def _product_type_prompt():
         validate_while_typing=False,
         multiline=False,
         prompt_continuation=prompt_continuation,
+        rprompt='<Tab> displays all options',
     )
 
     if not session:
@@ -225,9 +254,9 @@ def _variable_prompt():
     ]
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return ('> ')
+        return '> '
 
-    session = CLI.prompt(
+    session = SESSION.prompt(
         f'Select the Variable(s) {defaults}:\n> ',
         completer=WordCompleter(vars),
         complete_while_typing=True,
@@ -237,12 +266,12 @@ def _variable_prompt():
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt='Press <Alt> + <Enter> to finish selection'
+        rprompt='Press <Alt> + <Enter> to finish selection',
     )
 
     if not session:
         return defaults
-    
+
     else:
         variables = TO_LIST(session)
         if len(variables) == 1:
@@ -255,9 +284,9 @@ def _year_prompt():
     default = DefaultDate().year
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return ('> ')
+        return '> '
 
-    session = CLI.prompt(
+    session = SESSION.prompt(
         f"Select the Year(s) ['{default}']:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
@@ -267,12 +296,12 @@ def _year_prompt():
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=('Select a year range using (-): 2020-2023')
+        rprompt=('Select a year range using (-): 2020-2023'),
     )
 
     if not session:
         return default
-    
+
     elif '-' in session:
         return api_vars.str_range(str(session).replace('\n', '').strip())
 
@@ -288,9 +317,9 @@ def _month_prompt(year=None):
     default = DefaultDate().month
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return ('> ')
+        return '> '
 
-    session = CLI.prompt(
+    session = SESSION.prompt(
         f"Select the Month(s) ['{default}']:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
@@ -300,12 +329,12 @@ def _month_prompt(year=None):
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=('Type `all` to select the entire year')
+        rprompt=('Type `all` to select the entire year'),
     )
 
     if not session:
         return default
-    
+
     elif session == 'all' or session.replace('\n', '') == 'all':
         if year == DefaultDate().year:
             year_months = api_vars.str_range(f'01-{DefaultDate().month}')
@@ -330,9 +359,9 @@ def _day_prompt(year=None, month=None):
     default = DefaultDate().day
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return ('> ')
+        return '> '
 
-    session = CLI.prompt(
+    session = SESSION.prompt(
         f"Select the Day(s) ['{default}']:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
@@ -342,7 +371,7 @@ def _day_prompt(year=None, month=None):
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=('Select a days range using (-): 1-31 or `all`')
+        rprompt=('Select a days range using (-): 1-31 or `all`'),
     )
 
     if not session:
@@ -350,16 +379,19 @@ def _day_prompt(year=None, month=None):
 
     elif session == 'all' or session.replace('\n', '') == 'all':
         days = set()
-        year = [year] if isinstance(year, str) else year
-        month = [month] if isinstance(month, str) else month
-        for year in year:
-            for month in month:
-                if f'{year}-{month}' > f'{DefaultDate().year}-{DefaultDate().month}':
+        years = [year] if isinstance(year, str) else year
+        months = [month] if isinstance(month, str) else month
+        for year in years:
+            for month in months:
+                if (
+                    f'{year}-{month}'
+                    > f'{DefaultDate().year}-{DefaultDate().month}'
+                ):
                     continue
                 _, end = calendar.monthrange(int(year), int(month))
-                [days.add(day) for day in list(range(1, end+1))]
+                [days.add(day) for day in list(range(1, end + 1))]
         return sorted(list(map(lambda s: f'{int(s):02d}', days)))
-    
+
     elif '-' in session:
         days = api_vars.str_range(str(session).replace('\n', '').strip())
         return sorted(list(map(lambda s: f'{int(s):02d}', days)))
@@ -385,10 +417,10 @@ def _time_prompt():
     ]
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return ('> ')
-    
-    session = CLI.prompt(
-        f"Select the Hour(s) or Interval {default}:\n> ",
+        return '> '
+
+    session = SESSION.prompt(
+        f'Select the Hour(s) or Interval {default}:\n> ',
         completer=WordCompleter(vars),
         complete_while_typing=True,
         placeholder='',
@@ -397,7 +429,9 @@ def _time_prompt():
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=('Type the hour or select skipping `_ hours`. Default: `3 hours`')
+        rprompt=(
+            'Type the hour or select skipping `_ hours`. Default: `3 hours`'
+        ),
     )
 
     if not session:
@@ -405,7 +439,7 @@ def _time_prompt():
 
     elif session == 'all' or session.replace('\n', '') == 'all':
         return vars
-    
+
     else:
         times = _time_regex_search(session)
         if len(times) == 1:
@@ -438,27 +472,31 @@ def _time_regex_search(text: str):
                 ini: int = times.index(expr[0])
                 end: int = times.index(expr[1])
                 if ini < end:
-                    return times[ini:end+1] # Inclusive
+                    return times[ini:end + 1]   # Inclusive
                 elif ini > end:
                     res = []
                     res.extend(times[ini:])
-                    res.extend(times[:end+1])
+                    res.extend(times[: end + 1])
                     return sorted(res)
                 else:
                     return None
             else:
                 return None
         elif len(expr) == 3:
-            if expr[0] in times and expr[1] in times and str(expr[2]).isdigit():
+            if (
+                expr[0] in times
+                and expr[1] in times
+                and str(expr[2]).isdigit()
+            ):
                 ini: int = times.index(expr[0])
                 end: int = times.index(expr[1])
                 step: int = int(expr[2])
                 if ini < end:
-                    return times[ini:end+1:step]
+                    return times[ini:end + 1:step]
                 elif ini > end:
                     res = []
                     res.extend(times[ini:])
-                    res.extend(times[:end+1])
+                    res.extend(times[:end + 1])
                     return sorted(res)[::step]
                 else:
                     return None
@@ -468,5 +506,21 @@ def _time_regex_search(text: str):
             return None
 
 
-if __name__ == "__main__":
-    reanalysis_cli()
+def _format_prompt():
+    vars = api_vars.FORMAT
+    default = 'netcdf'
+
+    session = SESSION.prompt(
+        f"Select the file format ['{default}']:\n> ",
+        completer=WordCompleter(vars),
+        complete_while_typing=True,
+        placeholder=default,
+        validator=VarValidator('format'),
+        validate_while_typing=False,
+        multiline=False,
+    )
+
+    if not session:
+        return default
+
+    return session

@@ -21,6 +21,20 @@ Python Versions = [3.10, 3.11]
 
 Version 1.X includes only methods for Brazil's data format and cities.
 
+## Creating requests via Interactive shell
+Since SWT version 1.5, it is possible to create dynamic requests using the interactive
+python shell or via method call:
+```python
+from satellite_downloader import request
+
+file = request.ERA5_reanalysis(
+    filename = 'my_dataset_file'
+)
+```
+```
+NOTE: This feature is still in experimental versions, please submit an issue if you find any bug.
+```
+
 ## Usage of `copebr` extension
 ``` python
 import satellite_downloader

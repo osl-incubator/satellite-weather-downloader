@@ -1,9 +1,10 @@
 from datetime import datetime
 
+
 def str_range(range: str) -> list:
-    """ 
+    """
     Returns a list of sorted digits given a str range with `-`.
-    Usage: 
+    Usage:
     str_range('2023-2020') -> ['2020', '2021', '2022', '2023']
     str_range('01-05') -> ['01', '02', '03', '04', '05']
     """
@@ -368,6 +369,4 @@ TIME = [
     '23:00',
 ]
 
-FORMAT = ['grib','netcdf']
-
-
+FORMAT = ['grib', 'netcdf']
