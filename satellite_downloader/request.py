@@ -1,7 +1,7 @@
 from string import ascii_letters
 from typing import Optional, Union
 
-import connection
+from . import connection
 from loguru import logger
 from reanalysis.prompt import reanalysis_prompt
 
