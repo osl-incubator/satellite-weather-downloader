@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.5.2](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.5.1...1.5.2) (2023-01-31)
+
+
+### Bug Fixes
+
+* **readme:** fix typo ([2be8f38](https://github.com/osl-incubator/satellite-weather-downloader/commit/2be8f3879bf7182068e5dfde839d71609faa04d9))
+
 ## [1.5.1](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.5.0...1.5.1) (2023-01-31)
 
 
