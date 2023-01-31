@@ -32,14 +32,14 @@ download_br_netcdf() : Send a request to Copernicus API with the parameters of
                     @warning: date 2022-08-01 is corrupting all data retrieved.
 """
 
-import logging
 import re
-from datetime import datetime, timedelta
+import logging
+import pandas as pd
 from pathlib import Path
+from datetime import datetime, timedelta
 from typing import Optional, Tuple, Union
 
-import connection
-import pandas as pd
+from . import connection
 
 BR_AREA = {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
 DATA_DIR = Path.home() / 'copernicus_data'
