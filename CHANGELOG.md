@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.5.3](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.5.2...1.5.3) (2023-01-31)
+
+
+### Bug Fixes
+
+* **imports:** package missing local import ([4369714](https://github.com/osl-incubator/satellite-weather-downloader/commit/4369714f901c34a62e39070b4c7c0e6ed1e92534))
+
 ## [1.5.2](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.5.1...1.5.2) (2023-01-31)
 
 
