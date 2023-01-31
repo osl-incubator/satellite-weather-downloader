@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 from . import connection
 from loguru import logger
-from reanalysis.prompt import reanalysis_prompt
+from .reanalysis.prompt import reanalysis_prompt
 
 
 # TODO: Allow area slicing in request
