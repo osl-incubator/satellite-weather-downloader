@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+# [1.6.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.5.3...1.6.0) (2023-02-01)
+
+
+### Features
+
+* **weather:** start working on Polygon Filtering ([#43](https://github.com/osl-incubator/satellite-weather-downloader/issues/43)) ([4d1526a](https://github.com/osl-incubator/satellite-weather-downloader/commit/4d1526a3c60ad6337f6480e24542010ea7d84683))
+
 ## [1.5.3](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.5.2...1.5.3) (2023-01-31)
 
 
