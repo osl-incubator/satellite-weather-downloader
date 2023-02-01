@@ -21,7 +21,7 @@ Python Versions = [3.10, 3.11]
 
 Version 1.X includes only methods for Brazil's data format and cities.
 
-## Creating requests via Interactive shell
+## Create requests via Interactive shell
 Since SWT version 1.5, it is possible to create dynamic requests using the interactive
 python shell or via method call:
 ```python
@@ -36,24 +36,46 @@ file = request.ERA5_reanalysis(
 NOTE: This feature is still in experimental versions, please submit an issue if you find any bug.
 ```
 
-## Usage of `copebr` extension
+## Extract Brazil NetCDF4 file from a date range
 ``` python
 import satellite_downloader
-import satellite_weather
 
 file = satellite_downloader.download_br_netcdf('2023-01-01', '2023-01-07')
-br_dataset = satellite_weather.load_dataset(file)
-rio_dataset = br_dataset.copebr.ds_from_geocode(3304557) # Rio de Janeiro's geocode
-rio_dataframe = rio_dataset.to_dataframe()
+
+```
+
+## Load the dataset
+``` python
+import satellite_weather as sat
+br_dataset = sat.load_dataset(file)
+
+```
+
+## Usage of `copebr` extension
+``` python
+rio_geocode = 3304557 # Rio de Janeiro's geocode (IBGE)
+rio_dataset = br_dataset.copebr.ds_from_geocode(rio_geocode)
+rio_dataframe = rio_dataset.to_dataframe(rio_geocode)
 ```
 
 It is also possible to create a dataframe directly from the National-wide dataset:
 ``` python
-br_dataset.copebr.to_dataframe(3304557)
+br_dataset.copebr.to_dataframe(rio_geocode)
 ```
 
 All Xarray methods are extended when using the `copebr` extension:
 ``` python
 rio_dataset.precip_med.to_array()
 rio_dataset.temp_med.plot()
+```
+
+## Usage of `DSEI` extension
+``` python
+yanomami_ds = ds.DSEI['Yanomami']
+yanomami_polygon = ds.DSEI.get_polygon('Yanomami')
+```
+
+### List all DSEIs
+``` python
+ds.DSEI.DSEIs
 ```

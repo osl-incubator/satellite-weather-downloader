@@ -57,7 +57,7 @@ def ERA5_reanalysis(
         format=format,
     )
 
-    _no_suffix = filename.split('.')[0]   # Forcing right suffix
+    _no_suffix = filename.split('.')[0]   # Forcing correct suffix
     filename = _no_suffix + '.nc' if options['format'] == 'netcdf' else '.grib'
 
     try:

@@ -3,7 +3,6 @@
 # TODO: docstrings
 import xarray as xr
 
-from .utils import *
 from .xr_extensions import *
 
 
