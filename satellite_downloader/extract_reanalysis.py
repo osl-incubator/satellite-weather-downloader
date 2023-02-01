@@ -41,21 +41,21 @@ from typing import Optional, Tuple, Union
 
 from . import connection
 
-BR_AREA = {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
-DATA_DIR = Path.home() / 'copernicus_data'
+_BR_AREA = {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
+_DATA_DIR = Path.home() / 'copernicus_data'
 
-help_d = 'Use `help(extract_reanalysis.download_br_netcdf)` for more info.'
+_HELP = 'Use `help(extract_reanalysis.download_br_netcdf)` for more info.'
 
-date_today = datetime.now()
-date_format = '%Y-%m-%d'
-date_re_format = r'\d{4}-\d{2}-\d{2}'
-date_iso_format = 'YYYY-MM-DD'
+_CUR_DATE = datetime.now()
+_DATE_FORMAT = '%Y-%m-%d'
+_RE_FORMAT = r'\d{4}-\d{2}-\d{2}'
+_ISO_FORMAT = 'YYYY-MM-DD'
 
 # dataset has maximum of 8 days of update delay.
 # in order to prevent requesting invalid dates,
 # the max date is 8 days ago, from today's date
-max_update_delay = date_today - timedelta(days=8)
-max_update_delay_f = datetime.strftime(max_update_delay, date_format)
+_MAX_DELAY = _CUR_DATE - timedelta(days=8)
+_MAX_DELAY_F = datetime.strftime(_MAX_DELAY, _DATE_FORMAT)
 
 # TODO: make download_br_netcdf accepts date and datetime types.
 def download_br_netcdf(
@@ -104,7 +104,7 @@ def download_br_netcdf(
         data_dir = Path(str(data_dir))
 
     else:
-        data_dir = DATA_DIR
+        data_dir = _DATA_DIR
 
     data_dir.mkdir(parents=True, exist_ok=True)
 
@@ -119,16 +119,16 @@ def download_br_netcdf(
     elif not date and not date_end:
         logging.warning(
             'No date provided, downloading last'
-            + f' available date: {max_update_delay_f}'
+            + f' available date: {_MAX_DELAY_F}'
         )
-        year, month, day = _format_dates(max_update_delay_f)
-        filename = f'BR_{max_update_delay_f}.nc'
+        year, month, day = _format_dates(_MAX_DELAY_F)
+        filename = f'BR_{_MAX_DELAY_F}.nc'
 
     else:
         raise Exception(
             f"""
             Bad usage.
-            {help_d}
+            {_HELP}
         """
         )
 
@@ -162,7 +162,7 @@ def download_br_netcdf(
                         '18:00',
                         '21:00',
                     ],
-                    'area': list(BR_AREA.values()),
+                    'area': list(_BR_AREA.values()),
                     'format': 'netcdf',
                 },
                 str(file),
@@ -191,25 +191,25 @@ def _format_dates(
         day (str or list)  : The day(s) related to date provided.
     """
 
-    ini_date = datetime.strptime(date, date_format)
+    ini_date = datetime.strptime(date, _DATE_FORMAT)
     year, month, day = date.split('-')
 
-    if ini_date > max_update_delay:
+    if ini_date > _MAX_DELAY:
         raise Exception(
             f"""
                 Invalid date. The last update date is:
-                {max_update_delay_f}
-                {help_d}
+                {_MAX_DELAY_F}
+                {_HELP}
         """
         )
 
     # check for right initial date format
-    if not re.match(date_re_format, date):
+    if not re.match(_RE_FORMAT, date):
         raise Exception(
             f"""
                 Invalid initial date. Format:
-                {date_iso_format}
-                {help_d}
+                {_ISO_FORMAT}
+                {_HELP}
         """
         )
 
@@ -217,15 +217,15 @@ def _format_dates(
     # if there is no end date, only the day specified on
     # `date` will be downloaded
     if date_end:
-        end_date = datetime.strptime(date_end, date_format)
+        end_date = datetime.strptime(date_end, _DATE_FORMAT)
 
         # check for right end date format
-        if not re.match(date_re_format, date_end):
+        if not re.match(_RE_FORMAT, date_end):
             raise Exception(
                 f"""
                     Invalid end date. Format:
-                    {date_iso_format}
-                    {help_d}
+                    {_ISO_FORMAT}
+                    {_HELP}
             """
             )
 
@@ -235,7 +235,7 @@ def _format_dates(
             raise Exception(
                 f"""
                     Maximum query reached (limit: {max_api_query.days} days).
-                    {help_d}
+                    {_HELP}
             """
             )
 
@@ -244,7 +244,7 @@ def _format_dates(
             raise Exception(
                 f"""
                     Please select a valid date range.
-                    {help_d}
+                    {_HELP}
             """
             )
 
