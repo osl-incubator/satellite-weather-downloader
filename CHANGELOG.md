@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.6.1](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.6.0...1.6.1) (2023-02-07)
+
+
+### Bug Fixes
+
+* **docker:** fix containers healthcheck ([#45](https://github.com/osl-incubator/satellite-weather-downloader/issues/45)) ([9ef77a7](https://github.com/osl-incubator/satellite-weather-downloader/commit/9ef77a7b513662505503b5045eb6c7e23d907071))
+
 # [1.6.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.5.3...1.6.0) (2023-02-01)
 
 
