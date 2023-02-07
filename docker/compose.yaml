@@ -15,7 +15,7 @@ services:
     networks:
       - satellite
     healthcheck:
-      test: ["CMD", "curl", "-f", "-u", "${RBTMQ_USER}:${RBTMQ_PASSWORD}", "http://localhost:${RBTMQHTTP_PORT}/api/healthchecks/node"]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -51,7 +51,7 @@ services:
       - rabbitmq
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", 'celery --app celeryapp.weather.beat.app inspect ping -d "celery@$${HOSTNAME}"']
+      test: ["CMD-SHELL", 'celery --app celeryapp.weather.beat.app inspect ping -d celery@weather']
       interval: 60s
       timeout: 10s
       retries: 5
@@ -67,7 +67,7 @@ services:
       - rabbitmq
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", 'celery --app celeryapp.downloader.beat.app inspect ping -d "celery@$${HOSTNAME}"']
+      test: ["CMD-SHELL", 'celery --app celeryapp.downloader.beat.app inspect ping -d celery@downloader']
       interval: 60s
       timeout: 10s
       retries: 5
