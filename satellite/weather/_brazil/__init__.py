@@ -1,5 +1,3 @@
-from . import extract_coordinates
-from . import extract_latlons
-from . import DSEI
+from . import DSEI, extract_coordinates, extract_latlons
 
 # TODO: Docstrings

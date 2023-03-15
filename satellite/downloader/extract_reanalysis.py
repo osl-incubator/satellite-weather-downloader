@@ -29,17 +29,18 @@ download_br_netcdf() : Send a request to Copernicus API with the parameters of
                                 website, trying to retrieve a date range with the
                                 current month and the last days of the past month
                                 is not possible. Avoid using the current month.
-                    @warning: date 2022-08-01 is corrupting all data retrieved.
 """
 
-import re
 import logging
-import pandas as pd
-from pathlib import Path
+import os
+import re
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional, Tuple, Union
 
-from . import connection
+import pandas as pd
+import urllib3
+from cdsapi.api import Client
 
 _BR_AREA = {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
 _DATA_DIR = Path.home() / 'copernicus_data'
@@ -61,9 +62,7 @@ _MAX_DELAY_F = datetime.strftime(_MAX_DELAY, _DATE_FORMAT)
 def download_br_netcdf(
     date: Optional[str] = None,
     date_end: Optional[str] = None,
-    data_dir: Optional[str] = None,
-    uid: Optional[str] = None,
-    key: Optional[str] = None,
+    data_dir: Optional[str] = _DATA_DIR,
 ):
     """
     Creates the request for Copernicus API. Extracts the latitude and
@@ -87,26 +86,27 @@ def download_br_netcdf(
                               to define a date range.
         data_dir (opt(str)): Path in which the NetCDF file will be downloaded.
                              Default dir is `$HOME/copernicus_data/`.
-        uid (opt(str)): UID from Copernicus User page, it will be used with
-                        `connection.connect()` method.
-        key (opt(str)): API Key from Copernicus User page, it will be used with
-                        `connection.connect()` method.
 
     Returns:
         String corresponding to path: `data_dir/filename`, that can later be used
         to transform into a `xarray.Dataset` with the CopeBRDatasetExtension located
         in `satellite_weather` module.
     """
+    Path(data_dir).mkdir(parents=True, exist_ok=True)
 
-    conn = connection.connect(uid, key)
+    cdsapi_key = os.getenv('CDSAPI_KEY')
+    if not cdsapi_key:
+        raise EnvironmentError(
+            'Environment variable CDSAPI_KEY not found in the system.\n'
+            'Execute `$ export CDSAPI_KEY="<MY_UID>:<MY_API_KEY>" to fix.\n'
+            'These credentials are found in your Copernicus User Page: \n'
+            'https://cds.climate.copernicus.eu/user/<MY_USER>'
+        )
 
-    if data_dir:
-        data_dir = Path(str(data_dir))
-
-    else:
-        data_dir = _DATA_DIR
-
-    data_dir.mkdir(parents=True, exist_ok=True)
+    conn = Client(
+        url='https://cds.climate.copernicus.eu/api/v2',
+        key=cdsapi_key,
+    )
 
     if date and not date_end:
         year, month, day = _format_dates(date)
@@ -139,6 +139,7 @@ def download_br_netcdf(
 
     else:
         try:
+            urllib3.disable_warnings()
             conn.retrieve(
                 'reanalysis-era5-single-levels',
                 {
@@ -168,11 +169,11 @@ def download_br_netcdf(
                 str(file),
             )
             logging.info(f'NetCDF {filename} downloaded at {data_dir}.')
-
             return str(file)
 
         except Exception as e:
             logging.error(e)
+            raise e
 
 
 def _format_dates(
