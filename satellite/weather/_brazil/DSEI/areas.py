@@ -1,10 +1,10 @@
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, Union
-from loguru import logger
+
 import geopandas
 import pandas as pd
-
+from loguru import logger
 
 _SHAPEFILE = Path(__file__).parent / 'areas_dsei.shp'
 
@@ -47,19 +47,14 @@ DSEIs = {
 
 
 DSEI_DF = pd.DataFrame(
-    dict(
-        DSEI=list(DSEIs.values()), 
-        code=list(DSEIs)
-    ), 
-    index=list(range(len(DSEIs)))
+    dict(DSEI=list(DSEIs.values()), code=list(DSEIs)),
+    index=list(range(len(DSEIs))),
 )
 
 
 @lru_cache
 def load_polygons_df() -> geopandas.GeoDataFrame:
     df = geopandas.read_file(
-        _SHAPEFILE,
-        encoding='iso-8859-2',
-        crs='epsg:4326' #WGS84
+        _SHAPEFILE, encoding='iso-8859-2', crs='epsg:4326'  # WGS84
     )
     return df

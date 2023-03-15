@@ -1,11 +1,15 @@
-from typing import Union
-import metpy.calc as mpcalc
+import dask
 import numpy as np
-import pandas as pd
 import xarray as xr
-from metpy.units import units
+import dask.array as da
+import metpy.calc as mpcalc
+import dask.dataframe as dd
+
+from typing import Union
 from loguru import logger
+from metpy.units import units
 from matplotlib.path import Path
+from dask.dataframe.core import DataFrame 
 from shapely.geometry.polygon import Polygon
 
 from . import _brazil
@@ -99,7 +103,7 @@ class CopeBRDatasetExtension:
 
         return final_ds
 
-    def to_dataframe(self, geocode: int, raw=False) -> pd.DataFrame:
+    def to_dataframe(self, geocodes: Union[list, int], raw=False) -> DataFrame:
         """
         Returns a DataFrame with the values related to the geocode of a brazilian
         city according to IBGE's format. Extract the values using `ds_from_geocode()`
@@ -115,11 +119,22 @@ class CopeBRDatasetExtension:
                           but with an extra column with the geocode, in order to differ
                           the data when inserting into a database, for instance.
         """
-        ds = self.ds_from_geocode(geocode, raw)
-        df = ds.to_dataframe()
-        geocodes = [geocode for g in range(len(df))]
-        df.insert(0, 'geocodigo', geocodes)
-        return df
+        geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
+
+        dfs = []
+
+        for geocode in geocodes:
+            ds = self.ds_from_geocode(geocode, raw)
+            df = dd.from_delayed(dask.delayed(ds.to_dataframe)())
+            geocodes = [geocode for g in range(len(df))]
+            df = df.assign(geocodigo=da.from_array(geocodes))
+            dfs.append(df)
+            
+        final_df = dd.concat(dfs)
+        final_df = final_df.reset_index(drop=False)
+        final_df = final_df.rename(columns={'time': 'date'})
+
+        return final_df.compute()
 
     def _get_latlons(self, geocode: int) -> tuple:
         """

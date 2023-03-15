@@ -46,6 +46,7 @@ prompt-toolkit = "^3.0.36"
 geopandas = "^0.12.2"
 matplotlib = "^3.6.3"
 shapely = "^2.0.1"
+dask = "^2023.3.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^5.2"

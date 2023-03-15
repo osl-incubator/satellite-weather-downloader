@@ -1,16 +1,16 @@
+import os
 from string import ascii_letters
 from typing import Optional, Union
 
-from . import connection
+from cdsapi.api import Client
 from loguru import logger
+
 from .reanalysis.prompt import reanalysis_prompt
 
 
 # TODO: Allow area slicing in request
 def ERA5_reanalysis(
     filename: str,
-    uid: Optional[str] = None,
-    key: Optional[str] = None,
     product_type: Optional[str] = None,
     variable: Optional[Union[str, list]] = None,
     year: Optional[Union[str, list]] = None,
@@ -44,7 +44,19 @@ def ERA5_reanalysis(
         if char not in allowed_chars:
             raise ValueError(f'Invalid character {char}')
 
-    conn = connection.connect(uid, key)
+    cdsapi_key = os.getenv('CDSAPI_KEY')
+    if not cdsapi_key:
+        raise EnvironmentError(
+            'Environment variable CDSAPI_KEY not found in the system.\n'
+            'Execute `$ export CDSAPI_KEY="{MY_UID}:{MY_KEY}" to fix.\n'
+            'These credentials are found in your Copernicus User Page \n'
+            'https://cds.climate.copernicus.eu/user/{MY_USER}'
+        )
+
+    conn = Client(
+        url='https://cds.climate.copernicus.eu/api/v2',
+        key=cdsapi_key,
+    )
 
     options = reanalysis_prompt(
         product_type=product_type,
