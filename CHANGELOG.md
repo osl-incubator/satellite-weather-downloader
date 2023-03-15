@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+# [1.7.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.6.1...1.7.0) (2023-03-15)
+
+
+### Features
+
+* **dask:** use dask to create final df ([#47](https://github.com/osl-incubator/satellite-weather-downloader/issues/47)) ([5998dd2](https://github.com/osl-incubator/satellite-weather-downloader/commit/5998dd2bfa210dd71e5e3ca2fec7855674b60ccb))
+
 ## [1.6.1](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.6.0...1.6.1) (2023-02-07)
 
 
