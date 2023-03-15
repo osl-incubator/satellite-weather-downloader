@@ -1,5 +1,5 @@
-import satellite_weather as sat
-from satellite_weather import __version__
+import satellite.weather as sat
+from satellite.weather import __version__
 
 
 def test_version():
@@ -7,7 +7,7 @@ def test_version():
 
 
 def test_import_package():
-    from satellite_downloader import extract_reanalysis
+    from satellite.downloader import extract_reanalysis
 
     assert (
         extract_reanalysis.__name__
@@ -16,8 +16,8 @@ def test_import_package():
 
 
 def test_extract_latlons_from_geocode_n_extract_coord_from_latlons():
-    from satellite_weather._brazil.extract_coordinates import from_latlon
-    from satellite_weather._brazil.extract_latlons import from_geocode
+    from satellite.weather._brazil.extract_coordinates import from_latlon
+    from satellite.weather._brazil.extract_latlons import from_geocode
 
     latlon_rio_de_janeiro = from_geocode(3304557)
     latlon_florianopolis = from_geocode(4205407)

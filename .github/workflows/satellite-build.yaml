@@ -48,16 +48,3 @@ jobs:
         activate-environment: env-satellite
         use-mamba: true
         miniforge-variant: Mambaforge
-
-    - name: Create env file
-      run: |
-        touch .env
-        make prepare-environment
-
-    - name: Build docker images
-      run: |
-        make docker-build
-
-    - name: Docker start satellite
-      run: |
-        make docker-start SERVICES="weather downloader" 
