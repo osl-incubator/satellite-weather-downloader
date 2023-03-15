@@ -3,8 +3,8 @@ import uuid
 import shutil
 from pathlib import Path
 from unittest.mock import Mock
-from satellite_downloader.connection import connect
-from satellite_downloader.extract_reanalysis import _format_dates, _BR_AREA, _DATA_DIR
+from satellite.downloader.connection import connect
+from satellite.downloader.extract_reanalysis import _format_dates, _BR_AREA, _DATA_DIR
 
 class TestDownloaderConnection(unittest.TestCase):
     uid = '123456'
