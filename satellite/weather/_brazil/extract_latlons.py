@@ -21,7 +21,7 @@ with open(f'{Path(__file__).parent}/municipios.json') as muns:
     MUNICIPIOS = json.loads(_mun_decoded)
 
 
-def from_geocode(geocode: int) -> tuple:
+async def from_geocode(geocode: int) -> tuple:
     """
     Returns latitude and longitude given a city geocode.
 
