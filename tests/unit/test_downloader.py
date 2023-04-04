@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 from satellite.downloader.extract_reanalysis import _BR_AREA, _DATA_DIR, _format_dates
 
+
 class TestExtractMethods(unittest.TestCase):
     def test_brazil_coordinates_to_copernicus_api(self):
         self.assertEquals(
