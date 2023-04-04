@@ -66,7 +66,7 @@ class CopeBRDatasetExtension:
 
     def to_dataframe(self, geocodes: Union[list, int], raw: bool = False):
         num_geocodes = len(geocodes) if isinstance(geocodes, list) else 1
-        max_workers = math.ceil(num_geocodes / 100)
+        max_workers = math.ceil((num_geocodes / 100))
         pool = ThreadPoolExecutor(max_workers=max_workers)
         return pool.submit(
             asyncio.run, self._final_dataframe(geocodes=geocodes, raw=raw)
@@ -87,7 +87,10 @@ class CopeBRDatasetExtension:
         dfs = await asyncio.gather(*tasks)
         final_df = dd.concat(dfs)
         final_df = final_df.reset_index(drop=False)
-        final_df = final_df.rename(columns={'time': 'date'})
+        if raw:
+            final_df = final_df.rename(columns={'time': 'datetime'})
+        else:
+            final_df = final_df.rename(columns={'time': 'date'})
         return final_df.compute()
 
     async def _geocode_to_dataframe(self, geocode: int, raw=False):
@@ -148,14 +151,18 @@ class CopeBRDatasetExtension:
 
         geocode_ds = geocode_ds.sortby('time')
         gb = geocode_ds.resample(time='1D')
-
-        gmin, gmean, gmax = await asyncio.gather(
+        gmin, gmean, gmax, gtot = await asyncio.gather(
             self._reduce_by(gb, np.min, 'min'),
             self._reduce_by(gb, np.mean, 'med'),
             self._reduce_by(gb, np.max, 'max'),
+            self._reduce_by(gb, np.sum, 'tot'),
         )
 
-        final_ds = xr.combine_by_coords([gmin, gmean, gmax], data_vars='all')
+
+        final_ds = xr.combine_by_coords(
+            [gmin, gmean, gmax, gtot.precip_tot], 
+            data_vars='all'
+        )
 
         return final_ds
 
@@ -194,7 +201,6 @@ class CopeBRDatasetExtension:
         """
         ds = dataset
         vars = list(ds.data_vars.keys())
-
         if 't2m' in vars:
             # Convert Kelvin to Celsius degrees
             ds['t2m'] = ds.t2m - 273.15
