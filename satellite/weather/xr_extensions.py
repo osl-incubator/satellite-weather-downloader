@@ -1,15 +1,17 @@
+import asyncio
+import math
+from concurrent.futures import ThreadPoolExecutor
+from typing import Union
+
 import dask
+import dask.array as da
+import dask.dataframe as dd
+import metpy.calc as mpcalc
 import numpy as np
 import xarray as xr
-import dask.array as da
-import metpy.calc as mpcalc
-import dask.dataframe as dd
-
-from typing import Union
 from loguru import logger
-from metpy.units import units
 from matplotlib.path import Path
-from dask.dataframe.core import DataFrame 
+from metpy.units import units
 from shapely.geometry.polygon import Polygon
 
 from . import _brazil
@@ -62,27 +64,84 @@ class CopeBRDatasetExtension:
     def __init__(self, xarray_ds: xr.Dataset) -> None:
         self._ds = xarray_ds
 
-    def ds_from_geocode(self, geocode: int, raw=False) -> xr.Dataset:
+    def to_dataframe(self, geocodes: Union[list, int], raw: bool = False):
+        num_geocodes = len(geocodes) if isinstance(geocodes, list) else 1
+        max_workers = math.ceil((num_geocodes / 100))
+        pool = ThreadPoolExecutor(max_workers=max_workers)
+        return pool.submit(
+            asyncio.run, self._final_dataframe(geocodes=geocodes, raw=raw)
+        ).result()
+
+    def geocode_ds(self, geocode: int, raw: bool):
+        return asyncio.run(self._geocode_ds(geocode, raw))
+
+    async def _final_dataframe(self, geocodes: Union[list, int], raw=False):
+        geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
+
+        tasks = []
+        for geocode in geocodes:
+            tasks.append(
+                asyncio.create_task(self._geocode_to_dataframe(geocode, raw))
+            )
+
+        dfs = await asyncio.gather(*tasks)
+        final_df = dd.concat(dfs)
+        final_df = final_df.reset_index(drop=False)
+        if raw:
+            final_df = final_df.rename(columns={'time': 'datetime'})
+        else:
+            final_df = final_df.rename(columns={'time': 'date'})
+        return final_df.compute()
+
+    async def _geocode_to_dataframe(self, geocode: int, raw=False):
+        """
+        Returns a DataFrame with the values related to the geocode of a
+        brazilian city according to IBGE's format. Extract the values
+        using `ds_from_geocode()` and return `xr.Dataset.to_dataframe()`
+        from Xarray, inserting the geocode into the final DataFrame.
+        Attrs:
+          geocode (str or int): Geocode of a city in Brazil according to IBGE.
+          raw (bool)          : If raw is set to True, the DataFrame returned
+                                will contain data in 3 hours intervals.
+                                Default return will aggregate these values
+                                into 24 hours interval.
+        Returns:
+          pd.DataFrame: Similar to `ds_from_geocode(geocode).to_dataframe()`
+                        but with an extra column with the geocode, in order
+                        to differ the data when inserting into a database,
+                        for instance.
+        """
+
+        ds = await self._geocode_ds(geocode, raw)
+        df = dd.from_delayed(dask.delayed(ds.to_dataframe)())
+        geocode = [geocode for g in range(len(df))]
+        df = df.assign(geocodigo=da.from_array(geocode))
+
+        return df
+
+    async def _geocode_ds(self, geocode: int, raw=False):
         """
         This is the most important method of the extension. It will
         slice the dataset according to the geocode provided, do the
         math and the parse of the units to Br's format, and reduce by
         min, mean and max by day, if the `raw` is false.
         Attrs:
-            geocode (str or int): Geocode of a city in Brazil according to IBGE.
-            raw (bool)          : If raw is set to True, the DataFrame returned will
-                                  contain data in 3 hours intervals. Default return
-                                  will aggregate these values into 24 hours interval.
+            geocode (str|int): Geocode of a Brazilian city according to IBGE.
+            raw (bool)       : If raw is set to True, the DataFrame returned
+                               will contain data in 3 hours intervals. Default
+                               return will aggregate these values into 24h
+                               interval.
         Returns:
-            xr.Dataset: The final dataset with the data parsed into Br's format.
-                        if not `raw`, will group the data by day, taking it's
-                        min, mean and max values. If `raw`, the data corresponds
-                        to a 3h interval range for each day in the dataset.
+            xr.Dataset: The final dataset with the data parsed into Br's
+                        format. If not `raw`, will group the data by day,
+                        taking it's min, mean and max values. If `raw`,
+                        the data corresponds to a 3h interval range for
+                        each day in the dataset.
         """
-        lats, lons = self._get_latlons(geocode)
+        lats, lons = await self._get_latlons(geocode)
 
-        geocode_ds = self._convert_to_br_units(
-            self._slice_dataset_by_coord(
+        geocode_ds = await self._convert_to_br_units(
+            await self._slice_dataset_by_coord(
                 dataset=self._ds, lats=lats, lons=lons
             )
         )
@@ -92,57 +151,28 @@ class CopeBRDatasetExtension:
 
         geocode_ds = geocode_ds.sortby('time')
         gb = geocode_ds.resample(time='1D')
-
-        gmin, gmean, gmax = (
+        gmin, gmean, gmax, gtot = await asyncio.gather(
             self._reduce_by(gb, np.min, 'min'),
             self._reduce_by(gb, np.mean, 'med'),
             self._reduce_by(gb, np.max, 'max'),
+            self._reduce_by(gb, np.sum, 'tot'),
         )
 
-        final_ds = xr.combine_by_coords([gmin, gmean, gmax], data_vars='all')
+
+        final_ds = xr.combine_by_coords(
+            [gmin, gmean, gmax, gtot.precip_tot], 
+            data_vars='all'
+        )
 
         return final_ds
 
-    def to_dataframe(self, geocodes: Union[list, int], raw=False) -> DataFrame:
-        """
-        Returns a DataFrame with the values related to the geocode of a brazilian
-        city according to IBGE's format. Extract the values using `ds_from_geocode()`
-        and return `xr.Dataset.to_dataframe()` from Xarray, inserting the geocode into
-        the final DataFrame.
-        Attrs:
-            geocode (str or int): Geocode of a city in Brazil according to IBGE.
-            raw (bool)          : If raw is set to True, the DataFrame returned will
-                                  contain data in 3 hours intervals. Default return
-                                  will aggregate these values into 24 hours interval.
-        Returns:
-            pd.DataFrame: Similar to `ds.copebr.ds_from_geocode(geocode).to_dataframe()`
-                          but with an extra column with the geocode, in order to differ
-                          the data when inserting into a database, for instance.
-        """
-        geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
-
-        dfs = []
-
-        for geocode in geocodes:
-            ds = self.ds_from_geocode(geocode, raw)
-            df = dd.from_delayed(dask.delayed(ds.to_dataframe)())
-            geocodes = [geocode for g in range(len(df))]
-            df = df.assign(geocodigo=da.from_array(geocodes))
-            dfs.append(df)
-            
-        final_df = dd.concat(dfs)
-        final_df = final_df.reset_index(drop=False)
-        final_df = final_df.rename(columns={'time': 'date'})
-
-        return final_df.compute()
-
-    def _get_latlons(self, geocode: int) -> tuple:
+    async def _get_latlons(self, geocode: int):
         """
         Extract Latitude and Longitude from a Brazilian's city
         according to IBGE's geocode format.
         """
-        lat, lon = _brazil.extract_latlons.from_geocode(int(geocode))
-        N, S, E, W = _brazil.extract_coordinates.from_latlon(lat, lon)
+        lat, lon = await _brazil.extract_latlons.from_geocode(int(geocode))
+        N, S, E, W = await _brazil.extract_coordinates.from_latlon(lat, lon)
 
         lats = [N, S]
         lons = [E, W]
@@ -154,9 +184,9 @@ class CopeBRDatasetExtension:
 
         return lats, lons
 
-    def _slice_dataset_by_coord(
+    async def _slice_dataset_by_coord(
         self, dataset: xr.Dataset, lats: list[int], lons: list[int]
-    ) -> xr.Dataset:
+    ):
         """
         Slices a dataset using latitudes and longitudes, returns a dataset
         with the mean values between the coordinates.
@@ -164,14 +194,13 @@ class CopeBRDatasetExtension:
         ds = dataset.sel(latitude=lats, longitude=lons, method='nearest')
         return ds.mean(dim=['latitude', 'longitude'])
 
-    def _convert_to_br_units(self, dataset: xr.Dataset) -> xr.Dataset:
+    async def _convert_to_br_units(self, dataset: xr.Dataset) -> xr.Dataset:
         """
         Parse the units according to Brazil's standard unit measures.
         Rename their unit names and long names as well.
         """
         ds = dataset
         vars = list(ds.data_vars.keys())
-
         if 't2m' in vars:
             # Convert Kelvin to Celsius degrees
             ds['t2m'] = ds.t2m - 273.15
@@ -213,7 +242,7 @@ class CopeBRDatasetExtension:
 
         return ds.rename(with_br_vars)
 
-    def _reduce_by(self, ds: xr.Dataset, func, prefix: str):
+    async def _reduce_by(self, ds: xr.Dataset, func, prefix: str):
         """
         Applies a function to each coordinate in the dataset and
         replace the `data_vars` names to it's corresponding prefix.
@@ -231,7 +260,7 @@ class CopeBRDatasetExtension:
 
 @xr.register_dataset_accessor('DSEI')
 class CopeDSEIDatasetExtension:
-    """ 
+    """
     xarray.Dataset.DSEI
     -------------------
 
@@ -243,6 +272,7 @@ class CopeDSEIDatasetExtension:
         ds.DSEI.get_polygon('Yanomami')
         ```
     """
+
     DSEIs = _brazil.DSEI.areas.DSEI_DF
     _dsei_df = None
 

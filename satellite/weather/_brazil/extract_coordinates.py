@@ -18,7 +18,7 @@ _LONGITUDES = list(np.arange(-90.0, 90.25, 0.25))
 _LATITUDES = list(np.arange(-180.0, 180.25, 0.25))
 
 
-def from_latlon(lat, lon) -> tuple:
+async def from_latlon(lat, lon) -> tuple:
     """
     Firstly, the closest coordinate to the city is found. It is then calculated the
     relative position in the quadrant, to define the other three coordinates which
