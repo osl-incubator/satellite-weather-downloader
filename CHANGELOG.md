@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.8.1](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.8.0...1.8.1) (2023-04-12)
+
+
+### Bug Fixes
+
+* **downloader:** add back cdsapi_key to download method ([#50](https://github.com/osl-incubator/satellite-weather-downloader/issues/50)) ([c270a50](https://github.com/osl-incubator/satellite-weather-downloader/commit/c270a50fa34c78423db181457f0ff4ea3ef33055))
+
 # [1.8.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.7.0...1.8.0) (2023-04-04)
 
 
