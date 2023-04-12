@@ -63,6 +63,7 @@ def download_br_netcdf(
     date: Optional[str] = None,
     date_end: Optional[str] = None,
     data_dir: Optional[str] = _DATA_DIR,
+    user_key: Optional[str] = None,
 ):
     """
     Creates the request for Copernicus API. Extracts the latitude and
@@ -86,6 +87,8 @@ def download_br_netcdf(
                               to define a date range.
         data_dir (opt(str)): Path in which the NetCDF file will be downloaded.
                              Default dir is `$HOME/copernicus_data/`.
+        user_key (opt(str)): Credentials for retrieving Copernicus data. Format:
+                             "<MY_UID>:<MY_API_KEY>"
 
     Returns:
         String corresponding to path: `data_dir/filename`, that can later be used
@@ -94,7 +97,11 @@ def download_br_netcdf(
     """
     Path(data_dir).mkdir(parents=True, exist_ok=True)
 
-    cdsapi_key = os.getenv('CDSAPI_KEY')
+    if not user_key:
+        cdsapi_key = os.getenv('CDSAPI_KEY')
+    else:
+        cdsapi_key = user_key
+
     if not cdsapi_key:
         raise EnvironmentError(
             'Environment variable CDSAPI_KEY not found in the system.\n'
