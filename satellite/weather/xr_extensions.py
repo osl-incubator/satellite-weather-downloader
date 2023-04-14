@@ -13,6 +13,7 @@ from loguru import logger
 from matplotlib.path import Path
 from metpy.units import units
 from shapely.geometry.polygon import Polygon
+from sqlalchemy import create_engine
 
 from . import _brazil
 
@@ -72,6 +73,27 @@ class CopeBRDatasetExtension:
             asyncio.run, self._final_dataframe(geocodes=geocodes, raw=raw)
         ).result()
 
+    def to_sql(
+        self,
+        geocodes: Union[list, int],
+        sql_uri: str,
+        tablename: str,
+        schema: str,
+        raw: bool = False,
+    ):
+        geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
+        for geocode in geocodes:
+            self._geocode_to_sql(
+                geocode=geocode,
+                sql_uri=sql_uri,
+                schema=schema,
+                tablename=tablename,
+                raw=raw,
+            )
+        logger.debug(
+            f'{len(geocodes)} geocodes updated on {schema}.{tablename}'
+        )
+
     def geocode_ds(self, geocode: int, raw: bool):
         return asyncio.run(self._geocode_ds(geocode, raw))
 
@@ -114,10 +136,40 @@ class CopeBRDatasetExtension:
 
         ds = await self._geocode_ds(geocode, raw)
         df = dd.from_delayed(dask.delayed(ds.to_dataframe)())
+        del ds
         geocode = [geocode for g in range(len(df))]
         df = df.assign(geocodigo=da.from_array(geocode))
 
         return df
+
+    def _geocode_to_sql(
+        self,
+        geocode: int,
+        sql_uri: str,
+        schema: str,
+        tablename: str,
+        raw: bool,
+    ):
+        ds = asyncio.run(self._geocode_ds(geocode, raw))
+        df = ds.to_dataframe()
+        del ds
+        geocodes = [geocode for g in range(len(df))]
+        df = df.assign(geocodigo=geocodes)
+        df = df.reset_index(drop=False)
+        if raw:
+            df = df.rename(columns={'time': 'datetime'})
+        else:
+            df = df.rename(columns={'time': 'date'})
+
+        engine = create_engine(sql_uri)
+        with engine.connect() as conn:
+            df.to_sql(
+                name=tablename,
+                schema=schema,
+                con=conn,
+                if_exists='append',
+                index=False,
+            )
 
     async def _geocode_ds(self, geocode: int, raw=False):
         """
@@ -158,10 +210,8 @@ class CopeBRDatasetExtension:
             self._reduce_by(gb, np.sum, 'tot'),
         )
 
-
         final_ds = xr.combine_by_coords(
-            [gmin, gmean, gmax, gtot.precip_tot], 
-            data_vars='all'
+            [gmin, gmean, gmax, gtot.precip_tot], data_vars='all'
         )
 
         return final_ds
