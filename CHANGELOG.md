@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.8.2](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.8.1...1.8.2) (2023-04-14)
+
+
+### Bug Fixes
+
+* **v:** bumb version ([#52](https://github.com/osl-incubator/satellite-weather-downloader/issues/52)) ([992f2df](https://github.com/osl-incubator/satellite-weather-downloader/commit/992f2df1bc8833064107f560afe42c71670a5f2c))
+
 ## [1.8.1](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.8.0...1.8.1) (2023-04-12)
 
 
