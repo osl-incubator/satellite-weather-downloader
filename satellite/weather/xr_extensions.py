@@ -80,7 +80,13 @@ class CopeBRDatasetExtension:
         tablename: str,
         schema: str,
         raw: bool = False,
-    ):
+    ) -> None:
+        """ 
+        Reads the data for each geocode and insert the rows into the
+        database one by one, created by sqlalchemy engine with the URI.
+        This method is convenient to prevent the memory overhead when
+        executing with a large amount of geocodes.
+        """
         geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
         for geocode in geocodes:
             self._geocode_to_sql(
