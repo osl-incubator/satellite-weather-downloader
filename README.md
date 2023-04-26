@@ -25,7 +25,7 @@ Version 1.X includes only methods for Brazil's data format and cities.
 Since SWT version 1.5, it is possible to create dynamic requests using the interactive
 python shell or via method call:
 ```python
-from satellite_downloader import request
+from satellite.downloader import request
 
 file = request.ERA5_reanalysis(
     filename = 'my_dataset_file'
@@ -38,15 +38,15 @@ NOTE: This feature is still in experimental versions, please submit an issue if 
 
 ## Extract Brazil NetCDF4 file from a date range
 ``` python
-import satellite_downloader
+from satellite import downloader
 
-file = satellite_downloader.download_br_netcdf('2023-01-01', '2023-01-07')
+file = downloader.download_br_netcdf('2023-01-01', '2023-01-07')
 
 ```
 
 ## Load the dataset
 ``` python
-import satellite_weather as sat
+from satellite import weather as sat
 br_dataset = sat.load_dataset(file)
 
 ```
