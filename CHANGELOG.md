@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.8.3](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.8.2...1.8.3) (2023-05-03)
+
+
+### Bug Fixes
+
+* **copebr:** remove uri and delegate connection to another script ([#54](https://github.com/osl-incubator/satellite-weather-downloader/issues/54)) ([971687e](https://github.com/osl-incubator/satellite-weather-downloader/commit/971687ee79f46c40bd236b92919f97cd6f1c71e7))
+
 ## [1.8.2](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.8.1...1.8.2) (2023-04-14)
 
 
