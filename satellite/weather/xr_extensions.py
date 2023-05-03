@@ -14,6 +14,7 @@ from matplotlib.path import Path
 from metpy.units import units
 from shapely.geometry.polygon import Polygon
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Connectable
 
 from . import _brazil
 
@@ -76,7 +77,7 @@ class CopeBRDatasetExtension:
     def to_sql(
         self,
         geocodes: Union[list, int],
-        sql_uri: str,
+        con: Connectable,
         tablename: str,
         schema: str,
         raw: bool = False,
@@ -91,7 +92,7 @@ class CopeBRDatasetExtension:
         for geocode in geocodes:
             self._geocode_to_sql(
                 geocode=geocode,
-                sql_uri=sql_uri,
+                con=con,
                 schema=schema,
                 tablename=tablename,
                 raw=raw,
@@ -151,7 +152,7 @@ class CopeBRDatasetExtension:
     def _geocode_to_sql(
         self,
         geocode: int,
-        sql_uri: str,
+        con: Connectable,
         schema: str,
         tablename: str,
         raw: bool,
@@ -167,15 +168,13 @@ class CopeBRDatasetExtension:
         else:
             df = df.rename(columns={'time': 'date'})
 
-        engine = create_engine(sql_uri)
-        with engine.connect() as conn:
-            df.to_sql(
-                name=tablename,
-                schema=schema,
-                con=conn,
-                if_exists='append',
-                index=False,
-            )
+        df.to_sql(
+            name=tablename,
+            schema=schema,
+            con=con,
+            if_exists='append',
+            index=False,
+        )
 
     async def _geocode_ds(self, geocode: int, raw=False):
         """
