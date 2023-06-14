@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.8.4](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.8.3...1.8.4) (2023-06-14)
+
+
+### Bug Fixes
+
+* **log:** add log to each geocode inserted ([#55](https://github.com/osl-incubator/satellite-weather-downloader/issues/55)) ([a409b26](https://github.com/osl-incubator/satellite-weather-downloader/commit/a409b26ad9eed6eff81c0936a46b59a23b2e7e9f))
+
 ## [1.8.3](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.8.2...1.8.3) (2023-05-03)
 
 
