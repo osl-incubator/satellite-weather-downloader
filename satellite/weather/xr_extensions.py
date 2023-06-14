@@ -97,9 +97,9 @@ class CopeBRDatasetExtension:
                 tablename=tablename,
                 raw=raw,
             )
-        logger.debug(
-            f'{len(geocodes)} geocodes updated on {schema}.{tablename}'
-        )
+            logger.debug(
+                f'{geocode} updated on {schema}.{tablename}'
+            )
 
     def geocode_ds(self, geocode: int, raw: bool):
         return asyncio.run(self._geocode_ds(geocode, raw))
