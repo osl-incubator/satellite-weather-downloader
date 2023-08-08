@@ -35,3 +35,11 @@ jobs:
         activate-environment: env-satellite
         use-mamba: true
         miniforge-variant: Mambaforge
+
+    - name: Install dependencies
+      run: |
+        poetry install
+
+    - name: Run tests
+      run: |
+        pytest -s tests/

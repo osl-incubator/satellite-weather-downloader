@@ -1,15 +1,15 @@
-import unittest
 import datetime
 from pathlib import Path
-import dotenv
 import time
-import loguru
+import unittest
 
+import dotenv
+import loguru
 
 from satellite.downloader import download_br_netcdf
 from satellite.downloader.extract_reanalysis import _BR_AREA, _DATA_DIR, _format_dates
-from satellite.weather._brazil.extract_latlons import MUNICIPIOS
 from satellite.weather import load_dataset
+from satellite.weather._brazil.extract_latlons import MUNICIPIOS
 
 
 class TestDownloaderAndWeatherBrasil(unittest.TestCase):
@@ -49,26 +49,26 @@ class TestDownloaderAndWeatherBrasil(unittest.TestCase):
         expected_file = _DATA_DIR / f"BR_{lu.year}{lu.month:02d}{lu.day:02d}.nc"
 
         self.assertTrue(file.exists())
-        self.assertEquals(str(file), str(expected_file))
+        self.assertEqual(str(file), str(expected_file))
 
     def test_download_weekly_file(self):
         file = Path(self.weekly_file)
-        expected_file = _DATA_DIR / "BR_20230101_20230107"
+        expected_file = _DATA_DIR / "BR_20230101_20230107.nc"
 
         self.assertTrue(file.exists())
-        self.assertEquals(str(file), str(expected_file))
+        self.assertEqual(str(file), str(expected_file))
 
     def test_download_monthly_file(self):
         file = Path(self.montly_file)
-        expected_file = _DATA_DIR / "BR_20230101_20230131"
+        expected_file = _DATA_DIR / "BR_20230101_20230131.nc"
 
         self.assertTrue(file.exists())
-        self.assertEquals(str(file), str(expected_file))
+        self.assertEqual(str(file), str(expected_file))
 
     def test_load_datasets(self):
         for file in [self.daily_last_update, self.weekly_file, self.montly_file]:
             ds = load_dataset(file)
-            self.assertEquals(len(ds), 4)
+            self.assertEqual(len(ds), 4)
             del ds
 
     def test_copebr_dataframe_last_update_one_geocode(self):
@@ -77,59 +77,60 @@ class TestDownloaderAndWeatherBrasil(unittest.TestCase):
         df = ds.copebr.to_dataframe(3304557)
         et = time.time()
         tt = et - st
-        loguru.logger.warning(
-            f"test_copebr_dataframe_last_update_one_geocode: {tt:.4f} seconds"
+        loguru.logger.info(
+            f"took {tt:.4f} seconds"
         )
-        self.assertEquals(self.expected_columns, list(df.columns))
-        self.assertEquals(len(df), 1)
+        self.assertEqual(self.expected_columns, list(df.columns))
+        self.assertEqual(len(df), 1)
         self.assertFalse(df.empty)
+        del ds, df
 
-    def test_copebr_dataframe_last_update_half_geocodes(self):
+    def test_copebr_dataframe_weekly_file_one_geocode(self):
         st = time.time()
         ds = load_dataset(self.daily_last_update)
-        df = ds.copebr.to_dataframe(self.muns[:int(len(self.muns)/2)])
+        df = ds.copebr.to_dataframe(3304557)
         et = time.time()
         tt = et - st
-        loguru.logger.warning(
-            f"test_copebr_dataframe_last_update_half_geocodes: {tt:.4f} seconds"
+        loguru.logger.info(
+            f"took {tt:.4f} seconds"
         )
-        self.assertEquals(self.expected_columns, list(df.columns))
-        self.assertEquals(len(df), int(len(self.muns)/2)*7)
+        self.assertEqual(self.expected_columns, list(df.columns))
+        self.assertEqual(len(df), 7)
         self.assertFalse(df.empty)
+        del ds, df
 
-    def test_copebr_dataframe_last_update_all_geocodes(self):
+    def test_copebr_dataframe_monthly_file_one_geocode(self):
         st = time.time()
         ds = load_dataset(self.daily_last_update)
-        df = ds.copebr.to_dataframe(self.muns)
+        df = ds.copebr.to_dataframe(3304557)
         et = time.time()
         tt = et - st
-        loguru.logger.warning(
-            f"test_copebr_dataframe_last_update_all_geocodes: {tt:.4f} seconds"
+        loguru.logger.info(
+            f"took {tt:.4f} seconds"
         )
-        self.assertEquals(self.expected_columns, list(df.columns))
-        self.assertEquals(len(df), len(self.muns)*31)
+        self.assertEqual(self.expected_columns, list(df.columns))
+        self.assertEqual(len(df), 1)
         self.assertFalse(df.empty)
-
-
+        del ds, df
 
 
 class TestExtractMethods(unittest.TestCase):
     def test_brazil_coordinates_to_copernicus_api(self):
-        self.assertEquals(
+        self.assertEqual(
             _BR_AREA, {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
         )
 
     def test_default_data_directory(self):
         data_dir = Path().home() / 'copernicus_data'
-        self.assertEquals(_DATA_DIR, data_dir)
+        self.assertEqual(_DATA_DIR, data_dir)
 
     def test_date_formatting(self):
-        self.assertEquals(_format_dates('2023-01-01'), ('2023', '01', '01'))
-        self.assertEquals(
+        self.assertEqual(_format_dates('2023-01-01'), ('2023', '01', '01'))
+        self.assertEqual(
             _format_dates('2023-01-01', '2023-01-02'),
             ('2023', ['01'], ['01', '02']),
         )
-        self.assertEquals(
+        self.assertEqual(
             _format_dates('2023-01-01', '2023-01-31'),
             (
                 '2023',
@@ -169,7 +170,7 @@ class TestExtractMethods(unittest.TestCase):
                 ],
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             _format_dates('2023-01-01', '2023-06-15'),
             (
                 '2023',

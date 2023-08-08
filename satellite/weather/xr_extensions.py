@@ -176,6 +176,8 @@ class CopeBRDatasetExtension:
             index=False,
         )
 
+        del df
+
     async def _geocode_ds(self, geocode: int, raw=False):
         """
         This is the most important method of the extension. It will
