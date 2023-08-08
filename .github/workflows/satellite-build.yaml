@@ -22,9 +22,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
-    # - name: Semantic Release PR Title Check
-    #   uses: osl-incubator/semantic-release-pr-title-check@v1.0.0
+   
+    - name: Semantic Release PR Title Check
+      uses: osl-incubator/semantic-release-pr-title-check@v1.4.2
+      with:                                   
+        convention-name: conventionalcommits 
 
     - uses: conda-incubator/setup-miniconda@v2
       with:

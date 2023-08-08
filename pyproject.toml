@@ -58,6 +58,7 @@ isort = "^5.10.1"
 tomli = "^2.0.1"
 black = "^22.1.0"
 blue = "^0.9"
+virtualenv = "^20.24.2"
 
 [tool.isort]
 profile = "black"
