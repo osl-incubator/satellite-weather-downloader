@@ -3,18 +3,17 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from typing import Union
 
-import dask
-import dask.array as da
-import dask.dataframe as dd
-import metpy.calc as mpcalc
-import numpy as np
-import xarray as xr
-from loguru import logger
-from matplotlib.path import Path
-from metpy.units import units
-from shapely.geometry.polygon import Polygon
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Connectable
+import dask # type: ignore
+import dask.array as da # type: ignore
+import dask.dataframe as dd # type: ignore
+import metpy.calc as mpcalc # type: ignore
+import numpy as np # type: ignore
+import xarray as xr # type: ignore
+from loguru import logger # type: ignore
+from matplotlib.path import Path # type: ignore
+from metpy.units import units # type: ignore
+from shapely.geometry.polygon import Polygon # type: ignore
+from sqlalchemy.engine import Connectable # type: ignore
 
 from . import _brazil
 
@@ -37,7 +36,7 @@ class CopeBRDatasetExtension:
     Usage:
 
         ```
-        import satellite_weather as sat
+        import satellite.weather as sat
         ds = sat.load_dataset('file/path')
         RJ_geocode = 3304557
         rio_df = ds.copebr.to_dataframe(RJ_geocode)
@@ -55,6 +54,7 @@ class CopeBRDatasetExtension:
     precip_min : Minimum┐
     precip_med : Average├─ of total precipitation in `mm` given a geocode.
     precip_max : Maximum┘
+    precip_tot : Total precipitation in `mm` given a geocode.
     pressao_min: Minimum┐
     pressao_med: Average├─ sea level pressure in `hPa` given a geocode.
     pressao_max: Maximum┘

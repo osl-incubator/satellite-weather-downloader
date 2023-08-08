@@ -62,7 +62,7 @@ _MAX_DELAY_F = datetime.strftime(_MAX_DELAY, _DATE_FORMAT)
 def download_br_netcdf(
     date: Optional[str] = None,
     date_end: Optional[str] = None,
-    data_dir: Optional[str] = _DATA_DIR,
+    data_dir: Optional[str] = str(_DATA_DIR),
     user_key: Optional[str] = None,
 ):
     """
@@ -95,7 +95,7 @@ def download_br_netcdf(
         to transform into a `xarray.Dataset` with the CopeBRDatasetExtension located
         in `satellite_weather` module.
     """
-    Path(data_dir).mkdir(parents=True, exist_ok=True)
+    Path(str(data_dir)).mkdir(parents=True, exist_ok=True)
 
     if not user_key:
         cdsapi_key = os.getenv('CDSAPI_KEY')
@@ -107,7 +107,7 @@ def download_br_netcdf(
             'Environment variable CDSAPI_KEY not found in the system.\n'
             'Execute `$ export CDSAPI_KEY="<MY_UID>:<MY_API_KEY>" to fix.\n'
             'These credentials are found in your Copernicus User Page: \n'
-            'https://cds.climate.copernicus.eu/user/<MY_USER>'
+            'https://cds.climate.copernicus.eu/user/USER'
         )
 
     conn = Client(
