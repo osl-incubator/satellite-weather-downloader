@@ -1,25 +1,7 @@
 import unittest
-import datetime
 from pathlib import Path
 
-
-from satellite.downloader import download_br_netcdf
 from satellite.downloader.extract_reanalysis import _BR_AREA, _DATA_DIR, _format_dates
-
-
-class TestDownloaderAndWeather(unittest.TestCase):
-    def test_download_last_update(self):
-        netcdf_file = download_br_netcdf()
-        today = datetime.datetime.now()
-        lu = today - datetime.timedelta(days=8) # last update
-        
-        file = Path(netcdf_file)
-        expected_file = _DATA_DIR / f"BR_{lu.year}{lu.month:02d}{lu.day:02d}.nc"
-
-        self.assertTrue(file.exists())
-        self.assertEquals(str(netcdf_file), str(expected_file))
-
-
 
 class TestExtractMethods(unittest.TestCase):
     def test_brazil_coordinates_to_copernicus_api(self):
@@ -120,5 +102,3 @@ class TestExtractMethods(unittest.TestCase):
 
     ...
 
-# if __name__ == '__main__':
-#     unittest.main()

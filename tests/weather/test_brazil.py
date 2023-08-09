@@ -23,5 +23,3 @@ class TestExtraction(unittest.TestCase):
         self.assertEqual(ex(-10.6449, -36.9887), (-10.5, -10.75, -36.75, -37.0))
         self.assertEqual(ex(-8.96306, -48.1650), (-8.75, -9.0, -48.0, -48.25))
 
-if __name__ == "__main__":
-    unittest.main()
