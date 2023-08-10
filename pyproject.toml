@@ -64,6 +64,10 @@ virtualenv = "^20.24.2"
 [tool.poetry.group.tests.dependencies]
 snakeviz = "^2.2.0"
 
+
+[tool.poetry.group.test.dependencies]
+memory-profiler = "^0.61.0"
+
 [tool.isort]
 profile = "black"
 src_paths = ["isort", "test"]

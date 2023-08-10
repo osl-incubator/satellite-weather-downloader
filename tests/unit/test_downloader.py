@@ -5,21 +5,21 @@ from satellite.downloader.extract_reanalysis import _BR_AREA, _DATA_DIR, _format
 
 class TestExtractMethods(unittest.TestCase):
     def test_brazil_coordinates_to_copernicus_api(self):
-        self.assertEquals(
+        self.assertEqual(
             _BR_AREA, {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
         )
 
     def test_default_data_directory(self):
         data_dir = Path().home() / 'copernicus_data'
-        self.assertEquals(_DATA_DIR, data_dir)
+        self.assertEqual(_DATA_DIR, data_dir)
 
     def test_date_formatting(self):
-        self.assertEquals(_format_dates('2023-01-01'), ('2023', '01', '01'))
-        self.assertEquals(
+        self.assertEqual(_format_dates('2023-01-01'), ('2023', '01', '01'))
+        self.assertEqual(
             _format_dates('2023-01-01', '2023-01-02'),
             ('2023', ['01'], ['01', '02']),
         )
-        self.assertEquals(
+        self.assertEqual(
             _format_dates('2023-01-01', '2023-01-31'),
             (
                 '2023',
@@ -59,7 +59,7 @@ class TestExtractMethods(unittest.TestCase):
                 ],
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             _format_dates('2023-01-01', '2023-06-15'),
             (
                 '2023',

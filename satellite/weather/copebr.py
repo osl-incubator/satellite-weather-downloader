@@ -294,7 +294,7 @@ def reduce_by(ds: xr.Dataset, func, prefix: str):
     )
 
 
-def get_latlons(geocode: int) -> tuple[float, float]:
+def get_latlons(geocode: int) -> tuple[list[float], list[float]]:
     """
     Extract Latitude and Longitude from a Brazilian's city
     according to IBGE's geocode format.
