@@ -1,10 +1,8 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional, Union
 
 import geopandas
 import pandas as pd
-from loguru import logger
 
 _SHAPEFILE = Path(__file__).parent / 'areas_dsei.shp'
 

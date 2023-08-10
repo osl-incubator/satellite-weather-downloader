@@ -34,7 +34,6 @@ python = ">=3.10,<4"
 cdsapi = "^0.5.1"
 pandas = ">=2.0.0"
 numpy = ">=1.25"
-MetPy = ">=1.5"
 SQLAlchemy = "^1.4.41"
 python-dotenv = "^0.21.0"
 netCDF4 = "^1.6.1"
@@ -47,6 +46,7 @@ geopandas = "^0.12.2"
 matplotlib = "^3.6.3"
 shapely = "^2.0.1"
 dask = "^2023.3.1"
+xarray = ">=2023.7.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.4"
@@ -59,6 +59,10 @@ tomli = "^2.0.1"
 black = "^22.1.0"
 blue = "^0.9"
 virtualenv = "^20.24.2"
+
+
+[tool.poetry.group.tests.dependencies]
+snakeviz = "^2.2.0"
 
 [tool.isort]
 profile = "black"

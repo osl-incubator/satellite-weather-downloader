@@ -1,12 +1,11 @@
 from typing import Union
 
+import dask
 import dask.array as da # type: ignore
 import dask.dataframe as dd # type: ignore
-import metpy.calc as mpcalc # type: ignore
 import numpy as np # type: ignore
 import xarray as xr # type: ignore
 from loguru import logger # type: ignore
-from metpy.units import units # type: ignore
 from sqlalchemy.engine import Connectable # type: ignore
 
 from . import brazil
@@ -61,8 +60,14 @@ class CopeBRDatasetExtension:
         self._ds = xarray_ds
 
     def to_dataframe(self, geocodes: Union[list, int], raw: bool = False):
-        df = final_dataframe(dataset= self._ds, geocodes=geocodes, raw=raw).compute()
-        return df.reset_index()
+        df = final_dataframe(dataset= self._ds, geocodes=geocodes, raw=raw)
+        
+        if type(df) == dask.dataframe.core.DataFrame:
+            df = df.compute()
+
+        df = df.reset_index(drop=True)
+
+        return df
 
     def to_sql(
         self,
@@ -101,11 +106,15 @@ def final_dataframe(dataset: xr.Dataset, geocodes: Union[list, int], raw=False):
         dfs.append(geocode_to_dataframe(dataset, geocode, raw))
 
     final_df = dd.concat(dfs)
-    final_df = final_df.reset_index(drop=False)
+
+    if final_df.index.name == "time":
+        final_df = final_df.reset_index(drop=False)
+
     if raw:
         final_df = final_df.rename(columns={'time': 'datetime'})
     else:
         final_df = final_df.rename(columns={'time': 'date'})
+
     return final_df
 
 
@@ -226,10 +235,26 @@ def convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
     """
     ds = dataset
     vars = list(ds.data_vars.keys())
+
     if 't2m' in vars:
         # Convert Kelvin to Celsius degrees
         ds['t2m'] = ds.t2m - 273.15
         ds['t2m'].attrs = {'units': 'degC', 'long_name': 'Temperatura'}
+
+        if 'd2m' in vars:
+            # Calculate Relative Humidity percentage and add to Dataset
+            ds['d2m'] = ds.d2m - 273.15
+
+            e = 6.112 * np.exp(17.67*ds.d2m/(ds.d2m+243.5))
+            es = 6.112 * np.exp(17.67*ds.t2m/(ds.t2m+243.5))
+            rh = (e/es) * 100
+
+            # Replacing the variable instead of dropping. d2m won't be used.
+            ds['d2m'] = rh
+            ds['d2m'].attrs = {
+                'units': 'pct',
+                'long_name': 'Umidade Relativa do Ar',
+            }
     if 'tp' in vars:
         # Convert meters to millimeters
         ds['tp'] = ds.tp * 1000
@@ -241,21 +266,6 @@ def convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
         ds['msl'].attrs = {
             'units': 'atm',
             'long_name': 'Pressão ao Nível do Mar',
-        }
-    if 'd2m' in vars:
-        # Calculate Relative Humidity percentage and add to Dataset
-        ds['d2m'] = ds.d2m - 273.15
-        rh = (
-            mpcalc.relative_humidity_from_dewpoint(
-                ds['t2m'] * units.degC, ds['d2m'] * units.degC
-            )
-            * 100
-        )
-        # Replacing the variable instead of dropping. d2m won't be used.
-        ds['d2m'] = rh
-        ds['d2m'].attrs = {
-            'units': 'pct',
-            'long_name': 'Umidade Relativa do Ar',
         }
 
     with_br_vars = {
