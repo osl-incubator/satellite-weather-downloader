@@ -54,8 +54,8 @@ br_dataset = sat.load_dataset(file)
 ## Usage of `copebr` extension
 ``` python
 rio_geocode = 3304557 # Rio de Janeiro's geocode (IBGE)
-rio_dataset = br_dataset.copebr.ds_from_geocode(rio_geocode)
-rio_dataframe = rio_dataset.to_dataframe(rio_geocode)
+rio_dataset = br_dataset.copebr.geocode_ds(rio_geocode)
+rio_dataset.to_dataframe(rio_geocode)
 ```
 
 It is also possible to create a dataframe directly from the National-wide dataset:

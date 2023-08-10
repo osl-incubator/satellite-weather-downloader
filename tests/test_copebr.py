@@ -25,7 +25,7 @@ class TestWeatherCopebr(unittest.TestCase):
         profiler = Profile()
         profiler.enable()
 
-        latlons = weather.copebr.get_latlons(3304557)
+        latlons = weather.copebr._get_latlons(3304557)
 
         profiler.disable()
         stats = Stats(profiler)
@@ -34,10 +34,10 @@ class TestWeatherCopebr(unittest.TestCase):
 
         self.assertEqual(latlons, ([-22.75, -23.0], [-43.0, -43.25]))
         self.assertEqual(
-            weather.copebr.get_latlons(4108304), ([-25.5], [-54.5, -54.75])
+            weather.copebr._get_latlons(4108304), ([-25.5], [-54.5, -54.75])
         )
         self.assertRaises(
-            ValueError, weather.copebr.get_latlons, 123
+            ValueError, weather.copebr._get_latlons, 123
         )
 
     def test_load_netcdf_daily_file(self):
@@ -59,7 +59,7 @@ class TestWeatherCopebr(unittest.TestCase):
         profiler = Profile()
         profiler.enable()
 
-        ds_min = weather.copebr.reduce_by(self.dataset, np.min, "min")
+        ds_min = weather.copebr._reduce_by(self.dataset, np.min, "min")
 
         profiler.disable()
         stats = Stats(profiler)
@@ -78,7 +78,7 @@ class TestWeatherCopebr(unittest.TestCase):
         profiler = Profile()
         profiler.enable()
 
-        br = weather.copebr.convert_to_br_units(self.dataset)
+        br = weather.copebr._convert_to_br_units(self.dataset)
 
         profiler.disable()
         stats = Stats(profiler)
@@ -90,11 +90,11 @@ class TestWeatherCopebr(unittest.TestCase):
         self.assertEqual(list(br.coords), ['longitude', 'latitude', 'time'])
 
     def test_slicing_dataset_by_coord(self):
-        lats, lons = weather.copebr.get_latlons(3304557)
+        lats, lons = weather.copebr._get_latlons(3304557)
         profiler = Profile()
         profiler.enable()
 
-        ds_slice = weather.copebr.slice_dataset_by_coord(self.dataset, lats, lons)
+        ds_slice = weather.copebr._slice_dataset_by_coord(self.dataset, lats, lons)
 
         profiler.disable()
         stats = Stats(profiler)
@@ -109,7 +109,7 @@ class TestWeatherCopebr(unittest.TestCase):
         profiler = Profile()
         profiler.enable()
 
-        ds_rio = weather.copebr.geocode_ds(self.dataset, 3304557)
+        ds_rio = weather.copebr._geocode_ds(self.dataset, 3304557)
 
         profiler.disable()
         stats = Stats(profiler)
@@ -131,7 +131,7 @@ class TestWeatherCopebr(unittest.TestCase):
         profiler = Profile()
         profiler.enable()
 
-        df = weather.copebr.geocode_to_dataframe(self.dataset, 3304557)
+        df = weather.copebr._geocode_to_dataframe(self.dataset, 3304557)
 
         profiler.disable()
         stats = Stats(profiler)
@@ -155,7 +155,7 @@ class TestWeatherCopebr(unittest.TestCase):
         profiler = Profile()
         profiler.enable()
 
-        df = weather.copebr.final_dataframe(
+        df = weather.copebr._final_dataframe(
             self.dataset, list(self.geocodes.keys())[:50]
         )
 
@@ -200,7 +200,7 @@ class TestWeatherCopebr(unittest.TestCase):
         profiler = Profile()
         profiler.enable()
 
-        df = weather.copebr.final_dataframe(
+        df = weather.copebr._final_dataframe(
             self.dataset, list(self.geocodes.keys())[:500]
         )
 

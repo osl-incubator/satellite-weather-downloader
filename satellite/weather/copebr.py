@@ -60,7 +60,7 @@ class CopeBRDatasetExtension:
         self._ds = xarray_ds
 
     def to_dataframe(self, geocodes: Union[list, int], raw: bool = False):
-        df = final_dataframe(dataset= self._ds, geocodes=geocodes, raw=raw)
+        df = _final_dataframe(dataset= self._ds, geocodes=geocodes, raw=raw)
         
         if type(df) == dask.dataframe.core.DataFrame:
             df = df.compute()
@@ -85,7 +85,7 @@ class CopeBRDatasetExtension:
         """
         geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
         for geocode in geocodes:
-            geocode_to_sql(
+            _geocode_to_sql(
                 dataset=self._ds,
                 geocode=geocode,
                 con=con,
@@ -97,13 +97,16 @@ class CopeBRDatasetExtension:
                 f'{geocode} updated on {schema}.{tablename}'
             )
 
+    def geocode_ds(self, geocode: int, raw: bool = False):
+        return _geocode_ds(self._ds, geocode, raw)
 
-def final_dataframe(dataset: xr.Dataset, geocodes: Union[list, int], raw=False):
+
+def _final_dataframe(dataset: xr.Dataset, geocodes: Union[list, int], raw=False):
     geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
 
     dfs = []
     for geocode in geocodes:
-        dfs.append(geocode_to_dataframe(dataset, geocode, raw))
+        dfs.append(_geocode_to_dataframe(dataset, geocode, raw))
 
     final_df = dd.concat(dfs)
 
@@ -118,7 +121,7 @@ def final_dataframe(dataset: xr.Dataset, geocodes: Union[list, int], raw=False):
     return final_df
 
 
-def geocode_to_sql(
+def _geocode_to_sql(
     dataset: xr.Dataset,
     geocode: int,
     con: Connectable,
@@ -126,7 +129,7 @@ def geocode_to_sql(
     tablename: str,
     raw: bool,
 ):
-    ds = geocode_ds(dataset, geocode, raw)
+    ds = _geocode_ds(dataset, geocode, raw)
     df = ds.to_dataframe()
     del ds
     geocodes = [geocode for g in range(len(df))]
@@ -147,7 +150,7 @@ def geocode_to_sql(
     del df
 
 
-def geocode_to_dataframe(dataset: xr.Dataset, geocode: int, raw=False):
+def _geocode_to_dataframe(dataset: xr.Dataset, geocode: int, raw=False):
     """
     Returns a DataFrame with the values related to the geocode of a
     brazilian city according to IBGE's format. Extract the values
@@ -165,7 +168,7 @@ def geocode_to_dataframe(dataset: xr.Dataset, geocode: int, raw=False):
                     to differ the data when inserting into a database,
                     for instance.
     """
-    ds = geocode_ds(dataset, geocode, raw)
+    ds = _geocode_ds(dataset, geocode, raw)
     df = ds.to_dataframe()
     del ds
     geocode = [geocode for g in range(len(df))]
@@ -173,7 +176,7 @@ def geocode_to_dataframe(dataset: xr.Dataset, geocode: int, raw=False):
     return df
 
 
-def geocode_ds(ds: xr.Dataset, geocode: int, raw=False):
+def _geocode_ds(ds: xr.Dataset, geocode: int, raw=False):
     """
     This is the most important method of the extension. It will
     slice the dataset according to the geocode provided, do the
@@ -192,9 +195,9 @@ def geocode_ds(ds: xr.Dataset, geocode: int, raw=False):
                     the data corresponds to a 3h interval range for
                     each day in the dataset.
     """
-    lats, lons = get_latlons(geocode)
+    lats, lons = _get_latlons(geocode)
 
-    geocode_ds = convert_to_br_units(slice_dataset_by_coord(
+    geocode_ds = _convert_to_br_units(_slice_dataset_by_coord(
             dataset=ds, lats=lats, lons=lons
     ))
 
@@ -204,10 +207,10 @@ def geocode_ds(ds: xr.Dataset, geocode: int, raw=False):
     geocode_ds = geocode_ds.sortby('time')
     gb = geocode_ds.resample(time='1D')
     gmin, gmean, gmax, gtot = (
-        reduce_by(gb, np.min, 'min'),
-        reduce_by(gb, np.mean, 'med'),
-        reduce_by(gb, np.max, 'max'),
-        reduce_by(gb, np.sum, 'tot'),
+        _reduce_by(gb, np.min, 'min'),
+        _reduce_by(gb, np.mean, 'med'),
+        _reduce_by(gb, np.max, 'max'),
+        _reduce_by(gb, np.sum, 'tot'),
     )
 
     final_ds = xr.combine_by_coords(
@@ -217,7 +220,7 @@ def geocode_ds(ds: xr.Dataset, geocode: int, raw=False):
     return final_ds
 
 
-def slice_dataset_by_coord(
+def _slice_dataset_by_coord(
     dataset: xr.Dataset, lats: list[int], lons: list[int]
 ):
     """
@@ -228,7 +231,7 @@ def slice_dataset_by_coord(
     return ds.mean(dim=['latitude', 'longitude'])
 
 
-def convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
+def _convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
     """
     Parse the units according to Brazil's standard unit measures.
     Rename their unit names and long names as well.
@@ -278,7 +281,7 @@ def convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
     return ds.rename(with_br_vars)
 
 
-def reduce_by(ds: xr.Dataset, func, prefix: str):
+def _reduce_by(ds: xr.Dataset, func, prefix: str):
     """
     Applies a function to each coordinate in the dataset and
     replace the `data_vars` names to it's corresponding prefix.
@@ -294,7 +297,7 @@ def reduce_by(ds: xr.Dataset, func, prefix: str):
     )
 
 
-def get_latlons(geocode: int) -> tuple[list[float], list[float]]:
+def _get_latlons(geocode: int) -> tuple[list[float], list[float]]:
     """
     Extract Latitude and Longitude from a Brazilian's city
     according to IBGE's geocode format.
