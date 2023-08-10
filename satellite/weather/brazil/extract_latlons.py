@@ -15,12 +15,12 @@ from_geocode(geocode):
 import json
 from pathlib import Path
 
-with open(f'{Path(__file__).parent}/municipios.json') as muns:
-    _mun_decoded = muns.read().encode().decode('utf-8-sig')
+with open(f"{Path(__file__).parent}/municipios.json") as muns:
+    _mun_decoded = muns.read().encode().decode("utf-8-sig")
     MUNICIPALITIES = json.loads(_mun_decoded)
 
 COORDS_BY_GEOCODE = {
-    mun['geocodigo']: (mun['latitude'], mun['longitude']) for mun in MUNICIPALITIES
+    mun["geocodigo"]: (mun["latitude"], mun["longitude"]) for mun in MUNICIPALITIES
 }
 
 

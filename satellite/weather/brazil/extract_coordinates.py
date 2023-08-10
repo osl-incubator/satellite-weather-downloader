@@ -61,22 +61,34 @@ def from_latlon(lat, lon) -> tuple:
     # 1st quadrant
     if lat_diff < 0 and lon_diff < 0:
         north, south, east, west = (
-            closest_lat, closest_lat - 0.25, closest_lon, closest_lon - 0.25
+            closest_lat,
+            closest_lat - 0.25,
+            closest_lon,
+            closest_lon - 0.25,
         )
     # 2nd quadrant
     elif lat_diff > 0 and lon_diff < 0:
         north, south, east, west = (
-            closest_lat + 0.25, closest_lat, closest_lon, closest_lon - 0.25
+            closest_lat + 0.25,
+            closest_lat,
+            closest_lon,
+            closest_lon - 0.25,
         )
     # 3rd quadrant
     elif lat_diff > 0 and lon_diff > 0:
         north, south, east, west = (
-            closest_lat + 0.25, closest_lat, closest_lon + 0.25, closest_lon
+            closest_lat + 0.25,
+            closest_lat,
+            closest_lon + 0.25,
+            closest_lon,
         )
     # 4th quadrant
     else:
         north, south, east, west = (
-            closest_lat, closest_lat - 0.25, closest_lon + 0.25, closest_lon
+            closest_lat,
+            closest_lat - 0.25,
+            closest_lon + 0.25,
+            closest_lon,
         )
 
     return north, south, east, west

@@ -1,19 +1,19 @@
 from typing import Union
 
 import dask
-import dask.array as da # type: ignore
-import dask.dataframe as dd # type: ignore
-import numpy as np # type: ignore
-import xarray as xr # type: ignore
-from loguru import logger # type: ignore
-from sqlalchemy.engine import Connectable # type: ignore
+import dask.array as da  # type: ignore
+import dask.dataframe as dd  # type: ignore
+import numpy as np  # type: ignore
+import xarray as xr  # type: ignore
+from loguru import logger  # type: ignore
+from sqlalchemy.engine import Connectable  # type: ignore
 
 from . import brazil
 
 xr.set_options(keep_attrs=True)
 
 
-@xr.register_dataset_accessor('copebr')
+@xr.register_dataset_accessor("copebr")
 class CopeBRDatasetExtension:
     """
     xarray.Dataset.copebr
@@ -60,8 +60,8 @@ class CopeBRDatasetExtension:
         self._ds = xarray_ds
 
     def to_dataframe(self, geocodes: Union[list, int], raw: bool = False):
-        df = _final_dataframe(dataset= self._ds, geocodes=geocodes, raw=raw)
-        
+        df = _final_dataframe(dataset=self._ds, geocodes=geocodes, raw=raw)
+
         if type(df) == dask.dataframe.core.DataFrame:
             df = df.compute()
 
@@ -77,7 +77,7 @@ class CopeBRDatasetExtension:
         schema: str,
         raw: bool = False,
     ) -> None:
-        """ 
+        """
         Reads the data for each geocode and insert the rows into the
         database one by one, created by sqlalchemy engine with the URI.
         This method is convenient to prevent the memory overhead when
@@ -93,9 +93,7 @@ class CopeBRDatasetExtension:
                 tablename=tablename,
                 raw=raw,
             )
-            logger.debug(
-                f'{geocode} updated on {schema}.{tablename}'
-            )
+            logger.debug(f"{geocode} updated on {schema}.{tablename}")
 
     def geocode_ds(self, geocode: int, raw: bool = False):
         return _geocode_ds(self._ds, geocode, raw)
@@ -114,9 +112,9 @@ def _final_dataframe(dataset: xr.Dataset, geocodes: Union[list, int], raw=False)
         final_df = final_df.reset_index(drop=False)
 
     if raw:
-        final_df = final_df.rename(columns={'time': 'datetime'})
+        final_df = final_df.rename(columns={"time": "datetime"})
     else:
-        final_df = final_df.rename(columns={'time': 'date'})
+        final_df = final_df.rename(columns={"time": "date"})
 
     return final_df
 
@@ -136,15 +134,15 @@ def _geocode_to_sql(
     df = df.assign(geocodigo=geocodes)
     df = df.reset_index(drop=False)
     if raw:
-        df = df.rename(columns={'time': 'datetime'})
+        df = df.rename(columns={"time": "datetime"})
     else:
-        df = df.rename(columns={'time': 'date'})
+        df = df.rename(columns={"time": "date"})
 
     df.to_sql(
         name=tablename,
         schema=schema,
         con=con,
-        if_exists='append',
+        if_exists="append",
         index=False,
     )
     del df
@@ -197,38 +195,36 @@ def _geocode_ds(ds: xr.Dataset, geocode: int, raw=False):
     """
     lats, lons = _get_latlons(geocode)
 
-    geocode_ds = _convert_to_br_units(_slice_dataset_by_coord(
-            dataset=ds, lats=lats, lons=lons
-    ))
+    geocode_ds = _convert_to_br_units(
+        _slice_dataset_by_coord(dataset=ds, lats=lats, lons=lons)
+    )
 
     if raw:
         return geocode_ds
 
-    geocode_ds = geocode_ds.sortby('time')
-    gb = geocode_ds.resample(time='1D')
+    geocode_ds = geocode_ds.sortby("time")
+    gb = geocode_ds.resample(time="1D")
     gmin, gmean, gmax, gtot = (
-        _reduce_by(gb, np.min, 'min'),
-        _reduce_by(gb, np.mean, 'med'),
-        _reduce_by(gb, np.max, 'max'),
-        _reduce_by(gb, np.sum, 'tot'),
+        _reduce_by(gb, np.min, "min"),
+        _reduce_by(gb, np.mean, "med"),
+        _reduce_by(gb, np.max, "max"),
+        _reduce_by(gb, np.sum, "tot"),
     )
 
     final_ds = xr.combine_by_coords(
-        [gmin, gmean, gmax, gtot.precip_tot], data_vars='all'
+        [gmin, gmean, gmax, gtot.precip_tot], data_vars="all"
     )
 
     return final_ds
 
 
-def _slice_dataset_by_coord(
-    dataset: xr.Dataset, lats: list[int], lons: list[int]
-):
+def _slice_dataset_by_coord(dataset: xr.Dataset, lats: list[int], lons: list[int]):
     """
     Slices a dataset using latitudes and longitudes, returns a dataset
     with the mean values between the coordinates.
     """
-    ds = dataset.sel(latitude=lats, longitude=lons, method='nearest')
-    return ds.mean(dim=['latitude', 'longitude'])
+    ds = dataset.sel(latitude=lats, longitude=lons, method="nearest")
+    return ds.mean(dim=["latitude", "longitude"])
 
 
 def _convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
@@ -239,43 +235,43 @@ def _convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
     ds = dataset
     vars = list(ds.data_vars.keys())
 
-    if 't2m' in vars:
+    if "t2m" in vars:
         # Convert Kelvin to Celsius degrees
-        ds['t2m'] = ds.t2m - 273.15
-        ds['t2m'].attrs = {'units': 'degC', 'long_name': 'Temperatura'}
+        ds["t2m"] = ds.t2m - 273.15
+        ds["t2m"].attrs = {"units": "degC", "long_name": "Temperatura"}
 
-        if 'd2m' in vars:
+        if "d2m" in vars:
             # Calculate Relative Humidity percentage and add to Dataset
-            ds['d2m'] = ds.d2m - 273.15
+            ds["d2m"] = ds.d2m - 273.15
 
-            e = 6.112 * np.exp(17.67*ds.d2m/(ds.d2m+243.5))
-            es = 6.112 * np.exp(17.67*ds.t2m/(ds.t2m+243.5))
-            rh = (e/es) * 100
+            e = 6.112 * np.exp(17.67 * ds.d2m / (ds.d2m + 243.5))
+            es = 6.112 * np.exp(17.67 * ds.t2m / (ds.t2m + 243.5))
+            rh = (e / es) * 100
 
             # Replacing the variable instead of dropping. d2m won't be used.
-            ds['d2m'] = rh
-            ds['d2m'].attrs = {
-                'units': 'pct',
-                'long_name': 'Umidade Relativa do Ar',
+            ds["d2m"] = rh
+            ds["d2m"].attrs = {
+                "units": "pct",
+                "long_name": "Umidade Relativa do Ar",
             }
-    if 'tp' in vars:
+    if "tp" in vars:
         # Convert meters to millimeters
-        ds['tp'] = ds.tp * 1000
-        ds['tp'] = ds.tp.round(5)
-        ds['tp'].attrs = {'units': 'mm', 'long_name': 'Precipitação'}
-    if 'msl' in vars:
+        ds["tp"] = ds.tp * 1000
+        ds["tp"] = ds.tp.round(5)
+        ds["tp"].attrs = {"units": "mm", "long_name": "Precipitação"}
+    if "msl" in vars:
         # Convert Pa to ATM
-        ds['msl'] = ds.msl * 0.00000986923
-        ds['msl'].attrs = {
-            'units': 'atm',
-            'long_name': 'Pressão ao Nível do Mar',
+        ds["msl"] = ds.msl * 0.00000986923
+        ds["msl"].attrs = {
+            "units": "atm",
+            "long_name": "Pressão ao Nível do Mar",
         }
 
     with_br_vars = {
-        't2m': 'temp',
-        'tp': 'precip',
-        'msl': 'pressao',
-        'd2m': 'umid',
+        "t2m": "temp",
+        "tp": "precip",
+        "msl": "pressao",
+        "d2m": "umid",
     }
 
     return ds.rename(with_br_vars)
@@ -291,7 +287,7 @@ def _reduce_by(ds: xr.Dataset, func, prefix: str):
         dict(
             zip(
                 list(ds.data_vars),
-                list(map(lambda x: f'{x}_{prefix}', list(ds.data_vars))),
+                list(map(lambda x: f"{x}_{prefix}", list(ds.data_vars))),
             )
         )
     )
@@ -309,7 +305,7 @@ def _get_latlons(geocode: int) -> tuple[list[float], list[float]]:
     lons = [E, W]
 
     match geocode:
-        case 4108304:   # Foz do Iguaçu
+        case 4108304:  # Foz do Iguaçu
             lats = [-25.5]
             lons = [-54.5, -54.75]
 

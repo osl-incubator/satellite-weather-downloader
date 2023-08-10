@@ -42,21 +42,22 @@ import pandas as pd
 import urllib3
 from cdsapi.api import Client
 
-_BR_AREA = {'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
-_DATA_DIR = Path.home() / 'copernicus_data'
+_BR_AREA = {"N": 5.5, "W": -74.0, "S": -33.75, "E": -32.25}
+_DATA_DIR = Path.home() / "copernicus_data"
 
-_HELP = 'Use `help(extract_reanalysis.download_br_netcdf)` for more info.'
+_HELP = "Use `help(extract_reanalysis.download_br_netcdf)` for more info."
 
 _CUR_DATE = datetime.now()
-_DATE_FORMAT = '%Y-%m-%d'
-_RE_FORMAT = r'\d{4}-\d{2}-\d{2}'
-_ISO_FORMAT = 'YYYY-MM-DD'
+_DATE_FORMAT = "%Y-%m-%d"
+_RE_FORMAT = r"\d{4}-\d{2}-\d{2}"
+_ISO_FORMAT = "YYYY-MM-DD"
 
 # dataset has maximum of 8 days of update delay.
 # in order to prevent requesting invalid dates,
 # the max date is 8 days ago, from today's date
 _MAX_DELAY = _CUR_DATE - timedelta(days=8)
 _MAX_DELAY_F = datetime.strftime(_MAX_DELAY, _DATE_FORMAT)
+
 
 # TODO: make download_br_netcdf accepts date and datetime types.
 def download_br_netcdf(
@@ -98,38 +99,37 @@ def download_br_netcdf(
     Path(str(data_dir)).mkdir(parents=True, exist_ok=True)
 
     if not user_key:
-        cdsapi_key = os.getenv('CDSAPI_KEY')
+        cdsapi_key = os.getenv("CDSAPI_KEY")
     else:
         cdsapi_key = user_key
 
     if not cdsapi_key:
         raise EnvironmentError(
-            'Environment variable CDSAPI_KEY not found in the system.\n'
+            "Environment variable CDSAPI_KEY not found in the system.\n"
             'Execute `$ export CDSAPI_KEY="<MY_UID>:<MY_API_KEY>" to fix.\n'
-            'These credentials are found in your Copernicus User Page: \n'
-            'https://cds.climate.copernicus.eu/user/USER'
+            "These credentials are found in your Copernicus User Page: \n"
+            "https://cds.climate.copernicus.eu/user/USER"
         )
 
     conn = Client(
-        url='https://cds.climate.copernicus.eu/api/v2',
+        url="https://cds.climate.copernicus.eu/api/v2",
         key=cdsapi_key,
     )
 
     if date and not date_end:
         year, month, day = _format_dates(date)
-        filename = f'BR_{date}.nc'
+        filename = f"BR_{date}.nc"
 
     elif all([date, date_end]):
         year, month, day = _format_dates(date, date_end)
-        filename = f'BR_{date}_{date_end}.nc'
+        filename = f"BR_{date}_{date_end}.nc"
 
     elif not date and not date_end:
         logging.warning(
-            'No date provided, downloading last'
-            + f' available date: {_MAX_DELAY_F}'
+            "No date provided, downloading last" + f" available date: {_MAX_DELAY_F}"
         )
         year, month, day = _format_dates(_MAX_DELAY_F)
-        filename = f'BR_{_MAX_DELAY_F}.nc'
+        filename = f"BR_{_MAX_DELAY_F}.nc"
 
     else:
         raise Exception(
@@ -139,8 +139,8 @@ def download_br_netcdf(
         """
         )
 
-    filename = filename.replace('-', '')
-    file = f'{data_dir}/{filename}'
+    filename = filename.replace("-", "")
+    file = f"{data_dir}/{filename}"
     if Path(file).exists():
         return file
 
@@ -148,34 +148,34 @@ def download_br_netcdf(
         try:
             urllib3.disable_warnings()
             conn.retrieve(
-                'reanalysis-era5-single-levels',
+                "reanalysis-era5-single-levels",
                 {
-                    'product_type': 'reanalysis',
-                    'variable': [
-                        '2m_temperature',
-                        'total_precipitation',
-                        '2m_dewpoint_temperature',
-                        'mean_sea_level_pressure',
+                    "product_type": "reanalysis",
+                    "variable": [
+                        "2m_temperature",
+                        "total_precipitation",
+                        "2m_dewpoint_temperature",
+                        "mean_sea_level_pressure",
                     ],
-                    'year': year,
-                    'month': month,
-                    'day': day,
-                    'time': [
-                        '00:00',
-                        '03:00',
-                        '06:00',
-                        '09:00',
-                        '12:00',
-                        '15:00',
-                        '18:00',
-                        '21:00',
+                    "year": year,
+                    "month": month,
+                    "day": day,
+                    "time": [
+                        "00:00",
+                        "03:00",
+                        "06:00",
+                        "09:00",
+                        "12:00",
+                        "15:00",
+                        "18:00",
+                        "21:00",
                     ],
-                    'area': list(_BR_AREA.values()),
-                    'format': 'netcdf',
+                    "area": list(_BR_AREA.values()),
+                    "format": "netcdf",
                 },
                 str(file),
             )
-            logging.info(f'NetCDF {filename} downloaded at {data_dir}.')
+            logging.info(f"NetCDF {filename} downloaded at {data_dir}.")
             return str(file)
 
         except Exception as e:
@@ -200,7 +200,7 @@ def _format_dates(
     """
 
     ini_date = datetime.strptime(date, _DATE_FORMAT)
-    year, month, day = date.split('-')
+    year, month, day = date.split("-")
 
     if ini_date > _MAX_DELAY:
         raise Exception(
@@ -265,8 +265,8 @@ def _format_dates(
         day_set = set()
         for date in df:
             date_f = str(date)
-            iso_form = date_f.split(' ')[0]
-            year_, month_, day_ = iso_form.split('-')
+            iso_form = date_f.split(" ")[0]
+            year_, month_, day_ = iso_form.split("-")
             year_set.add(year_)
             month_set.add(month_)
             day_set.add(day_)

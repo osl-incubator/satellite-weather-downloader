@@ -1,1 +1,1 @@
-from . import areas
+from . import areas  # noqa

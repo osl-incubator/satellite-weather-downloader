@@ -22,7 +22,7 @@ classifiers = [  #! Update me
   "Topic :: Software Development :: Libraries :: Python Modules",
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
 ]
 
 packages = [
@@ -53,12 +53,10 @@ pytest = ">=7.4"
 jupyterlab = "^3.4.8"
 seaborn = "^0.12.1"
 pre-commit = "^2.20.0"
-flake8 = ">=3.8,<5.0.0"
-isort = "^5.10.1"
 tomli = "^2.0.1"
-black = "^22.1.0"
-blue = "^0.9"
+black = ">=23.7"
 virtualenv = "^20.24.2"
+ruff = "^0.0.284"
 
 
 [tool.poetry.group.tests.dependencies]

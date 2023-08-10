@@ -22,7 +22,7 @@ def ERA5_reanalysis(
 ) -> str:
     """
     https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels
-    This method will create the request to Copernicus Reanalysis using CLI or by method call.
+    Creates the request to Copernicus Reanalysis using CLI or by method call.
     Although the `copebr` extension in `satellite_weather` does not have support to all
     dataset variables, the request allows all options to be passed in, according to
     Copernicus API:
@@ -39,22 +39,22 @@ def ERA5_reanalysis(
     asks for the missing inputs. The request will fail if the data requested is too
     big. Please check the link above to more information.
     """
-    allowed_chars = ascii_letters + '/-_'
+    allowed_chars = ascii_letters + "/-_"
     for char in filename:
         if char not in allowed_chars:
-            raise ValueError(f'Invalid character {char}')
+            raise ValueError(f"Invalid character {char}")
 
-    cdsapi_key = os.getenv('CDSAPI_KEY')
+    cdsapi_key = os.getenv("CDSAPI_KEY")
     if not cdsapi_key:
         raise EnvironmentError(
-            'Environment variable CDSAPI_KEY not found in the system.\n'
+            "Environment variable CDSAPI_KEY not found in the system.\n"
             'Execute `$ export CDSAPI_KEY="{MY_UID}:{MY_KEY}" to fix.\n'
-            'These credentials are found in your Copernicus User Page \n'
-            'https://cds.climate.copernicus.eu/user/{MY_USER}'
+            "These credentials are found in your Copernicus User Page \n"
+            "https://cds.climate.copernicus.eu/user/{MY_USER}"
         )
 
     conn = Client(
-        url='https://cds.climate.copernicus.eu/api/v2',
+        url="https://cds.climate.copernicus.eu/api/v2",
         key=cdsapi_key,
     )
 
@@ -69,11 +69,11 @@ def ERA5_reanalysis(
         format=format,
     )
 
-    _no_suffix = filename.split('.')[0]   # Forcing correct suffix
-    filename = _no_suffix + '.nc' if options['format'] == 'netcdf' else '.grib'
+    _no_suffix = filename.split(".")[0]  # Forcing correct suffix
+    filename = _no_suffix + ".nc" if options["format"] == "netcdf" else ".grib"
 
     try:
-        conn.retrieve('reanalysis-era5-single-levels', options, filename)
+        conn.retrieve("reanalysis-era5-single-levels", options, filename)
     except Exception as e:
         logger.error(e)
         raise e

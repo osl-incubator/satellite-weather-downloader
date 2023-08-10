@@ -1,13 +1,15 @@
 from typing import Union
 
-from loguru import logger
-from shapely.geometry.polygon import Polygon # type: ignore
-from matplotlib.path import Path # type: ignore
 import xarray as xr
+import numpy as np
+from loguru import logger
+from matplotlib.path import Path  # type: ignore
+from shapely.geometry.polygon import Polygon  # type: ignore
 
-from . import brazil # type: ignore
+from . import brazil  # type: ignore
 
-@xr.register_dataset_accessor('DSEI')
+
+@xr.register_dataset_accessor("DSEI")
 class CopeDSEIDatasetExtension:
     """
     xarray.Dataset.DSEI
@@ -32,13 +34,11 @@ class CopeDSEIDatasetExtension:
     def load_polygons(self):
         df = brazil.DSEI.areas.load_polygons_df()
         self._dsei_df = df
-        logger.info('DSEI Polygons loaded')
+        logger.info("DSEI Polygons loaded")
 
     def get_polygon(self, dsei: Union[str, int]) -> Polygon:
         if self._dsei_df is None:
-            logger.error(
-                'Polygons are not loaded. Use `.DSEI.load_poligons()`'
-            )
+            logger.error("Polygons are not loaded. Use `.DSEI.load_poligons()`")
             return None
 
         polygon = self.__do_polygon(dsei)
@@ -49,13 +49,9 @@ class CopeDSEIDatasetExtension:
             return self.__do_dataset(__dsei)
         except AttributeError:
             if self._dsei_df is None:
-                logger.error(
-                    'Polygons are not loaded. Use `.DSEI.load_poligons()`'
-                )
+                logger.error("Polygons are not loaded. Use `.DSEI.load_poligons()`")
                 return None
-            logger.error(
-                f'{__dsei} not found. List all DSEIs with `.DSEI.info()`'
-            )
+            logger.error(f"{__dsei} not found. List all DSEIs with `.DSEI.info()`")
             return None
 
     def __do_grid(self):
@@ -67,9 +63,7 @@ class CopeDSEIDatasetExtension:
     def __do_polygon(self, __dsei: Union[str, int]) -> Polygon:
         if isinstance(__dsei, str):
             cod = float(self.DSEIs[self.DSEIs.DSEI == __dsei].code)
-            polygon = self._dsei_df[
-                self._dsei_df.cod_dsei == cod
-            ].geometry.item()
+            polygon = self._dsei_df[self._dsei_df.cod_dsei == cod].geometry.item()
         elif isinstance(__dsei, int):
             polygon = self._dsei_df[
                 self._dsei_df.cod_dsei == float(__dsei)
