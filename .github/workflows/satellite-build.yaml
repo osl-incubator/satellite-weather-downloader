@@ -22,9 +22,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
-    # - name: Semantic Release PR Title Check
-    #   uses: osl-incubator/semantic-release-pr-title-check@v1.0.0
+   
+    - name: Semantic Release PR Title Check
+      uses: osl-incubator/semantic-release-pr-title-check@v1.4.2
+      with:                                   
+        convention-name: conventionalcommits 
 
     - uses: conda-incubator/setup-miniconda@v2
       with:
@@ -35,3 +37,15 @@ jobs:
         activate-environment: env-satellite
         use-mamba: true
         miniforge-variant: Mambaforge
+
+    - name: Install dependencies
+      run: |
+        poetry install
+
+    - name: Lint
+      run: |
+        pre-commit run --all-files
+
+    - name: Run tests
+      run: |
+        pytest -s tests/

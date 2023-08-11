@@ -3,7 +3,6 @@ import re
 from datetime import datetime, timedelta
 from typing import Optional, Union
 
-from loguru import logger
 from prompt_toolkit import PromptSession
 from prompt_toolkit import print_formatted_text as print
 from prompt_toolkit.completion import WordCompleter
@@ -11,7 +10,11 @@ from prompt_toolkit.validation import ValidationError, Validator
 
 from . import api_vars
 
-TO_LIST = lambda v: ''.join(list(v)).replace('\n', ' ').strip().split(' ')
+
+def to_list(v):
+    return "".join(list(v)).replace("\n", " ").strip().split(" ")
+
+
 SESSION = PromptSession()
 
 
@@ -44,7 +47,7 @@ def reanalysis_prompt(
         )
 
     except KeyboardInterrupt:
-        print('exit')
+        print("exit")
         return None
 
     return options
@@ -72,120 +75,120 @@ class VarValidator(Validator):
         self.var_type = var_type
 
     def _not_digit(self, text: str):
-        digits = list(text.replace('\n', '').strip('-').strip())
+        digits = list(text.replace("\n", "").strip("-").strip())
         for d in digits:
             if not d.isdigit():
-                if d == '-':
+                if d == "-":
                     continue
                 else:
-                    return f'`{d}` is not a valid digit'
+                    return f"`{d}` is not a valid digit"
 
     def validate(self, document):
         var = document.text
         error = ValidationError(
-            message='Invalid input. Press <Tab> to display all options.',
+            message="Invalid input. Press <Tab> to display all options.",
             cursor_position=0,
         )
 
         match self.var_type:
-            case 'product_type':
-                if var and var not in self.vars['product_type']:
+            case "product_type":
+                if var and var not in self.vars["product_type"]:
                     raise error
                 elif not var:
                     pass
-            case 'variable':
+            case "variable":
                 if not var:
                     pass
                 else:
-                    variables = TO_LIST(var)
+                    variables = to_list(var)
                     for v in variables:
-                        if v not in self.vars['variable']:
-                            error.message += (
-                                ' Type only a variable name by line.'
-                            )
+                        if v not in self.vars["variable"]:
+                            error.message += " Type only a variable name by line."
                             raise error
-            case 'year':
+            case "year":
                 years = []
                 if not var:
                     pass
-                elif '-' in var:
+                elif "-" in var:
                     years = api_vars.str_range(var)
                 else:
-                    years = TO_LIST(var)
+                    years = to_list(var)
                 if self._not_digit(var):
                     error.message += self._not_digit(var)
                     raise error
                 for year in years:
-                    if year not in self.vars['year']:
+                    if year not in self.vars["year"]:
                         error.message = (
-                            f'`{year}` is invalid, please select between'
-                            f' {min(api_vars.YEAR)} and {max(api_vars.YEAR)}.'
+                            f"`{year}` is invalid, please select between"
+                            f" {min(api_vars.YEAR)} and {max(api_vars.YEAR)}."
                         )
                         raise error
-            case 'month':
+            case "month":
                 months = []
                 if not var:
                     pass
-                elif '-' in var:
+                elif "-" in var:
                     months = api_vars.str_range(var)
                 else:
-                    months = TO_LIST(var)
-                if var == 'all' or var.replace('\n', '') == 'all':
+                    months = to_list(var)
+                if var == "all" or var.replace("\n", "") == "all":
                     pass
                 elif self._not_digit(var):
                     error.message += self._not_digit(var)
                     raise error
                 else:
                     for month in months:
-                        if f'{int(month):02d}' not in self.vars['month']:
+                        if f"{int(month):02d}" not in self.vars["month"]:
                             error.message = (
-                                f'`{month}` is invalid, please select between'
-                                f' {min(api_vars.MONTH)} and {max(api_vars.MONTH)}.'
+                                f"`{month}` is invalid, please select between"
+                                f" {min(api_vars.MONTH)} and {max(api_vars.MONTH)}."
                             )
                             raise error
-            case 'day':
+            case "day":
                 days = []
                 if not var:
                     pass
-                elif '-' in var:
+                elif "-" in var:
                     days = api_vars.str_range(var)
                 else:
-                    days = TO_LIST(var)
-                if var == 'all' or var.replace('\n', '') == 'all':
+                    days = to_list(var)
+                if var == "all" or var.replace("\n", "") == "all":
                     pass
                 elif self._not_digit(var):
                     error.message += self._not_digit(var)
                     raise error
                 else:
                     for day in days:
-                        if f'{int(day):02d}' not in self.vars['day']:
+                        if f"{int(day):02d}" not in self.vars["day"]:
                             error.message = (
-                                f'`{day}` is invalid, please select between'
-                                f' {min(api_vars.DAY)} and {max(api_vars.DAY)}.'
+                                f"`{day}` is invalid, please select between"
+                                f" {min(api_vars.DAY)} and {max(api_vars.DAY)}."
                             )
                             raise error
-            case 'time':
+            case "time":
                 if not var:
                     pass
-                elif var == 'all' or var.replace('\n', '') == 'all':
+                elif var == "all" or var.replace("\n", "") == "all":
                     pass
                 else:
                     times = _time_regex_search(var)
                     if times:
                         for time in times:
-                            if time not in self.vars['time']:
+                            if time not in self.vars["time"]:
                                 error.message = (
-                                    f'{time} is invalid, please select between'
-                                    f' {min(api_vars.TIME)} and {max(api_vars.TIME)}'
+                                    f"{time} is invalid, please select between"
+                                    f" {min(api_vars.TIME)} and {max(api_vars.TIME)}"
                                 )
                                 raise error
                     else:
-                        error.message = f'{var} expression is incorrect. Format: `ini:end, _ hours`'
-            case 'format':
+                        error.message = (
+                            f"{var} expression is incorrect. Format: `ini:end, _ hours`"
+                        )
+            case "format":
                 if not var:
                     pass
-                elif var not in self.vars['format']:
-                    error.message += 'Select between grib and netcdf'
+                elif var not in self.vars["format"]:
+                    error.message += "Select between grib and netcdf"
                     raise error
 
 
@@ -203,38 +206,38 @@ class DefaultDate:
 
     @property
     def year(self):
-        return f'{self.delay.year}'
+        return f"{self.delay.year}"
 
     @property
     def month(self):
-        return f'{self.delay.month:02d}'
+        return f"{self.delay.month:02d}"
 
     @property
     def day(self):
-        return f'{self.delay.day:02d}'
+        return f"{self.delay.day:02d}"
 
     @property
     def last_update(self):
-        return self.delay.date().strftime('%Y-%m-%d')
+        return self.delay.date().strftime("%Y-%m-%d")
 
 
 def _product_type_prompt():
     vars = api_vars.PRODUCT_TYPE
-    default = 'reanalysis'
+    default = "reanalysis"
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return '> '
+        return "> "
 
     session = SESSION.prompt(
         f"Select the Product Type ['{default}']:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
         placeholder=default,
-        validator=VarValidator('product_type'),
+        validator=VarValidator("product_type"),
         validate_while_typing=False,
         multiline=False,
         prompt_continuation=prompt_continuation,
-        rprompt='<Tab> displays all options',
+        rprompt="<Tab> displays all options",
     )
 
     if not session:
@@ -247,33 +250,33 @@ def _variable_prompt():
     vars: list = api_vars.VARIABLE
 
     defaults = [
-        '2m_temperature',
-        'total_precipitation',
-        '2m_dewpoint_temperature',
-        'mean_sea_level_pressure',
+        "2m_temperature",
+        "total_precipitation",
+        "2m_dewpoint_temperature",
+        "mean_sea_level_pressure",
     ]
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return '> '
+        return "> "
 
     session = SESSION.prompt(
-        f'Select the Variable(s) {defaults}:\n> ',
+        f"Select the Variable(s) {defaults}:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
-        placeholder='',
-        validator=VarValidator('variable'),
+        placeholder="",
+        validator=VarValidator("variable"),
         validate_while_typing=False,
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt='Press <Alt> + <Enter> to finish selection',
+        rprompt="Press <Alt> + <Enter> to finish selection",
     )
 
     if not session:
         return defaults
 
     else:
-        variables = TO_LIST(session)
+        variables = to_list(session)
         if len(variables) == 1:
             return str(variables[0])
         return variables
@@ -284,29 +287,29 @@ def _year_prompt():
     default = DefaultDate().year
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return '> '
+        return "> "
 
     session = SESSION.prompt(
         f"Select the Year(s) ['{default}']:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
         placeholder=default,
-        validator=VarValidator('year'),
+        validator=VarValidator("year"),
         validate_while_typing=False,
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=('Select a year range using (-): 2020-2023'),
+        rprompt=("Select a year range using (-): 2020-2023"),
     )
 
     if not session:
         return default
 
-    elif '-' in session:
-        return api_vars.str_range(str(session).replace('\n', '').strip())
+    elif "-" in session:
+        return api_vars.str_range(str(session).replace("\n", "").strip())
 
     else:
-        years = TO_LIST(session)
+        years = to_list(session)
         if len(years) == 1:
             return str(years[0])
         return years
@@ -317,41 +320,41 @@ def _month_prompt(year=None):
     default = DefaultDate().month
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return '> '
+        return "> "
 
     session = SESSION.prompt(
         f"Select the Month(s) ['{default}']:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
         placeholder=default,
-        validator=VarValidator('month'),
+        validator=VarValidator("month"),
         validate_while_typing=False,
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=('Type `all` to select the entire year'),
+        rprompt=("Type `all` to select the entire year"),
     )
 
     if not session:
         return default
 
-    elif session == 'all' or session.replace('\n', '') == 'all':
+    elif session == "all" or session.replace("\n", "") == "all":
         if year == DefaultDate().year:
-            year_months = api_vars.str_range(f'01-{DefaultDate().month}')
+            year_months = api_vars.str_range(f"01-{DefaultDate().month}")
             if len(year_months) == 1:
-                return f'{int(year_months[0]):02d}'
+                return f"{int(year_months[0]):02d}"
             return year_months
         return vars
 
-    elif '-' in session:
-        months = api_vars.str_range(str(session).replace('\n', '').strip())
-        return sorted(list(map(lambda s: f'{int(s):02d}', months)))
+    elif "-" in session:
+        months = api_vars.str_range(str(session).replace("\n", "").strip())
+        return sorted(list(map(lambda s: f"{int(s):02d}", months)))
 
     else:
-        months = TO_LIST(session)
+        months = to_list(session)
         if len(months) == 1:
-            return f'{int(months[0]):02d}'
-        return sorted(list(map(lambda s: f'{int(s):02d}', months)))
+            return f"{int(months[0]):02d}"
+        return sorted(list(map(lambda s: f"{int(s):02d}", months)))
 
 
 def _day_prompt(year=None, month=None):
@@ -359,85 +362,80 @@ def _day_prompt(year=None, month=None):
     default = DefaultDate().day
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return '> '
+        return "> "
 
     session = SESSION.prompt(
         f"Select the Day(s) ['{default}']:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
         placeholder=default,
-        validator=VarValidator('day'),
+        validator=VarValidator("day"),
         validate_while_typing=False,
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=('Select a days range using (-): 1-31 or `all`'),
+        rprompt=("Select a days range using (-): 1-31 or `all`"),
     )
 
     if not session:
         return default
 
-    elif session == 'all' or session.replace('\n', '') == 'all':
+    elif session == "all" or session.replace("\n", "") == "all":
         days = set()
         years = [year] if isinstance(year, str) else year
         months = [month] if isinstance(month, str) else month
         for year in years:
             for month in months:
-                if (
-                    f'{year}-{month}'
-                    > f'{DefaultDate().year}-{DefaultDate().month}'
-                ):
+                if f"{year}-{month}" > f"{DefaultDate().year}-{DefaultDate().month}":
                     continue
                 _, end = calendar.monthrange(int(year), int(month))
                 [days.add(day) for day in list(range(1, end + 1))]
-        return sorted(list(map(lambda s: f'{int(s):02d}', days)))
+        return sorted(list(map(lambda s: f"{int(s):02d}", days)))
 
-    elif '-' in session:
-        days = api_vars.str_range(str(session).replace('\n', '').strip())
-        return sorted(list(map(lambda s: f'{int(s):02d}', days)))
+    elif "-" in session:
+        days = api_vars.str_range(str(session).replace("\n", "").strip())
+        return sorted(list(map(lambda s: f"{int(s):02d}", days)))
 
     else:
-        days = TO_LIST(session)
+        days = to_list(session)
         if len(days) == 1:
-            return f'{int(days[0]):02d}'
-        return sorted(list(map(lambda s: f'{int(s):02d}', days)))
+            return f"{int(days[0]):02d}"
+        return sorted(list(map(lambda s: f"{int(s):02d}", days)))
 
 
 def _time_prompt():
     vars = api_vars.TIME
     default = [
-        '00:00',
-        '03:00',
-        '06:00',
-        '09:00',
-        '12:00',
-        '15:00',
-        '18:00',
-        '21:00',
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
     ]
 
     def prompt_continuation(width, line_number, is_soft_wrap):
-        return '> '
+        return "> "
 
     session = SESSION.prompt(
-        f'Select the Hour(s) or Interval {default}:\n> ',
+        f"Select the Hour(s) or Interval {default}:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
-        placeholder='',
-        validator=VarValidator('time'),
+        placeholder="",
+        validator=VarValidator("time"),
         validate_while_typing=False,
         multiline=True,
         prompt_continuation=prompt_continuation,
         mouse_support=True,
-        rprompt=(
-            'Type the hour or select skipping `_ hours`. Default: `3 hours`'
-        ),
+        rprompt=("Type the hour or select skipping `_ hours`. Default: `3 hours`"),
     )
 
     if not session:
         return default
 
-    elif session == 'all' or session.replace('\n', '') == 'all':
+    elif session == "all" or session.replace("\n", "") == "all":
         return vars
 
     else:
@@ -451,20 +449,20 @@ def _time_regex_search(text: str):
     times: list = api_vars.TIME
 
     regex = re.compile(
-        '^[\n]*?((\d?\d:\d\d[\n]?)*?-?(\d\d:\d\d?)?)?,? ?(\d\d?)? ?[hours]*?[\n]*?$'
+        "^[\n]*?((\d?\d:\d\d[\n]?)*?-?(\d\d:\d\d?)?)?,? ?(\d\d?)? ?[hours]*?[\n]*?$"
     )
 
     matches: list = re.match(regex, text).groups()
 
     if any(matches):
-        if '\n' in matches[0][2:-2]:
-            return sorted(list(set(str(matches[0]).split('\n'))))
+        if "\n" in matches[0][2:-2]:
+            return sorted(list(set(str(matches[0]).split("\n"))))
         expr = [match for match in matches[1:] if match]
         if len(expr) == 1:
             if expr[0] in times:
                 return list(expr[0])
             elif str(expr[0]).isdigit():
-                return times[::int(expr[0])]
+                return times[:: int(expr[0])]
             else:
                 return None
         elif len(expr) == 2:
@@ -472,7 +470,7 @@ def _time_regex_search(text: str):
                 ini: int = times.index(expr[0])
                 end: int = times.index(expr[1])
                 if ini < end:
-                    return times[ini:end + 1]   # Inclusive
+                    return times[ini : end + 1]  # Inclusive
                 elif ini > end:
                     res = []
                     res.extend(times[ini:])
@@ -483,20 +481,16 @@ def _time_regex_search(text: str):
             else:
                 return None
         elif len(expr) == 3:
-            if (
-                expr[0] in times
-                and expr[1] in times
-                and str(expr[2]).isdigit()
-            ):
+            if expr[0] in times and expr[1] in times and str(expr[2]).isdigit():
                 ini: int = times.index(expr[0])
                 end: int = times.index(expr[1])
                 step: int = int(expr[2])
                 if ini < end:
-                    return times[ini:end + 1:step]
+                    return times[ini : end + 1 : step]
                 elif ini > end:
                     res = []
                     res.extend(times[ini:])
-                    res.extend(times[:end + 1])
+                    res.extend(times[: end + 1])
                     return sorted(res)[::step]
                 else:
                     return None
@@ -508,14 +502,14 @@ def _time_regex_search(text: str):
 
 def _format_prompt():
     vars = api_vars.FORMAT
-    default = 'netcdf'
+    default = "netcdf"
 
     session = SESSION.prompt(
         f"Select the file format ['{default}']:\n> ",
         completer=WordCompleter(vars),
         complete_while_typing=True,
         placeholder=default,
-        validator=VarValidator('format'),
+        validator=VarValidator("format"),
         validate_while_typing=False,
         multiline=False,
     )

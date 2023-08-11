@@ -13,15 +13,18 @@ from_geocode(geocode):
                 Returns a tuple (latitude, longitude)
 """
 import json
-from collections import defaultdict
 from pathlib import Path
 
-with open(f'{Path(__file__).parent}/municipios.json') as muns:
-    _mun_decoded = muns.read().encode().decode('utf-8-sig')
-    MUNICIPIOS = json.loads(_mun_decoded)
+with open(f"{Path(__file__).parent}/municipios.json") as muns:
+    _mun_decoded = muns.read().encode().decode("utf-8-sig")
+    MUNICIPALITIES = json.loads(_mun_decoded)
+
+COORDS_BY_GEOCODE = {
+    mun["geocodigo"]: (mun["latitude"], mun["longitude"]) for mun in MUNICIPALITIES
+}
 
 
-async def from_geocode(geocode: int) -> tuple:
+def from_geocode(geocode: int) -> tuple:
     """
     Returns latitude and longitude given a city geocode.
 
@@ -39,9 +42,8 @@ async def from_geocode(geocode: int) -> tuple:
                         the West and East coordinates.
     """
 
-    coords = defaultdict(dict)
-    for mun in MUNICIPIOS:
-        coords[mun['geocodigo']] = (mun['latitude'], mun['longitude'])
+    if geocode not in COORDS_BY_GEOCODE:
+        raise ValueError(f"Geocode {geocode} not found")
 
-    lat, lon = coords[int(geocode)]
+    lat, lon = COORDS_BY_GEOCODE[geocode]
     return lat, lon
