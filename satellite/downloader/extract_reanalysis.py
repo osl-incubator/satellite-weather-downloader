@@ -65,12 +65,11 @@ def download_br_netcdf(
     data_dir: Optional[str] = str(_DATA_DIR),
     user_key: Optional[str] = None,
 ):
-     
     if date and not date_end:
-       filename = f"BR_{date}"
+        filename = f"BR_{date}"
 
     elif all([date, date_end]):
-       filename = f"BR_{date}_{date_end}"
+        filename = f"BR_{date}_{date_end}"
 
     else:
         filename = f"BR_{_MAX_DELAY_F}"
@@ -78,13 +77,14 @@ def download_br_netcdf(
     filename = filename.replace("-", "")
 
     return download_netcdf(
-        filename = filename,
-        date = date,
-        date_end = date_end,
-        area = {"N": 5.5, "W": -74.0, "S": -33.75, "E": -32.25},
-        data_dir = data_dir,
-        user_key = user_key
+        filename=filename,
+        date=date,
+        date_end=date_end,
+        area={"N": 5.5, "W": -74.0, "S": -33.75, "E": -32.25},
+        data_dir=data_dir,
+        user_key=user_key,
     )
+
 
 # TODO: make download_netcdf accepts date and datetime types.
 def download_netcdf(
@@ -179,10 +179,12 @@ def download_netcdf(
         )
 
     if not list(area.keys()) == ["N", "W", "S", "E"]:
-        raise KeyError("""
+        raise KeyError(
+            """
             Wrong area format;
             Default: {"N": 90.0, "W": -180.0, "S": -90.0, "E": -180.0}
-        """)
+        """
+        )
 
     if not all([isinstance(v, (int, float)) for v in area.values()]):
         raise ValueError("Coordinate values must be rather int or float values")
@@ -255,20 +257,23 @@ def _format_dates(
     year, month, day = date.split("-")
 
     if ini_date > _MAX_DELAY:
-        raise Exception(f"""
+        raise Exception(
+            f"""
             Invalid date. The last update date is:
             {_MAX_DELAY_F}
             {_HELP}
-        """)
+        """
+        )
 
     # check for right initial date format
     if not re.match(_RE_FORMAT, date):
-        raise Exception(f"""
+        raise Exception(
+            f"""
             Invalid initial date. Format:
             {_ISO_FORMAT}
             {_HELP}
-        """)
-        
+        """
+        )
 
     # an end date can be passed to define the date range
     # if there is no end date, only the day specified on
@@ -278,27 +283,32 @@ def _format_dates(
 
         # check for right end date format
         if not re.match(_RE_FORMAT, date_end):
-            raise Exception(f"""
+            raise Exception(
+                f"""
                 Invalid end date. Format:
                 {_ISO_FORMAT}
                 {_HELP}
-            """)
+            """
+            )
 
         # safety limit for Copernicus limit and file size: 1 year
         max_api_query = timedelta(days=367)
         if end_date - ini_date > max_api_query:
-            raise Exception(f"""
+            raise Exception(
+                f"""
                 Maximum query reached (limit: {max_api_query.days} days).
                 {_HELP}
-            """)
-            
+            """
+            )
 
         # end date can't be bigger than initial date
         if end_date < ini_date:
-            raise Exception(f"""
+            raise Exception(
+                f"""
                 Please select a valid date range.
                 {_HELP}
-            """)
+            """
+            )
 
         # the date range will be responsible for match the requests
         # if the date is across months. For example a week that ends

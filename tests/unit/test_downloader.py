@@ -1,13 +1,10 @@
 import unittest
 from pathlib import Path
 
-from satellite.downloader.extract_reanalysis import _BR_AREA, _DATA_DIR, _format_dates
+from satellite.downloader.extract_reanalysis import _DATA_DIR, _format_dates
 
 
 class TestExtractMethods(unittest.TestCase):
-    def test_brazil_coordinates_to_copernicus_api(self):
-        self.assertEqual(_BR_AREA, {"N": 5.5, "W": -74.0, "S": -33.75, "E": -32.25})
-
     def test_default_data_directory(self):
         data_dir = Path().home() / "copernicus_data"
         self.assertEqual(_DATA_DIR, data_dir)
