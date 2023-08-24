@@ -42,7 +42,7 @@ import pandas as pd
 import urllib3
 from cdsapi.api import Client
 
-_BR_AREA = {"N": 5.5, "W": -74.0, "S": -33.75, "E": -32.25}
+_GLOBE_AREA = {"N": 90.0, "W": -180.0, "S": -90.0, "E": 180.0}
 _DATA_DIR = Path.home() / "copernicus_data"
 
 _HELP = "Use `help(extract_reanalysis.download_br_netcdf)` for more info."
@@ -59,10 +59,39 @@ _MAX_DELAY = _CUR_DATE - timedelta(days=8)
 _MAX_DELAY_F = datetime.strftime(_MAX_DELAY, _DATE_FORMAT)
 
 
-# TODO: make download_br_netcdf accepts date and datetime types.
 def download_br_netcdf(
     date: Optional[str] = None,
     date_end: Optional[str] = None,
+    data_dir: Optional[str] = str(_DATA_DIR),
+    user_key: Optional[str] = None,
+):
+    if date and not date_end:
+        filename = f"BR_{date}"
+
+    elif all([date, date_end]):
+        filename = f"BR_{date}_{date_end}"
+
+    else:
+        filename = f"BR_{_MAX_DELAY_F}"
+
+    filename = filename.replace("-", "")
+
+    return download_netcdf(
+        filename=filename,
+        date=date,
+        date_end=date_end,
+        area={"N": 5.5, "W": -74.0, "S": -33.75, "E": -32.25},
+        data_dir=data_dir,
+        user_key=user_key,
+    )
+
+
+# TODO: make download_netcdf accepts date and datetime types.
+def download_netcdf(
+    filename: str,
+    date: Optional[str] = None,
+    date_end: Optional[str] = None,
+    area: Optional[dict] = _GLOBE_AREA,
     data_dir: Optional[str] = str(_DATA_DIR),
     user_key: Optional[str] = None,
 ):
@@ -73,9 +102,18 @@ def download_br_netcdf(
     `cdsapi.Client()`. Data can be retrieved for a specific date or a
     date range, usage:
 
-    download_br_netcdf() -> downloads the last available date
-    download_br_netcdf(date='2022-10-04') or
-    download_br_netcdf(date='2022-10-04', date_end='2022-10-01')
+    download_netcdf('filename') -> downloads the last available date globalwide
+
+    download_netcdf('filename', date='2022-10-04')
+
+    download_netcdf('filename', date='2022-10-04', date_end='2022-10-01')
+
+    download_netcdf(
+        'filename',
+        date='2022-10-04',
+        date_end='2022-10-01',
+        area={'N': 5.5, 'W': -74.0, 'S': -33.75, 'E': -32.25}
+    )
 
     Using this way, a request will be done to extract the data related
     to the area of Brazil. A file in the NetCDF format will be downloaded
@@ -83,9 +121,13 @@ def download_br_netcdf(
     returned as a variable to be used in `netcdf_to_dataframe()` method.
 
     Attrs:
+        filename: Name of the file (without type; it will be `.nc`)
         date (opt(str)): Format 'YYYY-MM-DD'. Date of data to be retrieved.
         date_end (opt(str)): Format 'YYYY-MM-DD'. Used along with `date`
                               to define a date range.
+        area (opt(dict)): Area coordinates in lagitude and longitude
+            Format {'N': float, 'W': float, 'S': float, 'E': float}
+            Default {'N': 90.0, 'W': -180.0, 'S': -90.0, 'E': -180.0}
         data_dir (opt(str)): Path in which the NetCDF file will be downloaded.
                              Default dir is `$HOME/copernicus_data/`.
         user_key (opt(str)): Credentials for retrieving Copernicus data. Format:
@@ -94,7 +136,7 @@ def download_br_netcdf(
     Returns:
         String corresponding to path: `data_dir/filename`, that can later be used
         to transform into a `xarray.Dataset` with the CopeBRDatasetExtension located
-        in `satellite_weather` module.
+        in `satellite.weather` module.
     """
     Path(str(data_dir)).mkdir(parents=True, exist_ok=True)
 
@@ -118,18 +160,15 @@ def download_br_netcdf(
 
     if date and not date_end:
         year, month, day = _format_dates(date)
-        filename = f"BR_{date}.nc"
 
     elif all([date, date_end]):
         year, month, day = _format_dates(date, date_end)
-        filename = f"BR_{date}_{date_end}.nc"
 
     elif not date and not date_end:
         logging.warning(
             "No date provided, downloading last" + f" available date: {_MAX_DELAY_F}"
         )
         year, month, day = _format_dates(_MAX_DELAY_F)
-        filename = f"BR_{_MAX_DELAY_F}.nc"
 
     else:
         raise Exception(
@@ -139,8 +178,24 @@ def download_br_netcdf(
         """
         )
 
-    filename = filename.replace("-", "")
-    file = f"{data_dir}/{filename}"
+    if not list(area.keys()) == ["N", "W", "S", "E"]:
+        raise KeyError(
+            """
+            Wrong area format;
+            Default: {"N": 90.0, "W": -180.0, "S": -90.0, "E": -180.0}
+        """
+        )
+
+    if not all([isinstance(v, (int, float)) for v in area.values()]):
+        raise ValueError("Coordinate values must be rather int or float values")
+
+    if abs(area["N"]) > 90 or abs(area["S"]) > 90:
+        raise ValueError("Latitude must be between -90 and 90")
+
+    if abs(area["W"]) > 180 or abs(area["E"]) > 180:
+        raise ValueError("Longitude must be between -180 and 180")
+
+    file = f"{data_dir}/{filename}.nc"
     if Path(file).exists():
         return file
 
@@ -170,12 +225,11 @@ def download_br_netcdf(
                         "18:00",
                         "21:00",
                     ],
-                    "area": list(_BR_AREA.values()),
+                    "area": list(area.values()),
                     "format": "netcdf",
                 },
                 str(file),
             )
-            logging.info(f"NetCDF {filename} downloaded at {data_dir}.")
             return str(file)
 
         except Exception as e:
@@ -205,9 +259,9 @@ def _format_dates(
     if ini_date > _MAX_DELAY:
         raise Exception(
             f"""
-                Invalid date. The last update date is:
-                {_MAX_DELAY_F}
-                {_HELP}
+            Invalid date. The last update date is:
+            {_MAX_DELAY_F}
+            {_HELP}
         """
         )
 
@@ -215,9 +269,9 @@ def _format_dates(
     if not re.match(_RE_FORMAT, date):
         raise Exception(
             f"""
-                Invalid initial date. Format:
-                {_ISO_FORMAT}
-                {_HELP}
+            Invalid initial date. Format:
+            {_ISO_FORMAT}
+            {_HELP}
         """
         )
 
@@ -231,9 +285,9 @@ def _format_dates(
         if not re.match(_RE_FORMAT, date_end):
             raise Exception(
                 f"""
-                    Invalid end date. Format:
-                    {_ISO_FORMAT}
-                    {_HELP}
+                Invalid end date. Format:
+                {_ISO_FORMAT}
+                {_HELP}
             """
             )
 
@@ -242,8 +296,8 @@ def _format_dates(
         if end_date - ini_date > max_api_query:
             raise Exception(
                 f"""
-                    Maximum query reached (limit: {max_api_query.days} days).
-                    {_HELP}
+                Maximum query reached (limit: {max_api_query.days} days).
+                {_HELP}
             """
             )
 
@@ -251,8 +305,8 @@ def _format_dates(
         if end_date < ini_date:
             raise Exception(
                 f"""
-                    Please select a valid date range.
-                    {_HELP}
+                Please select a valid date range.
+                {_HELP}
             """
             )
 
