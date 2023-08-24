@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+# [1.9.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.8.4...1.9.0) (2023-08-24)
+
+
+### Features
+
+* **downloader:** implement global fetch on satellite downloader (area) ([#59](https://github.com/osl-incubator/satellite-weather-downloader/issues/59)) ([0c8a7bc](https://github.com/osl-incubator/satellite-weather-downloader/commit/0c8a7bcc4dc4950f89026ee8c779e4618ea4541e))
+
 ## [1.8.4](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.8.3...1.8.4) (2023-06-14)
 
 
