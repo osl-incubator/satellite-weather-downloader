@@ -20,7 +20,7 @@ class TestExtractMethods(unittest.TestCase):
             (
                 "2023",
                 ["01"],
-                [f'{d:02d}' for d in range(1, 32)],
+                [f"{d:02d}" for d in range(1, 32)],
             ),
         )
         self.assertEqual(
@@ -28,7 +28,7 @@ class TestExtractMethods(unittest.TestCase):
             (
                 "2023",
                 ["01", "02", "03", "04", "05", "06"],
-                [f'{d:02d}' for d in range(1, 32)],
+                [f"{d:02d}" for d in range(1, 32)],
             ),
         )
 
