@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.9.1](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.0...1.9.1) (2023-09-04)
+
+
+### Bug Fixes
+
+* **weather:** include Santos SP coordinates ([#60](https://github.com/osl-incubator/satellite-weather-downloader/issues/60)) ([85e1827](https://github.com/osl-incubator/satellite-weather-downloader/commit/85e1827bc2d19b23ef528d2da4a8894947c1bbff))
+
 # [1.9.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.8.4...1.9.0) (2023-08-24)
 
 
