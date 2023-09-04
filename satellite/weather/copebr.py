@@ -311,6 +311,6 @@ def _get_latlons(geocode: int) -> tuple[list[float], list[float]]:
 
         case 3548500:  # Santos (SP)
             lats = [-24.0]
-            lons = [-46.25]
+            lons = [-46.25, -46.5]
 
     return lats, lons
