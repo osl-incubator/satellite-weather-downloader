@@ -55,7 +55,7 @@ jupyterlab = "^3.4.8"
 seaborn = "^0.12.1"
 pre-commit = "^2.20.0"
 tomli = "^2.0.1"
-black = ">=23.7"
+black = "24.2.0"
 virtualenv = "^20.24.2"
 ruff = "^0.0.284"
 

@@ -12,6 +12,7 @@ Methods:
     from_latlon(latitude, longitude) : Returns North, South, East and West given a
                                    coordinate.
 """
+
 import numpy as np
 
 _LONGITUDES = list(np.arange(-90.0, 90.25, 0.25))
