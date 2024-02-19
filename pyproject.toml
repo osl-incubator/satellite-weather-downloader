@@ -30,10 +30,10 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4"
+python = ">=3.10,<3.12"
 cdsapi = "^0.5.1"
 pandas = ">=2.0.0"
-numpy = ">=1.25"
+numpy = ">=1.16.4"
 SQLAlchemy = "^1.4.41"
 python-dotenv = "^0.21.0"
 netCDF4 = "^1.6.1"
@@ -44,9 +44,10 @@ requests = "^2.28.2"
 prompt-toolkit = "^3.0.36"
 geopandas = "^0.12.2"
 matplotlib = "^3.6.3"
-shapely = "^2.0.1"
+shapely = ">=2.0.3"
 dask = "^2023.3.1"
 xarray = ">=2023.7.0"
+gdal = "^3.8.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.4"
@@ -54,7 +55,7 @@ jupyterlab = "^3.4.8"
 seaborn = "^0.12.1"
 pre-commit = "^2.20.0"
 tomli = "^2.0.1"
-black = ">=23.7"
+black = "24.2.0"
 virtualenv = "^20.24.2"
 ruff = "^0.0.284"
 

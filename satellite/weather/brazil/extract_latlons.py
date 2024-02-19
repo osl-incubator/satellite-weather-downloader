@@ -12,6 +12,7 @@ Methods
 from_geocode(geocode):
                 Returns a tuple (latitude, longitude)
 """
+
 import json
 from pathlib import Path
 
