@@ -964,6 +964,19 @@ ssh = ["paramiko"]
 tqdm = ["tqdm"]
 
 [[package]]
+name = "gdal"
+version = "3.8.4"
+description = "GDAL: Geospatial Data Abstraction Library"
+optional = false
+python-versions = ">=3.6.0"
+files = [
+    {file = "GDAL-3.8.4.tar.gz", hash = "sha256:7c51e0ae7a7ccf43ad9e4bf435176baa9276653dfa16fd167c3632f6e7275207"},
+]
+
+[package.extras]
+numpy = ["numpy (>1.0.0)"]
+
+[[package]]
 name = "geopandas"
 version = "0.12.2"
 description = "Geographic pandas extensions"
@@ -3672,4 +3685,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4"
-content-hash = "c7cdc1b9a46fa33d6fd6846f44cfe5bb6af3709ce14703dacb0573f43a613b83"
+content-hash = "03e45af062b8b3aa51f099a0f60c786c8b82053dce2005648c0cf6fdc5843e59"
