@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.9.3](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.2...1.9.3) (2024-02-19)
+
+
+### Bug Fixes
+
+* **downloader:** reduce from 8 to 6 days of minimum delay ([#63](https://github.com/osl-incubator/satellite-weather-downloader/issues/63)) ([766c06a](https://github.com/osl-incubator/satellite-weather-downloader/commit/766c06adbf357c05beeca5888afe2f99fc6af5ad))
+
 ## [1.9.2](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.1...1.9.2) (2023-09-04)
 
 
