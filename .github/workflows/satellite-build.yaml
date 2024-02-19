@@ -44,8 +44,6 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install "cython<3.0.0" 
-        pip install --no-build-isolation "pyyaml<6.0"
         poetry install
 
     - name: Lint
