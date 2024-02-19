@@ -30,7 +30,6 @@ download_br_netcdf() : Send a request to Copernicus API with the parameters of
                                 current month and the last days of the past month
                                 is not possible. Avoid using the current month.
 """
-
 import logging
 import os
 import re
@@ -166,8 +165,7 @@ def download_netcdf(
 
     elif not date and not date_end:
         logging.warning(
-            "No date provided, downloading last" +
-            f" available date: {_MIN_DELAY_F}"
+            "No date provided, downloading last" + f" available date: {_MIN_DELAY_F}"
         )
         year, month, day = _format_dates(_MIN_DELAY_F)
 
@@ -188,8 +186,7 @@ def download_netcdf(
         )
 
     if not all([isinstance(v, (int, float)) for v in area.values()]):
-        raise ValueError(
-            "Coordinate values must be rather int or float values")
+        raise ValueError("Coordinate values must be rather int or float values")
 
     if abs(area["N"]) > 90 or abs(area["S"]) > 90:
         raise ValueError("Latitude must be between -90 and 90")
