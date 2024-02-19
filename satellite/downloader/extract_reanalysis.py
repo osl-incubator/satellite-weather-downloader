@@ -52,11 +52,11 @@ _DATE_FORMAT = "%Y-%m-%d"
 _RE_FORMAT = r"\d{4}-\d{2}-\d{2}"
 _ISO_FORMAT = "YYYY-MM-DD"
 
-# dataset has maximum of 8 days of update delay.
+# dataset has maximum of 6 days of update delay.
 # in order to prevent requesting invalid dates,
-# the max date is 8 days ago, from today's date
-_MAX_DELAY = _CUR_DATE - timedelta(days=8)
-_MAX_DELAY_F = datetime.strftime(_MAX_DELAY, _DATE_FORMAT)
+# the max date is 6 days ago, from today's date
+_MIN_DELAY = _CUR_DATE - timedelta(days=6)
+_MIN_DELAY_F = datetime.strftime(_MIN_DELAY, _DATE_FORMAT)
 
 
 def download_br_netcdf(
@@ -72,7 +72,7 @@ def download_br_netcdf(
         filename = f"BR_{date}_{date_end}"
 
     else:
-        filename = f"BR_{_MAX_DELAY_F}"
+        filename = f"BR_{_MIN_DELAY_F}"
 
     filename = filename.replace("-", "")
 
@@ -166,9 +166,10 @@ def download_netcdf(
 
     elif not date and not date_end:
         logging.warning(
-            "No date provided, downloading last" + f" available date: {_MAX_DELAY_F}"
+            "No date provided, downloading last" +
+            f" available date: {_MIN_DELAY_F}"
         )
-        year, month, day = _format_dates(_MAX_DELAY_F)
+        year, month, day = _format_dates(_MIN_DELAY_F)
 
     else:
         raise Exception(
@@ -187,7 +188,8 @@ def download_netcdf(
         )
 
     if not all([isinstance(v, (int, float)) for v in area.values()]):
-        raise ValueError("Coordinate values must be rather int or float values")
+        raise ValueError(
+            "Coordinate values must be rather int or float values")
 
     if abs(area["N"]) > 90 or abs(area["S"]) > 90:
         raise ValueError("Latitude must be between -90 and 90")
@@ -256,11 +258,11 @@ def _format_dates(
     ini_date = datetime.strptime(date, _DATE_FORMAT)
     year, month, day = date.split("-")
 
-    if ini_date > _MAX_DELAY:
+    if ini_date > _MIN_DELAY:
         raise Exception(
             f"""
             Invalid date. The last update date is:
-            {_MAX_DELAY_F}
+            {_MIN_DELAY_F}
             {_HELP}
         """
         )
