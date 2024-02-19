@@ -33,7 +33,7 @@ packages = [
 python = ">=3.10,<4"
 cdsapi = "^0.5.1"
 pandas = ">=2.0.0"
-numpy = ">=1.25"
+numpy = ">=1.16.4"
 SQLAlchemy = "^1.4.41"
 python-dotenv = "^0.21.0"
 netCDF4 = "^1.6.1"
