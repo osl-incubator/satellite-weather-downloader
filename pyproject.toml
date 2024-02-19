@@ -47,6 +47,7 @@ matplotlib = "^3.6.3"
 shapely = "^2.0.1"
 dask = "^2023.3.1"
 xarray = ">=2023.7.0"
+setuptools = "^69.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.4"
