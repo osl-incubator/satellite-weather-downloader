@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.9.4](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.3...1.9.4) (2024-03-07)
+
+
+### Bug Fixes
+
+* **brasil:** update sqlalchemy V1 to V2 due to 'Connection object has no attribute cursor' error ([#64](https://github.com/osl-incubator/satellite-weather-downloader/issues/64)) ([b4b3c13](https://github.com/osl-incubator/satellite-weather-downloader/commit/b4b3c13e5fed44b37b23758b81296311f712c004))
+
 ## [1.9.3](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.2...1.9.3) (2024-02-19)
 
 
