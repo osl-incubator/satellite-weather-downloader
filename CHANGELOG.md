@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.9.6](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.5...1.9.6) (2024-05-16)
+
+
+### Bug Fixes
+
+* **release:** bump version on PyPI ([#66](https://github.com/osl-incubator/satellite-weather-downloader/issues/66)) ([ce11fb2](https://github.com/osl-incubator/satellite-weather-downloader/commit/ce11fb21315644332fda06756e9de2bcc8d9c859))
+
 ## [1.9.5](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.4...1.9.5) (2024-05-16)
 
 
