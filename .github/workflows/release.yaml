@@ -30,6 +30,10 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 20.11.0
+
     - uses: conda-incubator/setup-miniconda@v3
       with:
         miniconda-version: "latest"
@@ -40,10 +44,6 @@ jobs:
         use-mamba: true
         miniforge-variant: Mambaforge
     
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 20.11.0
-
     - name: Release
       run: |
         poetry config pypi-token.pypi ${PYPI_TOKEN}
