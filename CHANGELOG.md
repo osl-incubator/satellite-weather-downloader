@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.9.5](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.4...1.9.5) (2024-05-16)
+
+
+### Bug Fixes
+
+* **copebr:** round final dataframe to 4 decimals on float values ([#65](https://github.com/osl-incubator/satellite-weather-downloader/issues/65)) ([d8cd3c8](https://github.com/osl-incubator/satellite-weather-downloader/commit/d8cd3c8c6495dff4cb7b7d465a6b7ba42c69c5ee))
+
 ## [1.9.4](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.3...1.9.4) (2024-03-07)
 
 
