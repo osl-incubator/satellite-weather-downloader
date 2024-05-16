@@ -30,6 +30,10 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 20.11.0
+
     - uses: conda-incubator/setup-miniconda@v3
       with:
         miniconda-version: "latest"
@@ -39,12 +43,23 @@ jobs:
         activate-environment: env-satellite
         use-mamba: true
         miniforge-variant: Mambaforge
-    
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 20.11.0
+
+    - name: Release (for tests)
+      if: ${{ github.event_name != 'workflow_dispatch' }}
+      run: |
+        npx --yes \
+          -p semantic-release \
+          -p "@semantic-release/commit-analyzer" \
+          -p "@semantic-release/release-notes-generator" \
+          -p "@semantic-release/changelog" \
+          -p "@semantic-release/exec" \
+          -p "@semantic-release/github" \
+          -p "@semantic-release/git" \
+          -p "semantic-release-replace-plugin@1.2.7" \
+          semantic-release --dry-run --branches main
 
     - name: Release
+      if: ${{ github.event_name == 'workflow_dispatch' }}
       run: |
         poetry config pypi-token.pypi ${PYPI_TOKEN}
         npx --yes \
@@ -55,5 +70,5 @@ jobs:
           -p "@semantic-release/exec" \
           -p "@semantic-release/github" \
           -p "@semantic-release/git" \
-          -p "semantic-release-replace-plugin" \
-          semantic-release --ci
+          -p "semantic-release-replace-plugin@1.2.7" \
+          semantic-release --debug --ci --branches main
