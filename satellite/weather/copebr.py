@@ -65,6 +65,10 @@ class CopeBRDatasetExtension:
         if type(df) == dask.dataframe.core.DataFrame:
             df = df.compute()
 
+        columns_to_round = list(set(df.columns).difference(set(["date", "geocodigo"])))
+
+        df[columns_to_round] = df[columns_to_round].map(lambda x: np.round(x, 4))
+
         df = df.reset_index(drop=True)
 
         return df
@@ -283,6 +287,7 @@ def _reduce_by(ds: xr.Dataset, func, prefix: str):
     replace the `data_vars` names to it's corresponding prefix.
     """
     ds = ds.apply(func=func)
+    # ds = ds.map(lambda x: np.round(x, 4))
     return ds.rename(
         dict(
             zip(
