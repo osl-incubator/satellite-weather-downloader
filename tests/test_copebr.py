@@ -168,6 +168,7 @@ class TestWeatherCopebr(unittest.TestCase):
                 "pressao_min",
                 "precip_tot",
                 "geocodigo",
+                "epiweek",
             ],
         )
 
@@ -184,7 +185,7 @@ class TestWeatherCopebr(unittest.TestCase):
         logger.info("")
         stats.sort_stats("cumtime").print_stats(10)
 
-        self.assertTrue(type(df) == dask.dataframe.core.DataFrame)
+        self.assertTrue(isinstance(df, dask.dataframe.DataFrame))
         self.assertEqual(
             list(df.columns),
             [
@@ -203,26 +204,28 @@ class TestWeatherCopebr(unittest.TestCase):
                 "pressao_min",
                 "precip_tot",
                 "geocodigo",
+                "epiweek",
             ],
         )
         self.assertEqual(
             dict(df.dtypes),
             {
                 "date": dtype("<M8[ns]"),
-                "temp_max": dtype("float32"),
-                "precip_max": dtype("float32"),
-                "umid_max": dtype("float32"),
-                "pressao_max": dtype("float32"),
-                "temp_med": dtype("float32"),
-                "precip_med": dtype("float32"),
-                "umid_med": dtype("float32"),
-                "pressao_med": dtype("float32"),
-                "temp_min": dtype("float32"),
-                "precip_min": dtype("float32"),
-                "umid_min": dtype("float32"),
-                "pressao_min": dtype("float32"),
-                "precip_tot": dtype("float32"),
+                "temp_max": dtype("float64"),
+                "precip_max": dtype("float64"),
+                "umid_max": dtype("float64"),
+                "pressao_max": dtype("float64"),
+                "temp_med": dtype("float64"),
+                "precip_med": dtype("float64"),
+                "umid_med": dtype("float64"),
+                "pressao_med": dtype("float64"),
+                "temp_min": dtype("float64"),
+                "precip_min": dtype("float64"),
+                "umid_min": dtype("float64"),
+                "pressao_min": dtype("float64"),
+                "precip_tot": dtype("float64"),
                 "geocodigo": dtype("int64"),
+                "epiweek": pd.StringDtype(storage="pyarrow"),
             },
         )
 
@@ -239,4 +242,4 @@ class TestWeatherCopebr(unittest.TestCase):
         logger.info("")
         stats.sort_stats("cumtime").print_stats(10)
 
-        self.assertTrue(type(df) == dask.dataframe.core.DataFrame)
+        self.assertTrue(isinstance(df, dask.dataframe.DataFrame))

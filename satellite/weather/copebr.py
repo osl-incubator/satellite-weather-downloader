@@ -1,5 +1,6 @@
 from typing import Union
 
+from epiweeks import Week
 import dask
 import dask.array as da  # type: ignore
 import dask.dataframe as dd  # type: ignore
@@ -41,6 +42,7 @@ class CopeBRDatasetExtension:
     The expect output when the requested data is not `raw` is:
 
     date       : datetime object.
+    epiweek    : Epidemiological week (format: YYYYWW)
     temp_min   : Minimum┐
     temp_med   : Average├─ temperature in `celcius degrees` given a geocode.
     temp_max   : Maximum┘
@@ -62,12 +64,8 @@ class CopeBRDatasetExtension:
     def to_dataframe(self, geocodes: Union[list, int], raw: bool = False):
         df = _final_dataframe(dataset=self._ds, geocodes=geocodes, raw=raw)
 
-        if type(df) == dask.dataframe.core.DataFrame:
+        if isinstance(df, dask.dataframe.DataFrame):
             df = df.compute()
-
-        columns_to_round = list(set(df.columns).difference(set(["date", "geocodigo"])))
-
-        df[columns_to_round] = df[columns_to_round].map(lambda x: np.round(x, 4))
 
         df = df.reset_index(drop=True)
 
@@ -131,11 +129,7 @@ def _geocode_to_sql(
     tablename: str,
     raw: bool,
 ):
-    ds = _geocode_ds(dataset, geocode, raw)
-    df = ds.to_dataframe()
-    del ds
-    geocodes = [geocode for g in range(len(df))]
-    df = df.assign(geocodigo=geocodes)
+    df = _geocode_to_dataframe(dataset=dataset, geocode=geocode, raw=raw)
     df = df.reset_index(drop=False)
     if raw:
         df = df.rename(columns={"time": "datetime"})
@@ -166,15 +160,17 @@ def _geocode_to_dataframe(dataset: xr.Dataset, geocode: int, raw=False):
                             into 24 hours interval.
     Returns:
       pd.DataFrame: Similar to `ds_from_geocode(geocode).to_dataframe()`
-                    but with an extra column with the geocode, in order
-                    to differ the data when inserting into a database,
-                    for instance.
+                    but with two extra columns with the geocode and epiweek,
+                    the integer columns are also rounded to 4 decimals digits
     """
     ds = _geocode_ds(dataset, geocode, raw)
     df = ds.to_dataframe()
     del ds
     geocode = [geocode for g in range(len(df))]
     df = df.assign(geocodigo=da.from_array(geocode))
+    df = df.assign(epiweek=Week.fromdate(df.index.to_pydatetime()[0]))
+    columns_to_round = list(set(df.columns).difference(set(["geocodigo", "epiweek"])))
+    df[columns_to_round] = df[columns_to_round].map(lambda x: np.round(x, 4))
     return df
 
 
