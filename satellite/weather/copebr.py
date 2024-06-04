@@ -168,7 +168,7 @@ def _geocode_to_dataframe(dataset: xr.Dataset, geocode: int, raw=False):
     del ds
     geocode = [geocode for g in range(len(df))]
     df = df.assign(geocodigo=da.from_array(geocode))
-    df = df.assign(epiweek=Week.fromdate(df.index.to_pydatetime()[0]))
+    df = df.assign(epiweek=str(Week.fromdate(df.index.to_pydatetime()[0])))
     columns_to_round = list(set(df.columns).difference(set(["geocodigo", "epiweek"])))
     df[columns_to_round] = df[columns_to_round].map(lambda x: np.round(x, 4))
     return df
