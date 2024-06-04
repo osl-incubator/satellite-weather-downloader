@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+# [1.10.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.6...1.10.0) (2024-06-04)
+
+
+### Features
+
+* **epiweeks:** include epiweekcolumn on final df ([#67](https://github.com/osl-incubator/satellite-weather-downloader/issues/67)) ([d5c48e2](https://github.com/osl-incubator/satellite-weather-downloader/commit/d5c48e2cf5462900416709cb582787f7b25cd971))
+
 ## [1.9.6](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.5...1.9.6) (2024-05-16)
 
 
