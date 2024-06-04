@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.10.1](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.10.0...1.10.1) (2024-06-04)
+
+
+### Bug Fixes
+
+* **epiweek:** fix epiweek value data type ([#68](https://github.com/osl-incubator/satellite-weather-downloader/issues/68)) ([c7cfa18](https://github.com/osl-incubator/satellite-weather-downloader/commit/c7cfa18969339a718a4cc5f9b2e47304688c0433))
+
 # [1.10.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.9.6...1.10.0) (2024-06-04)
 
 
