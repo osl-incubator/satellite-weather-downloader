@@ -12,11 +12,19 @@ Methods:
     from_latlon(latitude, longitude) : Returns North, South, East and West given a
                                    coordinate.
 """
+from functools import lru_cache
 
 import numpy as np
 
-_LONGITUDES = list(np.arange(-90.0, 90.25, 0.25))
-_LATITUDES = list(np.arange(-180.0, 180.25, 0.25))
+
+@lru_cache(maxsize=None)
+def _longitudes():
+    return list(np.arange(-90.0, 90.25, 0.25))
+
+
+@lru_cache(maxsize=None)
+def _latitudes():
+    return list(np.arange(-180.0, 180.25, 0.25))
 
 
 def from_latlon(lat, lon) -> tuple:
@@ -53,8 +61,8 @@ def from_latlon(lat, lon) -> tuple:
     [-23.0, -43.25] = S, W
     [-22.75, -43.0] = N, E
     """
-    closest_lat = min(_LATITUDES, key=lambda x: abs(x - lat))
-    closest_lon = min(_LONGITUDES, key=lambda x: abs(x - lon))
+    closest_lat = min(_latitudes(), key=lambda x: abs(x - lat))
+    closest_lon = min(_longitudes(), key=lambda x: abs(x - lon))
 
     lat_diff = lat - closest_lat
     lon_diff = lon - closest_lon

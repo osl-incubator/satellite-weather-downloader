@@ -8,4 +8,4 @@ dependencies:
   - make
   - poetry
   - setuptools >= 69.1.0
-  - gdal
+  # - gdal

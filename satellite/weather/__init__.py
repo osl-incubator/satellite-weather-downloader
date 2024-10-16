@@ -4,7 +4,7 @@
 import xarray as xr
 
 from .copebr import *  # noqa
-from .dsei import *  # noqa
+# from .dsei import *  # noqa
 
 
 def load_dataset(file_path: str) -> xr.Dataset:

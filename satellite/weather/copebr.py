@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Literal
 
 from epiweeks import Week
 import dask
@@ -9,7 +9,8 @@ import xarray as xr  # type: ignore
 from loguru import logger  # type: ignore
 from sqlalchemy.engine import Connectable  # type: ignore
 
-from . import brazil
+# from .locales import BR
+from .utils import extract_latlons, extract_coordinates
 
 xr.set_options(keep_attrs=True)
 
@@ -58,8 +59,13 @@ class CopeBRDatasetExtension:
     umid_max   : Maximum┘
     """
 
-    def __init__(self, xarray_ds: xr.Dataset) -> None:
+    def __init__(
+        self,
+        xarray_ds: xr.Dataset,
+        locale: Literal['BR', 'AR'] = 'BR'
+    ) -> None:
         self._ds = xarray_ds
+        self.locale = locale
 
     def to_dataframe(self, geocodes: Union[list, int], raw: bool = False):
         df = _final_dataframe(dataset=self._ds, geocodes=geocodes, raw=raw)
@@ -97,11 +103,15 @@ class CopeBRDatasetExtension:
             )
             logger.debug(f"{geocode} updated on {schema}.{tablename}")
 
-    def geocode_ds(self, geocode: int, raw: bool = False):
-        return _geocode_ds(self._ds, geocode, raw)
+    def geocode_ds(self, geocode: int | str, raw: bool = False):
+        return _geocode_ds(self._ds, geocode, self.locale, raw)
 
 
-def _final_dataframe(dataset: xr.Dataset, geocodes: Union[list, int], raw=False):
+def _final_dataframe(
+    dataset: xr.Dataset,
+    geocodes: Union[list, int],
+    raw=False
+):
     geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
 
     dfs = []
@@ -167,14 +177,16 @@ def _geocode_to_dataframe(dataset: xr.Dataset, geocode: int, raw=False):
     df = ds.to_dataframe()
     del ds
     geocode = [geocode for g in range(len(df))]
-    df = df.assign(geocodigo=da.from_array(geocode))
+    df = df.assign(geocode=da.from_array(geocode))
     df = df.assign(epiweek=str(Week.fromdate(df.index.to_pydatetime()[0])))
-    columns_to_round = list(set(df.columns).difference(set(["geocodigo", "epiweek"])))
+    columns_to_round = list(set(df.columns).difference(
+        set(["geocode", "epiweek"]))
+    )
     df[columns_to_round] = df[columns_to_round].map(lambda x: np.round(x, 4))
     return df
 
 
-def _geocode_ds(ds: xr.Dataset, geocode: int, raw=False):
+def _geocode_ds(ds: xr.Dataset, geocode: int | str, locale: str, raw=False):
     """
     This is the most important method of the extension. It will
     slice the dataset according to the geocode provided, do the
@@ -193,7 +205,7 @@ def _geocode_ds(ds: xr.Dataset, geocode: int, raw=False):
                     the data corresponds to a 3h interval range for
                     each day in the dataset.
     """
-    lats, lons = _get_latlons(geocode)
+    lats, lons = _get_latlons(geocode, locale)
 
     geocode_ds = _convert_to_br_units(
         _slice_dataset_by_coord(dataset=ds, lats=lats, lons=lons)
@@ -294,13 +306,15 @@ def _reduce_by(ds: xr.Dataset, func, prefix: str):
     )
 
 
-def _get_latlons(geocode: int) -> tuple[list[float], list[float]]:
+def _get_latlons(
+        geocode: int | str, locale: str
+) -> tuple[list[float], list[float]]:
     """
     Extract Latitude and Longitude from a Brazilian's city
     according to IBGE's geocode format.
     """
-    lat, lon = brazil.extract_latlons.from_geocode(int(geocode))
-    N, S, E, W = brazil.extract_coordinates.from_latlon(lat, lon)
+    lat, lon = extract_latlons.from_geocode(int(geocode), locale)
+    N, S, E, W = extract_coordinates.from_latlon(lat, lon)
 
     lats = [N, S]
     lons = [E, W]

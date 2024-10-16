@@ -54,6 +54,9 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+.mypy_cache
+.pytest_cache
+.ruff_cache
 nosetests.xml
 coverage.xml
 *satellite_weather_downloader/tests
@@ -97,3 +100,4 @@ rabbitmq.conf
 *certificate.pem
 *key.pem
 *key.p12
+.misc

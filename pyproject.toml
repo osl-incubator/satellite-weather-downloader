@@ -42,13 +42,14 @@ loguru = "^0.6.0"
 amqp = "^5.1.1"
 requests = "^2.28.2"
 prompt-toolkit = "^3.0.36"
-geopandas = "^0.12.2"
+geopandas = ">=1.0.1"
 matplotlib = "^3.6.3"
 shapely = ">=2.0.3"
 dask = {extras = ["dataframe"], version = "^2024.5.2"}
-xarray = ">=2023.7.0"
-gdal = "^3.8.4"
+xarray = ">=2024.9.0"
+# gdal = "^3.9.3"
 epiweeks = "^2.3.0"
+orjson = "^3.10.7"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.4"
