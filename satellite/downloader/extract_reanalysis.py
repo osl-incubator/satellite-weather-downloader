@@ -33,17 +33,17 @@ download_br_netcdf() : Send a request to Copernicus API with the parameters of
 
 import logging
 import os
-import re
+from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Literal
 
-import pandas as pd
 import urllib3
 from cdsapi.api import Client
 
 _GLOBE_AREA = {"N": 90.0, "W": -180.0, "S": -90.0, "E": 180.0}
 _DATA_DIR = Path.home() / "copernicus_data"
+_LOCALES = ["BR", "AR"]
 
 _HELP = "Use `help(extract_reanalysis.download_br_netcdf)` for more info."
 
@@ -58,42 +58,18 @@ _ISO_FORMAT = "YYYY-MM-DD"
 _MIN_DELAY = _CUR_DATE - timedelta(days=6)
 _MIN_DELAY_F = datetime.strftime(_MIN_DELAY, _DATE_FORMAT)
 
-
-def download_br_netcdf(
-    date: Optional[str] = None,
-    date_end: Optional[str] = None,
-    data_dir: Optional[str] = str(_DATA_DIR),
-    user_key: Optional[str] = None,
-):
-    if date and not date_end:
-        filename = f"BR_{date}"
-
-    elif all([date, date_end]):
-        filename = f"BR_{date}_{date_end}"
-
-    else:
-        filename = f"BR_{_MIN_DELAY_F}"
-
-    filename = filename.replace("-", "")
-
-    return download_netcdf(
-        filename=filename,
-        date=date,
-        date_end=date_end,
-        area={"N": 5.5, "W": -74.0, "S": -33.75, "E": -32.25},
-        data_dir=data_dir,
-        user_key=user_key,
-    )
+load_dotenv()
 
 
-# TODO: make download_netcdf accepts date and datetime types.
 def download_netcdf(
-    filename: str,
+    filename: str = None,
     date: Optional[str] = None,
     date_end: Optional[str] = None,
-    area: Optional[dict] = _GLOBE_AREA,
-    data_dir: Optional[str] = str(_DATA_DIR),
+    locale: Optional[Literal["BR", "AR"]] = None,
+    area: Optional[dict] = None,
+    output_dir: Optional[str] = str(_DATA_DIR),
     user_key: Optional[str] = None,
+    verbose: bool = False
 ):
     """
     Creates the request for Copernicus API. Extracts the latitude and
@@ -138,38 +114,53 @@ def download_netcdf(
         to transform into a `xarray.Dataset` with the CopeBRDatasetExtension located
         in `satellite.weather` module.
     """
-    Path(str(data_dir)).mkdir(parents=True, exist_ok=True)
+    Path(str(output_dir)).mkdir(parents=True, exist_ok=True)
 
     if not user_key:
-        cdsapi_key = os.getenv("CDSAPI_KEY")
+        cdsapi_token = os.getenv("CDSAPI_TOKEN")
     else:
-        cdsapi_key = user_key
+        cdsapi_token = user_key
 
-    if not cdsapi_key:
+    if not cdsapi_token:
         raise EnvironmentError(
             "Environment variable CDSAPI_KEY not found in the system.\n"
-            'Execute `$ export CDSAPI_KEY="<MY_UID>:<MY_API_KEY>" to fix.\n'
+            'Execute `$ export CDSAPI_TOKEN="<MY_UID_TOKEN>" to fix.\n'
             "These credentials are found in your Copernicus User Page: \n"
             "https://cds.climate.copernicus.eu/user/USER"
         )
 
     conn = Client(
-        url="https://cds.climate.copernicus.eu/api/v2",
-        key=cdsapi_key,
+        url="https://cds.climate.copernicus.eu/api",
+        key=cdsapi_token,
     )
 
+    if locale and locale not in _LOCALES:
+        raise ValueError(f"locale {locale} not supported. Options: {_LOCALES}")
+
+    if not area:
+        match locale:
+            case None:
+                area = _GLOBE_AREA
+            case "BR":
+                area = {"N": 5.5, "W": -74.0, "S": -33.75, "E": -32.25}
+            case "AR":
+                area = {"N": -21.0, "W": -74.0, "S": -56.0, "E": -53.0}
+
     if date and not date_end:
-        year, month, day = _format_dates(date)
-
+        filename = f"{locale or 'WW'}_{date}"
+        date_req = str(date)
     elif all([date, date_end]):
-        year, month, day = _format_dates(date, date_end)
-
-    elif not date and not date_end:
-        logging.warning(
-            "No date provided, downloading last" + f" available date: {_MIN_DELAY_F}"
-        )
-        year, month, day = _format_dates(_MIN_DELAY_F)
-
+        filename = f"{locale or 'WW'}_{date}_{date_end}"
+        date_req = f"{date}/{date_end}"
+    elif not any([date, date_end]):
+        if verbose:
+            logging.warning(
+                "No date provided, downloading last"
+                f" available date: {_MIN_DELAY_F}"
+            )
+        date = _MIN_DELAY_F
+        date_req = str(date)
+        filename = f"{locale or 'WW'}_{date}"
     else:
         raise Exception(
             f"""
@@ -178,7 +169,7 @@ def download_netcdf(
         """
         )
 
-    if not list(area.keys()) == ["N", "W", "S", "E"]:
+    if set(area.keys()) != set(["N", "W", "S", "E"]):
         raise KeyError(
             """
             Wrong area format;
@@ -187,7 +178,8 @@ def download_netcdf(
         )
 
     if not all([isinstance(v, (int, float)) for v in area.values()]):
-        raise ValueError("Coordinate values must be rather int or float values")
+        raise ValueError(
+            "Coordinate values must be rather int or float values")
 
     if abs(area["N"]) > 90 or abs(area["S"]) > 90:
         raise ValueError("Latitude must be between -90 and 90")
@@ -195,146 +187,37 @@ def download_netcdf(
     if abs(area["W"]) > 180 or abs(area["E"]) > 180:
         raise ValueError("Longitude must be between -180 and 180")
 
-    file = f"{data_dir}/{filename}.nc"
+    file = f"{output_dir}/{filename}.nc"
+
     if Path(file).exists():
         return file
 
-    else:
-        try:
-            urllib3.disable_warnings()
-            conn.retrieve(
-                "reanalysis-era5-single-levels",
-                {
-                    "product_type": "reanalysis",
-                    "variable": [
-                        "2m_temperature",
-                        "total_precipitation",
-                        "2m_dewpoint_temperature",
-                        "mean_sea_level_pressure",
-                    ],
-                    "year": year,
-                    "month": month,
-                    "day": day,
-                    "time": [
-                        "00:00",
-                        "03:00",
-                        "06:00",
-                        "09:00",
-                        "12:00",
-                        "15:00",
-                        "18:00",
-                        "21:00",
-                    ],
-                    "area": list(area.values()),
-                    "format": "netcdf",
-                },
-                str(file),
-            )
-            return str(file)
+    urllib3.disable_warnings()
+    conn.retrieve(
+        "reanalysis-era5-land",
+        {
+            "product_type": ["reanalysis"],
+            "variable": [
+                "2m_temperature",
+                "total_precipitation",
+                "2m_dewpoint_temperature",
+                "surface_pressure",
+            ],
+            "date": date_req,
+            "time": [
+                "00:00",
+                "03:00",
+                "06:00",
+                "09:00",
+                "12:00",
+                "15:00",
+                "18:00",
+                "21:00",
+            ],
+            "area": [area["N"], area["W"], area["S"], area["E"]],
+            "format": "netcdf",
+        },
+        str(file),
+    ).download()
 
-        except Exception as e:
-            logging.error(e)
-            raise e
-
-
-def _format_dates(
-    date: str,
-    date_end: Optional[str] = None,
-) -> Tuple[Union[str, list], Union[str, list], Union[str, list]]:
-    """
-    Returns the days, months and years by given a date or
-    a date range.
-    Attrs:
-        date (str)    : Initial date.
-        date_end (str): If provided, defines a date range to be extracted.
-    Returns:
-        year (str or list) : The year(s) related to date provided.
-        month (str or list): The month(s) related to date provided.
-        day (str or list)  : The day(s) related to date provided.
-    """
-
-    ini_date = datetime.strptime(date, _DATE_FORMAT)
-    year, month, day = date.split("-")
-
-    if ini_date > _MIN_DELAY:
-        raise Exception(
-            f"""
-            Invalid date. The last update date is:
-            {_MIN_DELAY_F}
-            {_HELP}
-        """
-        )
-
-    # check for right initial date format
-    if not re.match(_RE_FORMAT, date):
-        raise Exception(
-            f"""
-            Invalid initial date. Format:
-            {_ISO_FORMAT}
-            {_HELP}
-        """
-        )
-
-    # an end date can be passed to define the date range
-    # if there is no end date, only the day specified on
-    # `date` will be downloaded
-    if date_end:
-        end_date = datetime.strptime(date_end, _DATE_FORMAT)
-
-        # check for right end date format
-        if not re.match(_RE_FORMAT, date_end):
-            raise Exception(
-                f"""
-                Invalid end date. Format:
-                {_ISO_FORMAT}
-                {_HELP}
-            """
-            )
-
-        # safety limit for Copernicus limit and file size: 1 year
-        max_api_query = timedelta(days=367)
-        if end_date - ini_date > max_api_query:
-            raise Exception(
-                f"""
-                Maximum query reached (limit: {max_api_query.days} days).
-                {_HELP}
-            """
-            )
-
-        # end date can't be bigger than initial date
-        if end_date < ini_date:
-            raise Exception(
-                f"""
-                Please select a valid date range.
-                {_HELP}
-            """
-            )
-
-        # the date range will be responsible for match the requests
-        # if the date is across months. For example a week that ends
-        # after the month.
-        df = pd.date_range(start=date, end=date_end)
-        year_set = set()
-        month_set = set()
-        day_set = set()
-        for date in df:
-            date_f = str(date)
-            iso_form = date_f.split(" ")[0]
-            year_, month_, day_ = iso_form.split("-")
-            year_set.add(year_)
-            month_set.add(month_)
-            day_set.add(day_)
-        # parsing the correct types
-        month = list(month_set)
-        day = list(day_set)
-        # sorting them (can't do inline)
-        month.sort()
-        day.sort()
-
-        if len(year_set) == 1:
-            year = str(year_set.pop())
-        else:
-            year = list(year_set)
-            year.sort()
-
-    return year, month, day
+    return str(file)
