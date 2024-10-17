@@ -21,9 +21,7 @@ import pandas as pd
 
 @lru_cache
 def _read_locale_json(locale: str) -> pd.DataFrame:
-    return pd.read_json(
-        f"{Path(__file__).parent.parent}/locales/{locale}/muns.json"
-    )
+    return pd.read_json(f"{Path(__file__).parent.parent}/locales/{locale}/muns.json")
 
 
 def from_geocode(geocode: int | str, locale: str) -> tuple:
@@ -36,7 +34,7 @@ def from_geocode(geocode: int | str, locale: str) -> tuple:
         locale (str)  : Country abbreviation. Example: 'BR'
 
     Returns:
-        lat (float)   : Latitude of geocode in degrees between -90 and 90. 
+        lat (float)   : Latitude of geocode in degrees between -90 and 90.
                         Represents the North and South coordinates.
 
         lon (float)   : Longitude of geocode in degrees
@@ -52,6 +50,6 @@ def from_geocode(geocode: int | str, locale: str) -> tuple:
     if lat_lon.empty:
         raise ValueError(f"Geocode {geocode} not found")
 
-    lat, lon = lat_lon['latitude'], lat_lon['longitude']
+    lat, lon = lat_lon["latitude"], lat_lon["longitude"]
 
     return lat, lon

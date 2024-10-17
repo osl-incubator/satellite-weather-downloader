@@ -12,6 +12,7 @@ Methods:
     from_latlon(latitude, longitude) : Returns North, South, East and West given a
                                    coordinate.
 """
+
 from functools import lru_cache
 
 import numpy as np
