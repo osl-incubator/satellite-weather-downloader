@@ -31,15 +31,15 @@ download_br_netcdf() : Send a request to Copernicus API with the parameters of
                                 is not possible. Avoid using the current month.
 """
 
-import logging
 import os
-from dotenv import load_dotenv
+import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Literal
 
-import urllib3
+from dotenv import load_dotenv
 from cdsapi.api import Client
+from requests.exceptions import RequestException
 
 _GLOBE_AREA = {"N": 90.0, "W": -180.0, "S": -90.0, "E": 180.0}
 _DATA_DIR = Path.home() / "copernicus_data"
@@ -69,7 +69,7 @@ def download_netcdf(
     area: Optional[dict] = None,
     output_dir: Optional[str] = str(_DATA_DIR),
     user_key: Optional[str] = None,
-    verbose: bool = False
+    verbose: bool = False,
 ):
     """
     Creates the request for Copernicus API. Extracts the latitude and
@@ -78,7 +78,7 @@ def download_netcdf(
     `cdsapi.Client()`. Data can be retrieved for a specific date or a
     date range, usage:
 
-    download_netcdf('filename') -> downloads the last available date globalwide
+    download_netcdf('filename') -> downloads the last available date worldwide
 
     download_netcdf('filename', date='2022-10-04')
 
@@ -129,11 +129,6 @@ def download_netcdf(
             "https://cds.climate.copernicus.eu/user/USER"
         )
 
-    conn = Client(
-        url="https://cds.climate.copernicus.eu/api",
-        key=cdsapi_token,
-    )
-
     if locale and locale not in _LOCALES:
         raise ValueError(f"locale {locale} not supported. Options: {_LOCALES}")
 
@@ -155,8 +150,7 @@ def download_netcdf(
     elif not any([date, date_end]):
         if verbose:
             logging.warning(
-                "No date provided, downloading last"
-                f" available date: {_MIN_DELAY_F}"
+                "No date provided, downloading last" f" available date: {_MIN_DELAY_F}"
             )
         date = _MIN_DELAY_F
         date_req = str(date)
@@ -178,8 +172,7 @@ def download_netcdf(
         )
 
     if not all([isinstance(v, (int, float)) for v in area.values()]):
-        raise ValueError(
-            "Coordinate values must be rather int or float values")
+        raise ValueError("Coordinate values must be rather int or float values")
 
     if abs(area["N"]) > 90 or abs(area["S"]) > 90:
         raise ValueError("Latitude must be between -90 and 90")
@@ -187,37 +180,46 @@ def download_netcdf(
     if abs(area["W"]) > 180 or abs(area["E"]) > 180:
         raise ValueError("Longitude must be between -180 and 180")
 
-    file = f"{output_dir}/{filename}.nc"
+    file = Path(output_dir) / f"{filename}.zip"
 
-    if Path(file).exists():
-        return file
+    if file.exists():
+        return str(file)
 
-    urllib3.disable_warnings()
-    conn.retrieve(
-        "reanalysis-era5-land",
-        {
-            "product_type": ["reanalysis"],
-            "variable": [
-                "2m_temperature",
-                "total_precipitation",
-                "2m_dewpoint_temperature",
-                "surface_pressure",
-            ],
-            "date": date_req,
-            "time": [
-                "00:00",
-                "03:00",
-                "06:00",
-                "09:00",
-                "12:00",
-                "15:00",
-                "18:00",
-                "21:00",
-            ],
-            "area": [area["N"], area["W"], area["S"], area["E"]],
-            "format": "netcdf",
-        },
-        str(file),
-    ).download()
+    conn = Client(
+        url="https://cds.climate.copernicus.eu/api",
+        key=cdsapi_token,
+    )
+
+    try:
+        conn.retrieve(
+            "reanalysis-era5-land",
+            {
+                "product_type": ["reanalysis"],
+                "variable": [
+                    "2m_temperature",
+                    "total_precipitation",
+                    "2m_dewpoint_temperature",
+                    "surface_pressure",
+                ],
+                "date": date_req,
+                "time": [
+                    "00:00",
+                    "03:00",
+                    "06:00",
+                    "09:00",
+                    "12:00",
+                    "15:00",
+                    "18:00",
+                    "21:00",
+                ],
+                "area": [area["N"], area["W"], area["S"], area["E"]],
+                "format": "netcdf",
+                "download_format": "zip",
+            },
+            str(file),
+        )
+    except (RequestException, KeyboardInterrupt) as e:
+        file.unlink(missing_ok=True)
+        raise e
 
     return str(file)

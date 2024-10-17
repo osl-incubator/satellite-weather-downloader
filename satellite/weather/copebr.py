@@ -78,7 +78,9 @@ class CopeBRDatasetExtension:
         self.locale = "BR"
 
     def to_dataframe(self, geocodes: Union[list[int], int], raw: bool = False):
-        df = _final_dataframe(dataset=self._ds, geocodes=geocodes, raw=raw)
+        df = _final_dataframe(
+            dataset=self._ds, geocodes=geocodes, locale=self.locale, raw=raw
+        )
         if isinstance(df, dask.dataframe.DataFrame):
             df = df.compute()
         df = df.reset_index(drop=True)
@@ -102,13 +104,14 @@ class CopeBRDatasetExtension:
                 con=con,
                 schema=schema,
                 tablename=tablename,
+                locale=self.locale,
                 raw=raw,
             )
             if verbose:
                 logger.info(f"{geocode} updated on {schema}.{tablename}")
 
     def geocode_ds(self, geocode: int, raw: bool = False):
-        return _geocode_ds(self._ds, geocode, self.locale, raw)
+        return _geocode_ds(ds=self._ds, geocode=geocode, locale=self.locale, raw=raw)
 
 
 @xr.register_dataset_accessor("CopeAR")
@@ -118,7 +121,9 @@ class CopeARDatasetExtension:
         self.locale = "AR"
 
     def to_dataframe(self, geocodes: Union[list[str], str], raw: bool = False):
-        df = _final_dataframe(dataset=self._ds, geocodes=geocodes, raw=raw)
+        df = _final_dataframe(
+            dataset=self._ds, geocodes=geocodes, locale=self.locale, raw=raw
+        )
         if isinstance(df, dask.dataframe.DataFrame):
             df = df.compute()
         df = df.reset_index(drop=True)
@@ -151,13 +156,20 @@ class CopeARDatasetExtension:
 
 
 def _final_dataframe(
-    dataset: xr.Dataset, geocodes: Union[list[str | int], int | str], raw=False
+    dataset: xr.Dataset,
+    geocodes: Union[list[str | int], int | str],
+    locale: str,
+    raw=False,
 ) -> pd.DataFrame:
     geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
 
     dfs = []
     for geocode in geocodes:
-        dfs.append(_geocode_to_dataframe(dataset, geocode, raw))
+        dfs.append(
+            _geocode_to_dataframe(
+                dataset=dataset, geocode=geocode, locale=locale, raw=raw
+            )
+        )
 
     final_df = dd.concat(dfs)
 
@@ -178,9 +190,10 @@ def _geocode_to_sql(
     con: Connectable,
     schema: str,
     tablename: str,
+    locale: str,
     raw: bool,
 ) -> None:
-    df = _geocode_to_dataframe(dataset=dataset, geocode=geocode, raw=raw)
+    df = _geocode_to_dataframe(dataset=dataset, geocode=geocode, locale=locale, raw=raw)
     df = df.reset_index(drop=False)
     if raw:
         df = df.rename(columns={"time": "datetime"})
@@ -197,7 +210,9 @@ def _geocode_to_sql(
     del df
 
 
-def _geocode_to_dataframe(dataset: xr.Dataset, geocode: int, raw=False) -> pd.DataFrame:
+def _geocode_to_dataframe(
+    dataset: xr.Dataset, geocode: int, locale: str, raw: bool = False
+) -> pd.DataFrame:
     """
     Returns a DataFrame with the values related to the geocode of a
     city according to each country's standard. Extract the values
@@ -214,7 +229,7 @@ def _geocode_to_dataframe(dataset: xr.Dataset, geocode: int, raw=False) -> pd.Da
                     but with two extra columns with the geocode and epiweek,
                     the integer columns are also rounded to 4 decimals digits
     """
-    ds = _geocode_ds(dataset, geocode, raw)
+    ds = _geocode_ds(ds=dataset, geocode=geocode, locale=locale, raw=raw)
     df = ds.to_dataframe()
     del ds
     geocode = [geocode for g in range(len(df))]
@@ -247,7 +262,7 @@ def _geocode_ds(
                     the data corresponds to a 3h interval range for
                     each day in the dataset.
     """
-    lats, lons = _get_latlons(geocode, locale)
+    lats, lons = _get_latlons(geocode=geocode, locale=locale)
 
     geocode_ds = _convert_to_br_units(
         _slice_dataset_by_coord(dataset=ds, lats=lats, lons=lons)
@@ -288,14 +303,14 @@ def _convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
     Parse measure units. Rename their unit names and long names as well.
     """
     ds = dataset
-    vars = list(ds.data_vars.keys())
+    _vars = list(ds.data_vars.keys())
 
-    if "t2m" in vars:
+    if "t2m" in _vars:
         # Convert Kelvin to Celsius degrees
         ds["t2m"] = ds.t2m - 273.15
         ds["t2m"].attrs = {"units": "degC", "long_name": "Temperatura"}
 
-        if "d2m" in vars:
+        if "d2m" in _vars:
             # Calculate Relative Humidity percentage and add to Dataset
             ds["d2m"] = ds.d2m - 273.15
 
@@ -309,27 +324,28 @@ def _convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
                 "units": "pct",
                 "long_name": "Umidade Relativa do Ar",
             }
-    if "tp" in vars:
+    if "tp" in _vars:
         # Convert meters to millimeters
         ds["tp"] = ds.tp * 1000
         ds["tp"] = ds.tp.round(5)
         ds["tp"].attrs = {"units": "mm", "long_name": "Precipitação"}
-    if "msl" in vars:
+    if "sp" in _vars:
         # Convert Pa to ATM
-        ds["msl"] = ds.msl * 0.00000986923
-        ds["msl"].attrs = {
+        ds["sp"] = ds.sp * 0.00000986923
+        ds["sp"].attrs = {
             "units": "atm",
             "long_name": "Pressão ao Nível do Mar",
         }
 
-    with_br_vars = {
+    parsed_vars = {
+        "valid_time": "time",
         "t2m": "temp",
         "tp": "precip",
-        "msl": "pressao",
+        "sp": "pressao",
         "d2m": "umid",
     }
 
-    return ds.rename(with_br_vars)
+    return ds.rename(parsed_vars)
 
 
 def _reduce_by(ds: xr.Dataset, func, prefix: str):

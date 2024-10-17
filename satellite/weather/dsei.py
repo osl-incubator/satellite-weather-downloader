@@ -6,7 +6,7 @@ from loguru import logger
 from matplotlib.path import Path
 from shapely.geometry.polygon import Polygon
 
-from .locales.BR import DSEI
+from .locales.BR.DSEI import areas
 
 
 @xr.register_dataset_accessor("DSEI")
@@ -24,7 +24,7 @@ class CopeDSEIDatasetExtension:
         ```
     """
 
-    DSEIs = DSEI.areas.DSEI_DF
+    DSEIs = areas.DSEI_DF
     _dsei_df = None
 
     def __init__(self, xarray_ds: xr.Dataset) -> None:
@@ -32,7 +32,7 @@ class CopeDSEIDatasetExtension:
         self._grid = self.__do_grid()
 
     def load_polygons(self):
-        df = DSEI.areas.load_polygons_df()
+        df = areas.load_polygons_df()
         self._dsei_df = df
         logger.info("DSEI Polygons loaded")
 

@@ -449,7 +449,7 @@ def _time_regex_search(text: str):
     times: list = api_vars.TIME
 
     regex = re.compile(
-        "^[\n]*?((\d?\d:\d\d[\n]?)*?-?(\d\d:\d\d?)?)?,? ?(\d\d?)? ?[hours]*?[\n]*?$"
+        r"^[\n]*?((\d?\d:\d\d[\n]?)*?-?(\d\d:\d\d?)?)?,? ?(\d\d?)? ?[hours]*?[\n]*?$"
     )
 
     matches: list = re.match(regex, text).groups()
@@ -480,24 +480,23 @@ def _time_regex_search(text: str):
                     return None
             else:
                 return None
+
         elif len(expr) == 3:
             if expr[0] in times and expr[1] in times and str(expr[2]).isdigit():
                 ini: int = times.index(expr[0])
                 end: int = times.index(expr[1])
                 step: int = int(expr[2])
+
                 if ini < end:
                     return times[ini : end + 1 : step]
-                elif ini > end:
+
+                if ini > end:
                     res = []
                     res.extend(times[ini:])
                     res.extend(times[: end + 1])
                     return sorted(res)[::step]
-                else:
-                    return None
-            else:
-                return None
-        else:
-            return None
+
+        return None
 
 
 def _format_prompt():
