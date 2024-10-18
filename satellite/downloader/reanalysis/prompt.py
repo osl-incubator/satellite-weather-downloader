@@ -2,6 +2,7 @@ import calendar
 import re
 from datetime import datetime, timedelta
 from typing import Optional, Union
+from abc import ABC, abstractmethod
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit import print_formatted_text as print
@@ -9,6 +10,10 @@ from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.validation import ValidationError, Validator
 
 from . import api_vars
+
+
+class PromptBase(ABC):
+    ...
 
 
 def to_list(v):
@@ -61,7 +66,7 @@ class VarValidator(Validator):
 
     var_type: str = None
 
-    vars = dict(
+    _vars = dict(
         product_type=api_vars.PRODUCT_TYPE,
         variable=api_vars.VARIABLE,
         year=api_vars.YEAR,
@@ -92,7 +97,7 @@ class VarValidator(Validator):
 
         match self.var_type:
             case "product_type":
-                if var and var not in self.vars["product_type"]:
+                if var and var not in self._vars["product_type"]:
                     raise error
                 elif not var:
                     pass
@@ -102,7 +107,7 @@ class VarValidator(Validator):
                 else:
                     variables = to_list(var)
                     for v in variables:
-                        if v not in self.vars["variable"]:
+                        if v not in self._vars["variable"]:
                             error.message += " Type only a variable name by line."
                             raise error
             case "year":
@@ -117,7 +122,7 @@ class VarValidator(Validator):
                     error.message += self._not_digit(var)
                     raise error
                 for year in years:
-                    if year not in self.vars["year"]:
+                    if year not in self._vars["year"]:
                         error.message = (
                             f"`{year}` is invalid, please select between"
                             f" {min(api_vars.YEAR)} and {max(api_vars.YEAR)}."
@@ -138,7 +143,7 @@ class VarValidator(Validator):
                     raise error
                 else:
                     for month in months:
-                        if f"{int(month):02d}" not in self.vars["month"]:
+                        if f"{int(month):02d}" not in self._vars["month"]:
                             error.message = (
                                 f"`{month}` is invalid, please select between"
                                 f" {min(api_vars.MONTH)} and {max(api_vars.MONTH)}."
@@ -159,7 +164,7 @@ class VarValidator(Validator):
                     raise error
                 else:
                     for day in days:
-                        if f"{int(day):02d}" not in self.vars["day"]:
+                        if f"{int(day):02d}" not in self._vars["day"]:
                             error.message = (
                                 f"`{day}` is invalid, please select between"
                                 f" {min(api_vars.DAY)} and {max(api_vars.DAY)}."
@@ -174,7 +179,7 @@ class VarValidator(Validator):
                     times = _time_regex_search(var)
                     if times:
                         for time in times:
-                            if time not in self.vars["time"]:
+                            if time not in self._vars["time"]:
                                 error.message = (
                                     f"{time} is invalid, please select between"
                                     f" {min(api_vars.TIME)} and {max(api_vars.TIME)}"
@@ -187,7 +192,7 @@ class VarValidator(Validator):
             case "format":
                 if not var:
                     pass
-                elif var not in self.vars["format"]:
+                elif var not in self._vars["format"]:
                     error.message += "Select between grib and netcdf"
                     raise error
 
@@ -222,7 +227,7 @@ class DefaultDate:
 
 
 def _product_type_prompt():
-    vars = api_vars.PRODUCT_TYPE
+    _vars = api_vars.PRODUCT_TYPE
     default = "reanalysis"
 
     def prompt_continuation(width, line_number, is_soft_wrap):
@@ -230,7 +235,7 @@ def _product_type_prompt():
 
     session = SESSION.prompt(
         f"Select the Product Type ['{default}']:\n> ",
-        completer=WordCompleter(vars),
+        completer=WordCompleter(_vars),
         complete_while_typing=True,
         placeholder=default,
         validator=VarValidator("product_type"),
@@ -247,7 +252,7 @@ def _product_type_prompt():
 
 
 def _variable_prompt():
-    vars: list = api_vars.VARIABLE
+    _vars: list = api_vars.VARIABLE
 
     defaults = [
         "2m_temperature",
@@ -261,7 +266,7 @@ def _variable_prompt():
 
     session = SESSION.prompt(
         f"Select the Variable(s) {defaults}:\n> ",
-        completer=WordCompleter(vars),
+        completer=WordCompleter(_vars),
         complete_while_typing=True,
         placeholder="",
         validator=VarValidator("variable"),
@@ -404,7 +409,7 @@ def _day_prompt(year=None, month=None):
 
 
 def _time_prompt():
-    vars = api_vars.TIME
+    _vars = api_vars.TIME
     default = [
         "00:00",
         "03:00",
@@ -421,7 +426,7 @@ def _time_prompt():
 
     session = SESSION.prompt(
         f"Select the Hour(s) or Interval {default}:\n> ",
-        completer=WordCompleter(vars),
+        completer=WordCompleter(_vars),
         complete_while_typing=True,
         placeholder="",
         validator=VarValidator("time"),
@@ -435,14 +440,15 @@ def _time_prompt():
     if not session:
         return default
 
-    elif session == "all" or session.replace("\n", "") == "all":
-        return vars
+    if session == "all" or session.replace("\n", "") == "all":
+        return _vars
 
-    else:
-        times = _time_regex_search(session)
-        if len(times) == 1:
-            return times[0]
-        return times
+    times = _time_regex_search(session)
+
+    if len(times) == 1:
+        return times[0]
+
+    return times
 
 
 def _time_regex_search(text: str):
@@ -457,38 +463,38 @@ def _time_regex_search(text: str):
     if any(matches):
         if "\n" in matches[0][2:-2]:
             return sorted(list(set(str(matches[0]).split("\n"))))
+
         expr = [match for match in matches[1:] if match]
+
         if len(expr) == 1:
             if expr[0] in times:
                 return list(expr[0])
-            elif str(expr[0]).isdigit():
+
+            if str(expr[0]).isdigit():
                 return times[:: int(expr[0])]
-            else:
-                return None
-        elif len(expr) == 2:
+
+        if len(expr) == 2:
             if expr[0] in times and expr[1] in times:
                 ini: int = times.index(expr[0])
                 end: int = times.index(expr[1])
+
                 if ini < end:
-                    return times[ini : end + 1]  # Inclusive
-                elif ini > end:
+                    return times[ini: end + 1]  # Inclusive
+
+                if ini > end:
                     res = []
                     res.extend(times[ini:])
                     res.extend(times[: end + 1])
                     return sorted(res)
-                else:
-                    return None
-            else:
-                return None
 
-        elif len(expr) == 3:
+        if len(expr) == 3:
             if expr[0] in times and expr[1] in times and str(expr[2]).isdigit():
                 ini: int = times.index(expr[0])
                 end: int = times.index(expr[1])
                 step: int = int(expr[2])
 
                 if ini < end:
-                    return times[ini : end + 1 : step]
+                    return times[ini: end + 1: step]
 
                 if ini > end:
                     res = []
@@ -496,16 +502,16 @@ def _time_regex_search(text: str):
                     res.extend(times[: end + 1])
                     return sorted(res)[::step]
 
-        return None
+    return []
 
 
 def _format_prompt():
-    vars = api_vars.FORMAT
+    _vars = api_vars.FORMAT
     default = "netcdf"
 
     session = SESSION.prompt(
         f"Select the file format ['{default}']:\n> ",
-        completer=WordCompleter(vars),
+        completer=WordCompleter(_vars),
         complete_while_typing=True,
         placeholder=default,
         validator=VarValidator("format"),

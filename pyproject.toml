@@ -50,6 +50,9 @@ xarray = ">=2024.9.0"
 # gdal = "^3.9.3"
 epiweeks = "^2.3.0"
 orjson = "^3.10.7"
+pydantic = "^2.9.2"
+typing-extensions = "^4.12.2"
+duckdb-engine = "^0.13.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.4"
