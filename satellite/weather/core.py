@@ -3,7 +3,7 @@ import logging
 import xarray as xr
 import zipfile
 
-from satellite.weather.extensions import copebr
+# from satellite.weather.extensions import copebr
 from satellite.weather.types import Locale
 
 
