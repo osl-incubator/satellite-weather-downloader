@@ -1,116 +1,114 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Sequence, create_engine, text, MetaData
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session
-from geoalchemy2 import Geometry as GeoGeometry
+import inspect
+from abc import ABC, abstractmethod
 
+import pandas as pd
+import duckdb
 
-DB_FILE = "/home/bida/Projetos/InfoDengue/satellite-weather-downloader/satellite/data/boundaries.duckdb"
-Base = declarative_base()
+from satellite.weather.orm import functional, constants, types
 
 
 def init_db():
-    eng = create_engine(
-        f"duckdb:///{DB_FILE}",
-        connect_args={'preload_extensions': ['spatial']}
-    )
+    ADM0.drop_table()
+    ADM0.create_table()
 
-    Base.metadata.drop_all(bind=eng)  # TODO: REMOVE IT
-    Base.metadata.create_all(tables=[ADM0, ADM1, ADM2], bind=eng)
+    df = pd.DataFrame.from_dict({"code": ["BRA"], "full_name": ["Brazil"]})
 
-    session = Session(bind=eng)
-    try:
-        session.execute(text("""
-            CREATE TABLE geometry (
-                id INTEGER PRIMARY KEY,
-                adm0_id INTEGER NOT NULL REFERENCES ADM0(id) ON DELETE RESTRICT,
-                adm1_id INTEGER REFERENCES ADM1(id) ON DELETE RESTRICT,
-                adm2_id INTEGER REFERENCES ADM2(id) ON DELETE RESTRICT,
-                geom GEOMETRY NOT NULL
-            );
-        """))
-        session.add(ADM0(code='BR', name='Brazil'))
+    with functional.session() as session:
+        session.execute(f"INSERT INTO {ADM0.__tablename__} SELECT * FROM df")
         session.commit()
 
-        adm0_id = session.query(ADM0).filter_by(code='BR').one().id
+    bra = ADM0.get("BRA")
+    print(bra.full_name)
 
-        session.add(ADM1(code=1, name='São Paulo', adm0_id=adm0_id))
-        session.add(ADM2(code=35, name='Campinas', adm1_id=adm0_id))
-        session.commit()
 
-        session.add(Geometry(
-            adm0_id=adm0_id,
-            geom='POLYGON((-46.65 -23.55, -46.65 -23.4, -46.5 -23.55, -46.65 -23.55))'
-        ))
-        session.commit()
+class Base(ABC):
+    __tablename__: str
+    __fields__: list[str]  # NOTE: Must be indexed as the same
 
-        return session.query(Geometry).one()
-    finally:
-        session.close()
+    @abstractmethod
+    def __init__(self) -> None: ...
+
+    @abstractmethod
+    def geometry(self): ...
+
+    @classmethod
+    def get(cls, value: str | int):
+        with functional.session() as session:
+            data = session.sql(
+                f"SELECT * FROM {cls.__tablename__} WHERE code = '{value}'"
+            ).fetchone()
+        if not data:
+            raise ValueError(f"{cls} with code '{value}' not found")
+
+        breakpoint()
+        return cls(**data)
+
+    @classmethod
+    def create_table(cls):
+        fields = cls._get_class_fields(cls.__fields__)  # noqa
+        columns = []
+        for field, _type in fields.items():
+            query = f"{field} {duckdb.typing.DuckDBPyType(_type)}"
+            if field == "code":
+                query += " PRIMARY KEY"
+            columns.append(query)
+
+        with functional.session() as session:
+            session.execute(f"""
+                CREATE TABLE {cls.__tablename__} ({", ".join(columns)})
+            """)
+            session.commit()
+
+    @classmethod
+    def drop_table(cls):  # TODO: REMOVE IT (READ ONLY TABLE)
+        with functional.session() as session:
+            session.sql(f"DROP TABLE IF EXISTS {cls.__tablename__}")
+            session.commit()
+
+    @classmethod
+    def _get_class_fields(cls, fields: list[str] = None) -> dict[str, type]:
+        if not fields:
+            raise ValueError("a list of fields must be provided")
+        return {
+            k: v for k, v in
+            inspect.get_annotations(cls).items()
+            if k in fields
+        }
 
 
 class ADM0(Base):
-    __tablename__ = "ADM0"
+    __tablename__ = "adm0"
+    __fields__ = ["code", "full_name"]
 
-    id = Column(Integer, Sequence("ADM0_id_sequence"), primary_key=True)
-    code = Column(String, nullable=False, unique=True)
-    full_name = Column(String, nullable=False, unique=True)
+    code: str
+    full_name: str
 
-    @property
-    def name(self):
-        return self.__tablename__
+    def __init__(self, code: types.ADM0Options, full_name: str) -> None:
+        self.code = code
+        self.full_name = full_name
 
-
-class ADM1(Base):
-    __tablename__ = "ADM1"
-
-    id = Column(Integer, Sequence("ADM1_id_sequence"), primary_key=True)
-    code = Column(Integer, nullable=False)
-    full_name = Column(String, nullable=False)
-    adm0_id = Column(
-        Integer,
-        ForeignKey("ADM0.id", ondelete="RESTRICT"),
-        nullable=False
-    )
-
-    @property
-    def name(self):
-        return self.__tablename__
-
-
-class ADM2(Base):
-    __tablename__ = "ADM2"
-
-    id = Column(Integer, Sequence("ADM2_id_sequence"), primary_key=True)
-    code = Column(Integer, nullable=False)
-    full_name = Column(String, nullable=False)
-    adm1_id = Column(
-        Integer,
-        ForeignKey("ADM1.id", ondelete="RESTRICT"),
-        nullable=False
-    )
-
-    @property
-    def name(self):
-        return self.__tablename__
-
-
-class Geometry(Base):
-    __tablename__ = "geometry"
-
-    id = Column(Integer, Sequence("geometry_id_sequence"), primary_key=True)
-    adm0_id = Column(
-        Integer,
-        ForeignKey("ADM0.id", ondelete="RESTRICT"),
-        nullable=False
-    )
-    adm1_id = Column(
-        Integer,
-        ForeignKey("ADM1.id", ondelete="RESTRICT"),
-        nullable=True
-    )
-    adm2_id = Column(
-        Integer,
-        ForeignKey("ADM2.id", ondelete="RESTRICT"),
-        nullable=True
-    )
-    geom = Column(GeoGeometry, nullable=False)
+#
+# class ADM1(Base):
+#     __tablename__ = "ADM1"
+#
+#     id = Column(Integer, Sequence("ADM1_id_sequence"), primary_key=True)
+#     code = Column(Integer, nullable=False)
+#     full_name = Column(String, nullable=False)
+#     adm0_id = Column(
+#         Integer,
+#         ForeignKey("ADM0.id", ondelete="RESTRICT"),
+#         nullable=False
+#     )
+#
+#
+# class ADM2(Base):
+#     __tablename__ = "ADM2"
+#
+#     id = Column(Integer, Sequence("ADM2_id_sequence"), primary_key=True)
+#     code = Column(Integer, nullable=False)
+#     full_name = Column(String, nullable=False)
+#     adm1_id = Column(
+#         Integer,
+#         ForeignKey("ADM1.id", ondelete="RESTRICT"),
+#         nullable=False
+#     )
