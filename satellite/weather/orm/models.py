@@ -17,7 +17,7 @@ def init_db():
         session.execute(f"INSERT INTO {ADM0.__tablename__} SELECT * FROM df")
         session.commit()
 
-    bra = ADM0.get("BRA")
+    bra = ADM0.get(code="BRA")
     print(bra.full_name)
 
 
@@ -32,15 +32,15 @@ class Base(ABC):
     def geometry(self): ...
 
     @classmethod
-    def get(cls, value: str | int):
+    def get(cls, **params):
         with functional.session() as session:
-            data = session.sql(
-                f"SELECT * FROM {cls.__tablename__} WHERE code = '{value}'"
-            ).fetchone()
+            data = session.sql(f"""
+                SELECT * FROM {cls.__tablename__} 
+                WHERE {" AND ".join([f"{p} = {v}" for p, v in params.items()])}'
+            """).fetchone()
         if not data:
-            raise ValueError(f"{cls} with code '{value}' not found")
+            raise ValueError(f"{cls} for query {params} not found")
 
-        breakpoint()
         return cls(**data)
 
     @classmethod
