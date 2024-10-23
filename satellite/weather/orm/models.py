@@ -1,10 +1,14 @@
-import inspect
 from abc import ABC, abstractmethod
+from typing import TypeVar, Type, List, Optional
+import inspect
 
 import pandas as pd
 import duckdb
 
 from satellite.weather.orm import functional, types
+
+
+ADM = TypeVar("ADM", bound="ADMBase")
 
 
 def init_db():
@@ -30,10 +34,11 @@ def init_db():
         session.commit()
 
     sp = ADM1.get(code=123)
+    breakpoint()
     assert sp.name == "SP"
 
 
-class Base(ABC):
+class ADMBase(ABC):
     __tablename__: str
     __fields__: list[str]  # NOTE: Must be indexed as the same as the attrs
 
@@ -53,12 +58,9 @@ class Base(ABC):
     def geometry(self): ...
 
     @classmethod
-    def get(cls, **params):
+    def get(cls: Type[ADM], **params) -> Type[ADM]:
         with functional.session() as session:
-            res = session.sql(f"""
-                SELECT * FROM {cls.__tablename__} WHERE 
-                {" AND ".join([f"{p} = '{v}'" for p, v in params.items()])}
-            """)
+            res = cls._query(session=session, **params)
 
             if len(res) > 1:
                 raise ValueError(
@@ -76,6 +78,24 @@ class Base(ABC):
             setattr(instance, field, value)
 
         return instance
+
+    @classmethod
+    def filter(cls: Type[ADM], **kwargs) -> List[Type[ADM]]:
+        ...
+
+    @classmethod
+    def _query(cls: Type[ADM], session, **kwargs) -> duckdb.DuckDBPyRelation:
+        where_params = (
+            " AND ".join([f"{p} = '{v}'" for p, v in kwargs.items()])
+        )
+
+        where = f"WHERE {where_params}"
+
+        select = f"SELECT * FROM {cls.__tablename__} "
+
+        query = select + where if kwargs else select
+
+        return session.sql(query)
 
     @classmethod
     def create_table(cls):
@@ -119,26 +139,25 @@ class Base(ABC):
         }
 
 
-class ADM0(Base):
+class ADM0(ADMBase):
     __tablename__ = "adm0"
     __fields__ = ["code", "name"]
 
     code: str
     name: str
 
-    def __init__(
-        self,
-        code: types.ADM0Options,
-        name: str,
-    ) -> None:
-        self.code = code
-        self.name = name
+    def __init__(self) -> None:
+        if not all([self.code, self.name]):
+            raise ValueError(
+                f"Bad {type(self)} instantiation, "
+                f"please use {type(self)}.get() instead"
+            )
 
     def geometry(self):
         raise NotImplementedError()
 
 
-class ADM1(Base):
+class ADM1(ADMBase):
     __tablename__ = "adm1"
     __fields__ = ["code", "name", "adm0"]
 
@@ -146,18 +165,21 @@ class ADM1(Base):
     name: str
     adm0: ADM0
 
-    def __init__(
-        self,
-        code: int,
-        name: str,
-        adm0: types.ADM0Options,
-    ) -> None:
-        self.code = code
-        self.name = name
-        self.adm0 = ADM0.get(code=adm0)
+    def __init__(self) -> None:
+        if not all([self.code, self.name, self.adm0]):
+            raise ValueError(
+                "Bad ADM1 initialization, please use ADM1.get() instead"
+            )
 
     def geometry(self):
         raise NotImplementedError()
+
+    @classmethod
+    def get(cls: Type[ADM], **params) -> Optional[ADM]:
+        result = super().get(**params)
+        if result:
+            result.adm0 = ADM0.get(code=result.adm0)
+        return result
 
 #
 #
