@@ -11,46 +11,6 @@ from satellite.weather.orm import functional
 ADM = TypeVar("ADM", bound="ADMBase")
 
 
-def init_db():
-    for adm in [ADM0, ADM1, ADM2]:
-        adm.drop_table()
-        adm.create_table()
-
-    df = pd.DataFrame.from_dict({"code": ["BRA"], "name": ["Brazil"]})
-
-    with functional.session() as session:
-        session.execute(f"INSERT INTO {ADM0.__tablename__} SELECT * FROM df")
-        session.commit()
-
-    bra = ADM0.get(code="BRA")
-    assert bra.name == "Brazil"
-
-    df = pd.DataFrame.from_dict(
-        {"code": [123], "name": ["SP"], "adm0": ["BRA"]}
-    )
-
-    with functional.session() as session:
-        session.execute(f"INSERT INTO {ADM1.__tablename__} SELECT * FROM df")
-        session.commit()
-
-    sp = ADM1.get(code=123)
-    assert sp.name == "SP"
-    assert sp.adm0.name == bra.name
-
-    df = pd.DataFrame.from_dict(
-        {"code": [12345], "name": ["Foo Bar"], "adm0": ["BRA"], "adm1": [123]}
-    )
-
-    with functional.session() as session:
-        session.execute(f"INSERT INTO {ADM2.__tablename__} SELECT * FROM df")
-        session.commit()
-
-    foo = ADM2.get(code=12345, adm1=123)
-    assert foo.name == "Foo Bar"
-    assert foo.adm0.name == bra.name
-    assert foo.adm1.name == sp.name
-
-
 class ADMBase(ABC):
     __tablename__: str
     __fields__: list[str]  # NOTE: Must be indexed as the same as the attrs
@@ -135,19 +95,18 @@ class ADMBase(ABC):
 
         with functional.session() as session:
             session.execute(
-                f"""
-                CREATE TABLE {cls.__tablename__} ({", ".join(columns)})
-            """
+                "CREATE TABLE IF NOT EXISTS "
+                f"{cls.__tablename__} ({', '.join(columns)})"
             )
             session.commit()
 
-    @classmethod
+    @ classmethod
     def drop_table(cls):  # TODO: REMOVE IT (READ ONLY TABLE)
         with functional.session() as session:
             session.sql(f"DROP TABLE IF EXISTS {cls.__tablename__}")
             session.commit()
 
-    @classmethod
+    @ classmethod
     def _get_class_fields(cls, fields: list[str] = None) -> dict[str, type]:
         if not fields:
             raise ValueError("a list of fields must be provided")
@@ -189,7 +148,7 @@ class ADM1(ADMBase):
     def geometry(self):
         raise NotImplementedError()
 
-    @classmethod
+    @ classmethod
     def get(cls: Type[ADM], **params) -> Optional[ADM]:
         res = super().get(**params)
         if res:
@@ -215,7 +174,7 @@ class ADM2(ADMBase):
     def geometry(self):
         raise NotImplementedError()
 
-    @classmethod
+    @ classmethod
     def get(cls: Type[ADM], **params) -> Optional[ADM]:
         res = super().get(**params)
         if res:
