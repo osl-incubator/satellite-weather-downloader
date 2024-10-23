@@ -12,7 +12,7 @@ ADM = TypeVar("ADM", bound="ADMBase")
 
 
 def init_db():
-    for adm in [ADM0, ADM1]:
+    for adm in [ADM0, ADM1, ADM2]:
         adm.drop_table()
         adm.create_table()
 
@@ -34,8 +34,19 @@ def init_db():
         session.commit()
 
     sp = ADM1.get(code=123)
-    breakpoint()
     assert sp.name == "SP"
+
+    df = pd.DataFrame.from_dict(
+        {"code": [12345], "name": ["Foo Bar"], "adm0": ["BRA"], "adm1": [123]}
+    )
+
+    with functional.session() as session:
+        session.execute(f"INSERT INTO {ADM2.__tablename__} SELECT * FROM df")
+        session.commit()
+
+    foo = ADM2.get(code=12345, adm1=123)
+
+    assert foo.name == "Foo Bar"
 
 
 class ADMBase(ABC):
@@ -88,13 +99,9 @@ class ADMBase(ABC):
         where_params = (
             " AND ".join([f"{p} = '{v}'" for p, v in kwargs.items()])
         )
-
         where = f"WHERE {where_params}"
-
         select = f"SELECT * FROM {cls.__tablename__} "
-
         query = select + where if kwargs else select
-
         return session.sql(query)
 
     @classmethod
@@ -176,21 +183,34 @@ class ADM1(ADMBase):
 
     @classmethod
     def get(cls: Type[ADM], **params) -> Optional[ADM]:
-        result = super().get(**params)
-        if result:
-            result.adm0 = ADM0.get(code=result.adm0)
-        return result
+        res = super().get(**params)
+        if res:
+            res.adm0 = ADM0.get(code=res.adm0)  # noqa
+        return res
 
-#
-#
-# class ADM2(Base):
-#     __tablename__ = "ADM2"
-#
-#     id = Column(Integer, Sequence("ADM2_id_sequence"), primary_key=True)
-#     code = Column(Integer, nullable=False)
-#     name = Column(String, nullable=False)
-#     adm1_id = Column(
-#         Integer,
-#         ForeignKey("ADM1.id", ondelete="RESTRICT"),
-#         nullable=False
-#     )
+
+class ADM2(ADMBase):
+    __tablename__ = "adm2"
+    __fields__ = ["code", "name", "adm0", "adm1"]
+
+    code: int
+    name: str
+    adm0: ADM0
+    adm1: ADM1
+
+    def __init__(self) -> None:
+        if not all([self.code, self.name, self.adm0]):
+            raise ValueError(
+                "Bad ADM2 initialization, please use ADM2.get() instead"
+            )
+
+    def geometry(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def get(cls: Type[ADM], **params) -> Optional[ADM]:
+        res = super().get(**params)
+        if res:
+            res.adm0 = ADM0.get(code=res.adm0)  # noqa
+            res.adm1 = ADM1.get(code=res.adm1, adm0=res.adm0.code)  # noqa
+        return res
