@@ -35,6 +35,7 @@ def init_db():
 
     sp = ADM1.get(code=123)
     assert sp.name == "SP"
+    assert sp.adm0.name == bra.name
 
     df = pd.DataFrame.from_dict(
         {"code": [12345], "name": ["Foo Bar"], "adm0": ["BRA"], "adm1": [123]}
@@ -45,8 +46,9 @@ def init_db():
         session.commit()
 
     foo = ADM2.get(code=12345, adm1=123)
-
     assert foo.name == "Foo Bar"
+    assert foo.adm0.name == bra.name
+    assert foo.adm1.name == sp.name
 
 
 class ADMBase(ABC):
@@ -55,6 +57,9 @@ class ADMBase(ABC):
 
     code: str | int
     name: str
+    adm0: Optional["ADM0"]
+    adm1: Optional["ADM1"]
+    adm2: Optional["ADM2"]
 
     def __str__(self) -> str:
         return str(self.code)
@@ -113,7 +118,7 @@ class ADMBase(ABC):
             if _type == ADM0:
                 _type = str
 
-            if _type in [ADM1]:
+            if _type in [ADM1, ADM2]:
                 _type = int
 
             query = f"{field} {duckdb.typing.DuckDBPyType(_type)}"
