@@ -4,9 +4,9 @@ from satellite.weather.orm.constants import ADM0_OPTIONS, DATASET_FPATH_SUFFIX
 
 
 def validate_adm0_options(code: str) -> str:
-    assert code in ADM0_OPTIONS, (
-        f"Unknown ADM0 '{code}'. Options: {ADM0_OPTIONS.keys()}"
-    )
+    assert (
+        code in ADM0_OPTIONS
+    ), f"Unknown ADM0 '{code}'. Options: {ADM0_OPTIONS.keys()}"
     return code
 
 

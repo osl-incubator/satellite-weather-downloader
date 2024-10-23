@@ -172,8 +172,7 @@ def download_netcdf(
         )
 
     if not all([isinstance(v, (int, float)) for v in area.values()]):
-        raise ValueError(
-            "Coordinate values must be rather int or float values")
+        raise ValueError("Coordinate values must be rather int or float values")
 
     if abs(area["N"]) > 90 or abs(area["S"]) > 90:
         raise ValueError("Latitude must be between -90 and 90")

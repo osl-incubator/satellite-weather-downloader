@@ -193,8 +193,7 @@ def _geocode_to_sql(
     locale: str,
     raw: bool,
 ) -> None:
-    df = _geocode_to_dataframe(
-        dataset=dataset, geocode=geocode, locale=locale, raw=raw)
+    df = _geocode_to_dataframe(dataset=dataset, geocode=geocode, locale=locale, raw=raw)
     df = df.reset_index(drop=False)
     if raw:
         df = df.rename(columns={"time": "datetime"})
@@ -236,8 +235,7 @@ def _geocode_to_dataframe(
     geocode = [geocode for g in range(len(df))]
     df = df.assign(geocode=da.from_array(geocode))
     df = df.assign(epiweek=str(Week.fromdate(df.index.to_pydatetime()[0])))
-    columns_to_round = list(
-        set(df.columns).difference(set(["geocode", "epiweek"])))
+    columns_to_round = list(set(df.columns).difference(set(["geocode", "epiweek"])))
     df[columns_to_round] = df[columns_to_round].map(lambda x: np.round(x, 4))
     return df
 

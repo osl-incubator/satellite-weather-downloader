@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Type, List, Optional
-import inspect
+from inspect import get_annotations
 
 import pandas as pd
 import duckdb
 
-from satellite.weather.orm import functional, types
+from satellite.weather.orm import functional
 
 
 ADM = TypeVar("ADM", bound="ADMBase")
@@ -55,7 +55,7 @@ class ADMBase(ABC):
     __tablename__: str
     __fields__: list[str]  # NOTE: Must be indexed as the same as the attrs
 
-    code: str | int
+    code: str
     name: str
     adm0: Optional["ADM0"]
     adm1: Optional["ADM1"]
@@ -80,8 +80,7 @@ class ADMBase(ABC):
 
             if len(res) > 1:
                 raise ValueError(
-                    f"{cls} for query {params} found multiple entries"
-                )
+                    f"{cls} for query {params} found multiple entries")
 
             data = res.fetchone()
 
@@ -89,20 +88,30 @@ class ADMBase(ABC):
             raise ValueError(f"{cls} for query {params} not found")
 
         instance = cls.__new__(cls)
-
         for field, value in zip(cls.__fields__, data):
             setattr(instance, field, value)
 
         return instance
 
     @classmethod
-    def filter(cls: Type[ADM], **kwargs) -> List[Type[ADM]]:
-        ...
+    def filter(cls: Type[ADM], **params) -> List[Type[ADM]]:
+        with functional.session() as session:
+            res = cls._query(session=session, **params)
+            data = res.fetchall()
+
+        adms = []
+        for item in data:
+            instance = cls.__new__(cls)
+            for field, value in zip(cls.__fields__, item):
+                setattr(instance, field, value)
+            adms.append(instance)
+
+        return adms
 
     @classmethod
     def _query(cls: Type[ADM], session, **kwargs) -> duckdb.DuckDBPyRelation:
-        where_params = (
-            " AND ".join([f"{p} = '{v}'" for p, v in kwargs.items()])
+        where_params = " AND ".join(
+            [f"{p} = '{v}'" for p, v in kwargs.items()]
         )
         where = f"WHERE {where_params}"
         select = f"SELECT * FROM {cls.__tablename__} "
@@ -111,15 +120,11 @@ class ADMBase(ABC):
 
     @classmethod
     def create_table(cls):
-        fields = cls._get_class_fields(cls.__fields__)  # noqa
+        fields = cls._get_class_fields(cls.__fields__)
         columns = []
         for field, _type in fields.items():
-            # TODO: should add fk?
-            if _type == ADM0:
+            if _type in [ADM0, ADM1, ADM2]:
                 _type = str
-
-            if _type in [ADM1, ADM2]:
-                _type = int
 
             query = f"{field} {duckdb.typing.DuckDBPyType(_type)}"
 
@@ -129,9 +134,11 @@ class ADMBase(ABC):
             columns.append(query)
 
         with functional.session() as session:
-            session.execute(f"""
+            session.execute(
+                f"""
                 CREATE TABLE {cls.__tablename__} ({", ".join(columns)})
-            """)
+            """
+            )
             session.commit()
 
     @classmethod
@@ -144,11 +151,7 @@ class ADMBase(ABC):
     def _get_class_fields(cls, fields: list[str] = None) -> dict[str, type]:
         if not fields:
             raise ValueError("a list of fields must be provided")
-        return {
-            k: v for k, v in
-            inspect.get_annotations(cls).items()
-            if k in fields
-        }
+        return {k: v for k, v in get_annotations(cls).items() if k in fields}
 
 
 class ADM0(ADMBase):
@@ -173,7 +176,7 @@ class ADM1(ADMBase):
     __tablename__ = "adm1"
     __fields__ = ["code", "name", "adm0"]
 
-    code: int
+    code: str
     name: str
     adm0: ADM0
 
@@ -190,7 +193,7 @@ class ADM1(ADMBase):
     def get(cls: Type[ADM], **params) -> Optional[ADM]:
         res = super().get(**params)
         if res:
-            res.adm0 = ADM0.get(code=res.adm0)  # noqa
+            res.adm0 = ADM0.get(code=res.adm0)
         return res
 
 
@@ -198,7 +201,7 @@ class ADM2(ADMBase):
     __tablename__ = "adm2"
     __fields__ = ["code", "name", "adm0", "adm1"]
 
-    code: int
+    code: str
     name: str
     adm0: ADM0
     adm1: ADM1
@@ -216,6 +219,6 @@ class ADM2(ADMBase):
     def get(cls: Type[ADM], **params) -> Optional[ADM]:
         res = super().get(**params)
         if res:
-            res.adm0 = ADM0.get(code=res.adm0)  # noqa
-            res.adm1 = ADM1.get(code=res.adm1, adm0=res.adm0.code)  # noqa
+            res.adm0 = ADM0.get(code=res.adm0)
+            res.adm1 = ADM1.get(code=res.adm1, adm0=res.adm0.code)
         return res

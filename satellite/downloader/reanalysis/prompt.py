@@ -12,8 +12,7 @@ from prompt_toolkit.validation import ValidationError, Validator
 from . import api_vars
 
 
-class PromptBase(ABC):
-    ...
+class PromptBase(ABC): ...
 
 
 def to_list(v):
@@ -479,7 +478,7 @@ def _time_regex_search(text: str):
                 end: int = times.index(expr[1])
 
                 if ini < end:
-                    return times[ini: end + 1]  # Inclusive
+                    return times[ini : end + 1]  # Inclusive
 
                 if ini > end:
                     res = []
@@ -494,7 +493,7 @@ def _time_regex_search(text: str):
                 step: int = int(expr[2])
 
                 if ini < end:
-                    return times[ini: end + 1: step]
+                    return times[ini : end + 1 : step]
 
                 if ini > end:
                     res = []
