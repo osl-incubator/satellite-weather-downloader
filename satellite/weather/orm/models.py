@@ -1,11 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Type, List, Optional
 from inspect import get_annotations
+from functools import lru_cache
+from pathlib import Path
 
+from shapely import MultiPolygon, Polygon
+import geopandas as gpd
 import pandas as pd
 import duckdb
 
-from satellite.weather.orm import functional
+from satellite.weather.orm import functional, constants
 
 
 ADM = TypeVar("ADM", bound="ADMBase")
@@ -27,11 +31,11 @@ class ADMBase(ABC):
     def __repr__(self) -> str:
         return self.name
 
-    @abstractmethod
-    def __init__(self) -> None: ...
-
-    @abstractmethod
-    def geometry(self): ...
+    @staticmethod
+    @lru_cache(maxsize=None)
+    def read_gpkg(fpath: Path) -> gpd.GeoDataFrame:
+        df = gpd.read_file(str(fpath))
+        return df
 
     @classmethod
     def get(cls: Type[ADM], **params) -> Type[ADM]:
@@ -55,6 +59,7 @@ class ADMBase(ABC):
 
     @classmethod
     def filter(cls: Type[ADM], **params) -> List[Type[ADM]]:
+        # TODO: include ADM class initialization when filtering (infinity loop)
         with functional.session() as session:
             res = cls._query(session=session, **params)
             data = res.fetchall()
@@ -100,13 +105,13 @@ class ADMBase(ABC):
             )
             session.commit()
 
-    @ classmethod
+    @classmethod
     def drop_table(cls):  # TODO: REMOVE IT (READ ONLY TABLE)
         with functional.session() as session:
             session.sql(f"DROP TABLE IF EXISTS {cls.__tablename__}")
             session.commit()
 
-    @ classmethod
+    @classmethod
     def _get_class_fields(cls, fields: list[str] = None) -> dict[str, type]:
         if not fields:
             raise ValueError("a list of fields must be provided")
@@ -127,8 +132,16 @@ class ADM0(ADMBase):
                 f"please use {type(self)}.get() instead"
             )
 
-    def geometry(self):
-        raise NotImplementedError()
+    def to_dataframe(self) -> gpd.GeoDataFrame:
+        gpkg = constants.GPKGS_DIR / f"{self.code}.gpkg"
+        gdf = self.read_gpkg(gpkg)
+        gdf = gdf.dissolve()
+        if len(gdf) != 1:
+            raise ValueError("expects only one row as output")
+        res = gdf.copy().drop(columns=["adm2", "adm1"])
+        res.loc[0, "code"] = self.code
+        res.loc[0, "name"] = self.name
+        return res[self.__fields__ + ["geometry"]]
 
 
 class ADM1(ADMBase):
@@ -145,10 +158,21 @@ class ADM1(ADMBase):
                 "Bad ADM1 initialization, please use ADM1.get() instead"
             )
 
-    def geometry(self):
-        raise NotImplementedError()
+    def to_dataframe(self) -> gpd.GeoDataFrame:
+        adm0 = self.adm0.code if isinstance(self.adm0, ADM0) else self.adm0
+        gpkg = constants.GPKGS_DIR / f"{adm0}.gpkg"
+        gdf = self.read_gpkg(gpkg)
+        gdf = gdf[gdf['adm1'] == self.code]
+        gdf = gdf.dissolve()
+        if len(gdf) != 1:
+            raise ValueError("expects only one row as output")
+        res = gdf.copy().drop(columns=["adm2"])
+        res = res.rename(columns={"adm1": "code"})
+        res.loc[0, "name"] = self.name
+        res.loc[0, "adm0"] = adm0
+        return res[self.__fields__ + ["geometry"]]
 
-    @ classmethod
+    @classmethod
     def get(cls: Type[ADM], **params) -> Optional[ADM]:
         res = super().get(**params)
         if res:
@@ -171,10 +195,24 @@ class ADM2(ADMBase):
                 "Bad ADM2 initialization, please use ADM2.get() instead"
             )
 
-    def geometry(self):
-        raise NotImplementedError()
+    def to_dataframe(self) -> gpd.GeoDataFrame:
+        adm0 = self.adm0.code if isinstance(self.adm0, ADM0) else self.adm0
+        adm1 = self.adm1.code if isinstance(self.adm1, ADM1) else self.adm1
+        gpkg = constants.GPKGS_DIR / f"{adm0}.gpkg"
+        gdf = self.read_gpkg(gpkg)
+        gdf = gdf[
+            (gdf['adm1'] == adm1) & (gdf['adm2'] == self.code)
+        ]
+        if len(gdf) != 1:
+            raise ValueError("expects only one row as output")
+        res = gdf.copy()
+        res = res.rename(columns={"adm2": "code"})
+        res.loc[0, "name"] = self.name
+        res.loc[0, "adm0"] = adm0
+        res.loc[0, "adm1"] = adm1
+        return res[self.__fields__ + ["geometry"]]
 
-    @ classmethod
+    @classmethod
     def get(cls: Type[ADM], **params) -> Optional[ADM]:
         res = super().get(**params)
         if res:

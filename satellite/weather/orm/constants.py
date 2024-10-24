@@ -1,6 +1,9 @@
 from pathlib import Path
 
-ADM_DB = Path(__file__).parent.parent.parent / "data/ADM.duckdb"
+BASE_DIR = Path(__file__).parent.parent.parent
+ADM_DB = BASE_DIR / "data/ADM.duckdb"
+GPKGS_DIR = BASE_DIR / "data/gpkgs/"
+
 
 # ALPHA 3 CODES
 ADM0_OPTIONS = {"BRA": "Brazil", "ARG": "Argentina"}
