@@ -1,12 +1,10 @@
-from abc import ABC, abstractmethod
 from typing import TypeVar, Type, List, Optional
 from inspect import get_annotations
 from functools import lru_cache
 from pathlib import Path
+from abc import ABC
 
-from shapely import MultiPolygon, Polygon
 import geopandas as gpd
-import pandas as pd
 import duckdb
 
 from satellite.weather.orm import functional, constants
@@ -31,12 +29,6 @@ class ADMBase(ABC):
     def __repr__(self) -> str:
         return self.name
 
-    @staticmethod
-    @lru_cache(maxsize=None)
-    def read_gpkg(fpath: Path) -> gpd.GeoDataFrame:
-        df = gpd.read_file(str(fpath))
-        return df
-
     @classmethod
     def get(cls: Type[ADM], **params) -> Type[ADM]:
         with functional.session() as session:
@@ -59,7 +51,7 @@ class ADMBase(ABC):
 
     @classmethod
     def filter(cls: Type[ADM], **params) -> List[Type[ADM]]:
-        # TODO: include ADM class initialization when filtering (infinity loop)
+        # TODO: include ADM class initialization when filtering (recursive err)
         with functional.session() as session:
             res = cls._query(session=session, **params)
             data = res.fetchall()
@@ -76,12 +68,17 @@ class ADMBase(ABC):
     @classmethod
     def _query(cls: Type[ADM], session, **kwargs) -> duckdb.DuckDBPyRelation:
         where_params = " AND ".join(
-            [f"{p} = '{v}'" for p, v in kwargs.items()]
-        )
+            [f"{p} = '{v}'" for p, v in kwargs.items()])
         where = f"WHERE {where_params}"
         select = f"SELECT * FROM {cls.__tablename__} "
         query = select + where if kwargs else select
         return session.sql(query)
+
+    @staticmethod
+    @lru_cache(maxsize=None)
+    def _read_gpkg(fpath: Path) -> gpd.GeoDataFrame:
+        df = gpd.read_file(str(fpath))
+        return df
 
     @classmethod
     def create_table(cls):
@@ -126,15 +123,11 @@ class ADM0(ADMBase):
     name: str
 
     def __init__(self) -> None:
-        if not all([self.code, self.name]):
-            raise ValueError(
-                f"Bad {type(self)} instantiation, "
-                f"please use {type(self)}.get() instead"
-            )
+        raise ValueError("bad ADM0 instantiation, use ADM0.get() instead")
 
     def to_dataframe(self) -> gpd.GeoDataFrame:
         gpkg = constants.GPKGS_DIR / f"{self.code}.gpkg"
-        gdf = self.read_gpkg(gpkg)
+        gdf = self._read_gpkg(gpkg)
         gdf = gdf.dissolve()
         if len(gdf) != 1:
             raise ValueError("expects only one row as output")
@@ -153,17 +146,14 @@ class ADM1(ADMBase):
     adm0: ADM0
 
     def __init__(self) -> None:
-        if not all([self.code, self.name, self.adm0]):
-            raise ValueError(
-                "Bad ADM1 initialization, please use ADM1.get() instead"
-            )
+        raise ValueError("bad ADM1 initialization, use ADM1.get() instead")
 
     def to_dataframe(self) -> gpd.GeoDataFrame:
         adm0 = self.adm0.code if isinstance(self.adm0, ADM0) else self.adm0
         gpkg = constants.GPKGS_DIR / f"{adm0}.gpkg"
-        gdf = self.read_gpkg(gpkg)
-        gdf = gdf[gdf['adm1'] == self.code]
-        gdf = gdf.dissolve()
+        gdf = self._read_gpkg(gpkg)
+        gdf = gdf[gdf["adm1"] == self.code]
+        gdf = gdf.dissolve(by="adm1", as_index=False).reset_index(drop=True)
         if len(gdf) != 1:
             raise ValueError("expects only one row as output")
         res = gdf.copy().drop(columns=["adm2"])
@@ -190,22 +180,17 @@ class ADM2(ADMBase):
     adm1: ADM1
 
     def __init__(self) -> None:
-        if not all([self.code, self.name, self.adm0]):
-            raise ValueError(
-                "Bad ADM2 initialization, please use ADM2.get() instead"
-            )
+        raise ValueError("bad ADM2 initialization, use ADM2.get() instead")
 
     def to_dataframe(self) -> gpd.GeoDataFrame:
         adm0 = self.adm0.code if isinstance(self.adm0, ADM0) else self.adm0
         adm1 = self.adm1.code if isinstance(self.adm1, ADM1) else self.adm1
         gpkg = constants.GPKGS_DIR / f"{adm0}.gpkg"
-        gdf = self.read_gpkg(gpkg)
-        gdf = gdf[
-            (gdf['adm1'] == adm1) & (gdf['adm2'] == self.code)
-        ]
+        gdf = self._read_gpkg(gpkg)
+        gdf = gdf[(gdf["adm1"] == adm1) & (gdf["adm2"] == self.code)]
         if len(gdf) != 1:
             raise ValueError("expects only one row as output")
-        res = gdf.copy()
+        res = gdf.copy().reset_index(drop=True)
         res = res.rename(columns={"adm2": "code"})
         res.loc[0, "name"] = self.name
         res.loc[0, "adm0"] = adm0

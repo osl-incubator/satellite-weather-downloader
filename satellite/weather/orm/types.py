@@ -1,5 +1,3 @@
-from typing import Optional
-
 from typing_extensions import Annotated
 from pydantic.functional_validators import AfterValidator
 
