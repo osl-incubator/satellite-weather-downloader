@@ -211,7 +211,12 @@ class ERA5LandSpecs(Specs):
         values: ValidationInfo,
     ) -> Optional[dict[Literal["N", "S", "W", "E"], float]]:
         if value is not None:
-            return Area.from_coords(value["N"], value["W"], value["S"], value["E"]).bbox
+            return Area.from_coords(
+                north=value["N"],
+                west=value["W"],
+                south=value["S"],
+                east=value["E"],
+            ).bbox
 
         locale = values.data["locale"]
         if locale:
@@ -278,7 +283,7 @@ class ERA5LandRequest(BaseRequest):
 
 class DataSet:
     @classmethod
-    def from_netcdf4(cls, fpath: str) -> xr.Dataset:
+    def from_netcdf(cls, fpath: str) -> xr.Dataset:
         if Path(fpath).suffix == ".zip":
             with zipfile.ZipFile(fpath, "r") as zip_files:
                 zfiles = zip_files.namelist()
