@@ -35,8 +35,7 @@ class ADMBase(ABC):
             res = cls._query(session=session, **params)
 
             if len(res) > 1:
-                raise ValueError(
-                    f"{cls} for query {params} found multiple entries")
+                raise ValueError(f"{cls} for query {params} found multiple entries")
 
             data = res.fetchone()
 
@@ -67,8 +66,7 @@ class ADMBase(ABC):
 
     @classmethod
     def _query(cls: Type[ADM], session, **kwargs) -> duckdb.DuckDBPyRelation:
-        where_params = " AND ".join(
-            [f"{p} = '{v}'" for p, v in kwargs.items()])
+        where_params = " AND ".join([f"{p} = '{v}'" for p, v in kwargs.items()])
         where = f"WHERE {where_params}"
         select = f"SELECT * FROM {cls.__tablename__} "
         query = select + where if kwargs else select
