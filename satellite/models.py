@@ -5,6 +5,7 @@ from pathlib import Path
 import zipfile
 import uuid
 import os
+import io
 
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from requests.exceptions import RequestException
@@ -290,5 +291,6 @@ class DataSet:
                 if len(zfiles) != 1:
                     raise ValueError(f"multiple or no data found in {fpath}")
                 with zip_files.open(zfiles[0]) as zfile:
-                    return xr.open_dataset(zfile, engine="h5netcdf")
+                    data = zfile.read()
+                    return xr.open_dataset(io.BytesIO(data), engine="h5netcdf")
         return xr.open_dataset(fpath, engine="netcdf4")
