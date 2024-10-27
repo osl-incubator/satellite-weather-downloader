@@ -4,7 +4,7 @@ from typing import TypeVar, Type, List, Optional
 from inspect import get_annotations
 from functools import lru_cache
 from pathlib import Path
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import geopandas as gpd
 import duckdb
@@ -31,18 +31,23 @@ class ADMBase(ABC):
     def __repr__(self) -> str:
         return self.name
 
+    @abstractmethod
+    def to_dataframe(self) -> gpd.GeoDataFrame: ...
+
     @classmethod
     def get(cls: Type[ADM], **params) -> Type[ADM]:
         with functional.session() as session:
             res = cls._query(session=session, **params)
 
             if len(res) > 1:
-                raise ValueError(f"{cls} for query {params} found multiple entries")
+                raise ValueError(
+                    f"{cls.__tablename__} for query " f"{params} found multiple entries"
+                )
 
             data = res.fetchone()
 
         if not data:
-            raise ValueError(f"{cls} for query {params} not found")
+            raise ValueError(f"{cls.__tablename__} for query {params} not found")
 
         instance = cls.__new__(cls)
         for field, value in zip(cls.__fields__, data):
@@ -90,10 +95,18 @@ class ADMBase(ABC):
 
             query = f"{field} {duckdb.typing.DuckDBPyType(_type)}"
 
-            if field == "code":
+            if _type == ADM0 and field == "code":
                 query += " PRIMARY KEY"
 
+            query += " NOT NULL"
+
             columns.append(query)
+
+            if _type == ADM1:
+                columns.append("UNIQUE (code, adm0)")
+
+            if _type == ADM2:
+                columns.append("UNIQUE (code, adm1)")
 
         with functional.session() as session:
             session.execute(

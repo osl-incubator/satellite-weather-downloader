@@ -101,3 +101,4 @@ rabbitmq.conf
 *key.pem
 *key.p12
 .misc
+.dbf
