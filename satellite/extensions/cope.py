@@ -1,22 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Union, Optional
 
 import pandas as pd
-import dask
-import dask.array as da
-import dask.dataframe as dd
 import numpy as np
 import xarray as xr
+import xagg as xa
 from loguru import logger
 from epiweeks import Week
-from sqlalchemy.engine import Connectable
 
-from satellite.weather.utils import extract_latlons, extract_coordinates
+from satellite.geo.models import ADM, ADMBase
 
 xr.set_options(keep_attrs=True)
 
 
-class CopeDatasetExtensionBase(ABC):
+class CopeExtensionBase(ABC):
     """
     This class is an `xr.Dataset` extension base class. It's children will
     works as a dataset layer with the purpose of enhancing the xarray dataset
@@ -27,13 +24,10 @@ class CopeDatasetExtensionBase(ABC):
 
     Usage:
     ```
-    import satellite.weather as sat
-    ds = sat.load_dataset('file/path')
-    ds.Cope<ABV>.to_dataframe(geocode)
-    ds.Cope<ABV>.geocode_ds(geocode)
+    ds.cope.to_dataframe(ADM)
+    ds.cope.adm_ds(ADM)
     ```
-
-    The expect output when the requested data is not `raw` is:
+    See also: satellite.ADM2
 
     date       : datetime object.
     epiweek    : Epidemiological week (format: YYYYWW)
@@ -53,15 +47,15 @@ class CopeDatasetExtensionBase(ABC):
     """
 
     @abstractmethod
-    def geocode_ds(self, geocode, raw, **kwargs) -> xr.Dataset:
+    def to_dataframe(self, adms: Union[list[ADM], ADM]) -> pd.DataFrame:
         pass
 
     @abstractmethod
-    def to_dataframe(self, geocodes, raw, **kwargs) -> pd.DataFrame:
+    def adm_ds(self, adm: ADM) -> xr.Dataset:
         pass
 
     @abstractmethod
-    def to_sql(self, geocodes, con, tablename, schema, raw, **kwargs) -> None:
+    def to_sql(self, adms, con, tablename, schema, raw, **kwargs) -> None:
         """
         Reads the data for each geocode and insert the rows into the
         database one by one, created by sqlalchemy engine with the URI.
@@ -71,135 +65,51 @@ class CopeDatasetExtensionBase(ABC):
         pass
 
 
-@xr.register_dataset_accessor("CopeBR")
-class CopeBRDatasetExtension:
+@xr.register_dataset_accessor("cope")
+class CopeExtension(CopeExtensionBase):
     def __init__(self, xarray_ds: xr.Dataset):
         self._ds = xarray_ds
-        self.locale = "BR"
 
-    def to_dataframe(self, geocodes: Union[list[int], int], raw: bool = False):
-        df = _final_dataframe(
-            dataset=self._ds, geocodes=geocodes, locale=self.locale, raw=raw
-        )
-        if isinstance(df, dask.dataframe.DataFrame):
-            df = df.compute()
-        df = df.reset_index(drop=True)
-
-        return df
+    def to_dataframe(self, adms: Union[list[ADM], ADM]) -> pd.DataFrame:
+        adms = [adms] if isinstance(adms, ADMBase) else adms
+        dfs = []
+        for adm in adms:
+            dfs.append(_adm_to_dataframe(self._ds, adm=adm))
+        return pd.concat(dfs)
 
     def to_sql(
         self,
-        geocodes: Union[list[int], int],
-        con: Connectable,
+        adms: Union[list[int], int],
+        con,
         tablename: str,
-        schema: str,
+        schema: Optional[str] = None,
         raw: bool = False,
         verbose: bool = True,
     ) -> None:
-        geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
-        for geocode in geocodes:
+        adms = [adms] if isinstance(adms, ADMBase) else adms
+        for adm in adms:
             _geocode_to_sql(
                 dataset=self._ds,
-                geocode=geocode,
+                adm=adm,
                 con=con,
                 schema=schema,
                 tablename=tablename,
-                locale=self.locale,
-                raw=raw,
             )
             if verbose:
-                logger.info(f"{geocode} updated on {schema}.{tablename}")
+                logger.info(f"{adm.code} updated on {schema}.{tablename}")
 
-    def geocode_ds(self, geocode: int, raw: bool = False):
-        return _geocode_ds(ds=self._ds, geocode=geocode, locale=self.locale, raw=raw)
-
-
-@xr.register_dataset_accessor("CopeAR")
-class CopeARDatasetExtension:
-    def __init__(self, xarray_ds: xr.Dataset):
-        self._ds = xarray_ds
-        self.locale = "AR"
-
-    def to_dataframe(self, geocodes: Union[list[str], str], raw: bool = False):
-        df = _final_dataframe(
-            dataset=self._ds, geocodes=geocodes, locale=self.locale, raw=raw
-        )
-        if isinstance(df, dask.dataframe.DataFrame):
-            df = df.compute()
-        df = df.reset_index(drop=True)
-        return df
-
-    def to_sql(
-        self,
-        geocodes: Union[list[str], str],
-        con: Connectable,
-        tablename: str,
-        schema: str,
-        raw: bool = False,
-        verbose: bool = True,
-    ):
-        geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
-        for geocode in geocodes:
-            _geocode_to_sql(
-                dataset=self._ds,
-                geocode=geocode,
-                con=con,
-                schema=schema,
-                tablename=tablename,
-                raw=raw,
-            )
-            if verbose:
-                logger.info(f"{geocode} updated on {schema}.{tablename}")
-
-    def geocode_ds(self, geocode: str, raw: bool = False):
-        return _geocode_ds(self._ds, geocode, self.locale, raw)
-
-
-def _final_dataframe(
-    dataset: xr.Dataset,
-    geocodes: Union[list[str | int], int | str],
-    locale: str,
-    raw=False,
-) -> pd.DataFrame:
-    geocodes = [geocodes] if isinstance(geocodes, int) else geocodes
-
-    dfs = []
-    for geocode in geocodes:
-        dfs.append(
-            _geocode_to_dataframe(
-                dataset=dataset, geocode=geocode, locale=locale, raw=raw
-            )
-        )
-
-    final_df = dd.concat(dfs)
-
-    if final_df.index.name == "time":
-        final_df = final_df.reset_index(drop=False)
-
-    if raw:
-        final_df = final_df.rename(columns={"time": "datetime"})
-    else:
-        final_df = final_df.rename(columns={"time": "date"})
-
-    return final_df
+    def adm_ds(self, adm: ADM):
+        return _adm_ds(ds=self._ds, adm=adm)
 
 
 def _geocode_to_sql(
     dataset: xr.Dataset,
-    geocode: int,
-    con: Connectable,
+    adm: ADM,
+    con,
     schema: str,
     tablename: str,
-    locale: str,
-    raw: bool,
 ) -> None:
-    df = _geocode_to_dataframe(dataset=dataset, geocode=geocode, locale=locale, raw=raw)
-    df = df.reset_index(drop=False)
-    if raw:
-        df = df.rename(columns={"time": "datetime"})
-    else:
-        df = df.rename(columns={"time": "date"})
-
+    df = _adm_to_dataframe(dataset=dataset, adm=adm)
     df.to_sql(
         name=tablename,
         schema=schema,
@@ -210,151 +120,41 @@ def _geocode_to_sql(
     del df
 
 
-def _geocode_to_dataframe(
-    dataset: xr.Dataset, geocode: int, locale: str, raw: bool = False
-) -> pd.DataFrame:
-    """
-    Returns a DataFrame with the values related to the geocode of a
-    city according to each country's standard. Extract the values
-    using `ds_from_geocode()` and return `xr.Dataset.to_dataframe()`
-    from Xarray, inserting the geocode into the final DataFrame.
-    Attrs:
-      geocode (str or int): Geocode of a city
-      raw (bool)          : If raw is set to True, the DataFrame returned
-                            will contain data in 3 hours intervals.
-                            Default return will aggregate these values
-                            into 24 hours interval.
-    Returns:
-      pd.DataFrame: Similar to `ds_from_geocode(geocode).to_dataframe()`
-                    but with two extra columns with the geocode and epiweek,
-                    the integer columns are also rounded to 4 decimals digits
-    """
-    ds = _geocode_ds(ds=dataset, geocode=geocode, locale=locale, raw=raw)
-    df = ds.to_dataframe()
+def _adm_to_dataframe(dataset: xr.Dataset, adm: ADM) -> pd.DataFrame:
+    ds = _adm_ds(ds=dataset, adm=adm)
+    df = ds.to_dataframe().reset_index()
     del ds
-    geocode = [geocode for g in range(len(df))]
-    df = df.assign(geocode=da.from_array(geocode))
-    df = df.assign(epiweek=str(Week.fromdate(df.index.to_pydatetime()[0])))
-    columns_to_round = list(set(df.columns).difference(set(["geocode", "epiweek"])))
+    df = df.assign(epiweek=str(Week.fromdate(pd.to_datetime(df.time)[0])))
+    columns_to_round = list(
+        set(df.columns).difference(set(["time", "code", "name", "epiweek"]))
+    )
     df[columns_to_round] = df[columns_to_round].map(lambda x: np.round(x, 4))
+    df = df.drop(columns=["poly_idx", "name"])
+    df = df.rename(columns={"time": "date", "code": "geocode"})
     return df
 
 
-def _geocode_ds(
-    ds: xr.Dataset, geocode: int | str, locale: str, raw=False
-) -> xr.Dataset:
-    """
-    This is the most important method of the extension. It will
-    slice the dataset according to the geocode provided, do the
-    math and the parse of the units to Br's format, and reduce by
-    min, mean and max by day, if the `raw` is false.
-    Attrs:
-        geocode (str|int): Geocode of a city.
-        raw (bool)       : If raw is set to True, the DataFrame returned
-                           will contain data in 3 hours intervals. Default
-                           return will aggregate these values into 24h
-                           interval.
-        locale (str)     : Country abbreviation. Example: 'BR'
-    Returns:
-        xr.Dataset: The final dataset with the data parsed into Br's
-                    format. If not `raw`, will group the data by day,
-                    taking it's min, mean and max values. If `raw`,
-                    the data corresponds to a 3h interval range for
-                    each day in the dataset.
-    """
-    lats, lons = _get_latlons(geocode=geocode, locale=locale)
-
-    geocode_ds = _convert_to_br_units(
-        _slice_dataset_by_coord(dataset=ds, lats=lats, lons=lons)
-    )
-
-    if raw:
-        return geocode_ds
-
-    geocode_ds = geocode_ds.sortby("time")
-    gb = geocode_ds.resample(time="1D")
+def _adm_ds(ds: xr.Dataset, adm: ADM) -> xr.Dataset:
+    ds = _convert_units(ds)
+    weightmap = xa.pixel_overlaps(ds, adm.to_dataframe(), silent=True)
+    ds = xa.aggregate(ds, weightmap, silent=True).to_dataset().sortby("time")
+    gb = ds.resample(time="1D")
     gmin, gmean, gmax, gtot = (
         _reduce_by(gb, np.min, "min"),
         _reduce_by(gb, np.mean, "med"),
         _reduce_by(gb, np.max, "max"),
         _reduce_by(gb, np.sum, "tot"),
     )
-
-    final_ds = xr.combine_by_coords(
-        [gmin, gmean, gmax, gtot.precip_tot], data_vars="all"
+    return xr.combine_by_coords(
+        [ds.code, ds.name, gmin, gmean, gmax, gtot.precip_tot], data_vars="all"
     )
 
-    return final_ds
 
+def _reduce_by(ds: xr.Dataset, func, prefix: str) -> xr.Dataset:
+    ds = ds.apply(func=func).drop_vars(
+        ["code", "name", "adm1", "adm0"], errors="ignore"
+    )
 
-def _slice_dataset_by_coord(
-    dataset: xr.Dataset, lats: list[int], lons: list[int]
-) -> xr.Dataset:
-    """
-    Slices a dataset using latitudes and longitudes, returns a dataset
-    with the mean values between the coordinates.
-    """
-    ds = dataset.sel(latitude=lats, longitude=lons, method="nearest")
-    return ds.mean(dim=["latitude", "longitude"])
-
-
-def _convert_to_br_units(dataset: xr.Dataset) -> xr.Dataset:
-    """
-    Parse measure units. Rename their unit names and long names as well.
-    """
-    ds = dataset
-    _vars = list(ds.data_vars.keys())
-
-    if "t2m" in _vars:
-        # Convert Kelvin to Celsius degrees
-        ds["t2m"] = ds.t2m - 273.15
-        ds["t2m"].attrs = {"units": "degC", "long_name": "Temperatura"}
-
-        if "d2m" in _vars:
-            # Calculate Relative Humidity percentage and add to Dataset
-            ds["d2m"] = ds.d2m - 273.15
-
-            e = 6.112 * np.exp(17.67 * ds.d2m / (ds.d2m + 243.5))
-            es = 6.112 * np.exp(17.67 * ds.t2m / (ds.t2m + 243.5))
-            rh = (e / es) * 100
-
-            # Replacing the variable instead of dropping. d2m won't be used.
-            ds["d2m"] = rh
-            ds["d2m"].attrs = {
-                "units": "pct",
-                "long_name": "Umidade Relativa do Ar",
-            }
-    if "tp" in _vars:
-        # Convert meters to millimeters
-        ds["tp"] = ds.tp * 1000
-        ds["tp"] = ds.tp.round(5)
-        ds["tp"].attrs = {"units": "mm", "long_name": "Precipitação"}
-    if "sp" in _vars:
-        # Convert Pa to ATM
-        ds["sp"] = ds.sp * 0.00000986923
-        ds["sp"].attrs = {
-            "units": "atm",
-            "long_name": "Pressão ao Nível do Mar",
-        }
-
-    parsed_vars = {
-        "valid_time": "time",
-        "t2m": "temp",
-        "tp": "precip",
-        "sp": "pressao",
-        "d2m": "umid",
-    }
-
-    return ds.rename(parsed_vars)
-
-
-def _reduce_by(ds: xr.Dataset, func, prefix: str):
-    """
-    Applies a function to each coordinate in the dataset and
-    replace the `data_vars` names to it's corresponding prefix.
-    """
-    ds = ds.apply(func=func)
-    # ds = ds.map(lambda x: np.round(x, 4))
     return ds.rename(
         dict(
             zip(
@@ -365,24 +165,46 @@ def _reduce_by(ds: xr.Dataset, func, prefix: str):
     )
 
 
-def _get_latlons(geocode: int | str, locale: str) -> tuple[list[float], list[float]]:
-    """
-    Extract Latitude and Longitude from a geocode of the specific locale.
-    """
-    lat, lon = extract_latlons.from_geocode(int(geocode), locale)
-    N, S, E, W = extract_coordinates.from_latlon(lat, lon)
+def _convert_units(ds: xr.Dataset) -> xr.Dataset:
+    _ds = ds.copy()
+    del ds
+    _vars = list(_ds.data_vars.keys())
 
-    lats = [N, S]
-    lons = [E, W]
+    parsed_vars = {
+        "valid_time": "time",
+    }
 
-    if locale == "BR":
-        match geocode:
-            case 4108304:  # Foz do Iguaçu - BR
-                lats = [-25.5]
-                lons = [-54.5, -54.75]
+    if "t2m" in _vars:
+        _ds["t2m"] = _ds.t2m - 273.15
+        _ds["t2m"].attrs = {"units": "degC", "long_name": "Temperatura"}
+        parsed_vars["t2m"] = "temp"
 
-            case 3548500:  # Santos (SP) - BR
-                lats = [-24.0]
-                lons = [-46.25, -46.5]
+        if "d2m" in _vars:
+            _ds["d2m"] = _ds.d2m - 273.15
 
-    return lats, lons
+            e = 6.112 * np.exp(17.67 * _ds.d2m / (_ds.d2m + 243.5))
+            es = 6.112 * np.exp(17.67 * _ds.t2m / (_ds.t2m + 243.5))
+            rh = (e / es) * 100
+
+            _ds["d2m"] = rh
+            _ds["d2m"].attrs = {
+                "units": "pct",
+                "long_name": "Umidade Relativa do Ar",
+            }
+            parsed_vars["d2m"] = "umid"
+
+    if "tp" in _vars:
+        _ds["tp"] = _ds.tp * 1000
+        _ds["tp"] = _ds.tp.round(5)
+        _ds["tp"].attrs = {"units": "mm", "long_name": "Precipitação"}
+        parsed_vars["tp"] = "precip"
+
+    if "sp" in _vars:
+        _ds["sp"] = _ds.sp * 0.00000986923
+        _ds["sp"].attrs = {
+            "units": "atm",
+            "long_name": "Pressão ao Nível do Mar",
+        }
+        parsed_vars["sp"] = "pressao"
+
+    return _ds.rename(parsed_vars)

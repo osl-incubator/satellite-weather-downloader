@@ -50,7 +50,7 @@
       {
         "assets": [
           "pyproject.toml",
-          "CHANGELOG.md",
+          "CHANGELOG.md"
         ],
         "message": "chore(release): ${nextRelease.version}"
       }

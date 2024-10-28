@@ -70,7 +70,6 @@ class Specs(BaseModel): ...
 
 
 class BaseRequest(ABC, BaseModel):
-    client: Optional[Client] = Field(default=None, validate_default=True)
     name: str = Field(
         ..., description="Copernicus dataset. e.g: 'reanalysis-era5-land'"
     )
@@ -81,27 +80,27 @@ class BaseRequest(ABC, BaseModel):
     @abstractmethod
     def download(self, output: str) -> str: ...
 
-    @field_validator("client")
     @classmethod
-    def validate_client(cls, value: Optional[Client] = None) -> Client:
-        if not value:
+    def get_client(cls, key: Optional[str] = None) -> Client:
+        if not key:
             key = os.getenv("CDSAPI_TOKEN", None)
-            assert key, (
-                "Environment variable CDSAPI_TOKEN not found in the system.\n"
-                'Execute `$ export CDSAPI_TOKEN="<MY_UID_TOKEN>"` to fix.\n'
-                "These credentials are found in your Copernicus User Page: \n"
-                "https://cds.climate.copernicus.eu/user/<USER>"
-            )
+            if not key:
+                raise ValueError(
+                    "Environment variable CDSAPI_TOKEN not found in the system.\n"
+                    'Execute `$ export CDSAPI_TOKEN="<MY_UID_TOKEN>"` '
+                    "or pass the key in the request to fix.\n"
+                    "These credentials are found in your Copernicus User Page: \n"
+                    "https://cds.climate.copernicus.eu/user/<USER>"
+                )
 
-            uuid.UUID(key)
+        uuid.UUID(key)
 
-            client = Client(
-                url="https://cds.climate.copernicus.eu/api",
-                key=key,
-            )
+        client = Client(
+            url="https://cds.climate.copernicus.eu/api",
+            key=key,
+        )
 
-            return client
-        return value
+        return client
 
     class Config:
         arbitrary_types_allowed = True
@@ -230,6 +229,7 @@ class ERA5LandRequest(BaseRequest):
     https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land
     """
 
+    api_key: Optional[str] = Field(default=None)
     name: Literal["reanalysis-era5-land"] = Field(
         default="reanalysis-era5-land", validate_default=True
     )
@@ -261,8 +261,10 @@ class ERA5LandRequest(BaseRequest):
         if output.exists():
             return str(output)
 
+        client = self.get_client(self.api_key)
+
         try:
-            self.client.retrieve(
+            client.retrieve(
                 self.name,
                 {
                     "product_type": request.product_type,

@@ -82,7 +82,7 @@ class ADMBase(ABC):
     @staticmethod
     @lru_cache(maxsize=None)
     def _read_gpkg(fpath: Path) -> gpd.GeoDataFrame:
-        df = gpd.read_file(str(fpath))
+        df = gpd.read_file(str(fpath), encoding="utf-8")
         return df
 
     @classmethod

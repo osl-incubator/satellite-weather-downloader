@@ -3,14 +3,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import xarray as xr
-from cdsapi.api import Client
 
 from satellite.models import ERA5LandRequest, DataSet
 
 
 def reanalysis_era5_land(
     output: Optional[str] = None,
-    client: Optional[Client] = None,
+    api_token: Optional[str] = None,
     product_type: list[str] = ["reanalysis"],
     variable: list[str] = [
         "2m_temperature",
@@ -47,5 +46,5 @@ def reanalysis_era5_land(
     if output and Path(output).is_file():
         return DataSet.from_netcdf(output)
     return DataSet.from_netcdf(
-        ERA5LandRequest(client=client, request=request).download(output)
+        ERA5LandRequest(api_key=api_token, request=request).download(output)
     )

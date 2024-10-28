@@ -6,6 +6,7 @@
 notebooks_tmp/
 satellite_weather_downloader/tests/
 *utilities/geo_json/
+.pylintrc
 
 
 ### Python template
@@ -101,4 +102,7 @@ rabbitmq.conf
 *key.pem
 *key.p12
 .misc
-.dbf
+*.dbf
+*.zip
+*.nc
+*.geojson
