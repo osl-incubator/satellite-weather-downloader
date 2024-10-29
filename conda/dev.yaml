@@ -1,11 +1,8 @@
-name: env-satellite
+name: satellite
 channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python >=3.10,<3.12
+  - python >=3.11,<3.12
   - pip
-  - make
   - poetry
-  - setuptools >= 69.1.0
-  # - gdal
