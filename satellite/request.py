@@ -8,7 +8,7 @@ from satellite.models import ERA5LandRequest, DataSet
 
 
 def reanalysis_era5_land(
-    output: Optional[str] = None,
+    output: str,
     api_token: Optional[str] = None,
     product_type: list[str] = ["reanalysis"],
     variable: list[str] = [

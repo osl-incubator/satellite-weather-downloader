@@ -236,29 +236,19 @@ class ERA5LandRequest(BaseRequest):
     request: ERA5LandSpecs = Field(default=ERA5LandSpecs(), validate_default=True)
 
     # pylint: disable=maybe-no-member
-    def download(self, output: Optional[str] = None) -> str:
+    def download(self, output: str) -> str:
         request: ERA5LandSpecs = self.request
+        output = Path(output)
 
-        output = Path(output) if output else Path(".")
-        if output.is_dir():
-            output.mkdir(parents=True, exist_ok=True)
-            fname_parts = [self.name, request.date]
-            if request.locale:
-                fname_parts.append(request.locale)
-            s = ".nc" if request.format == "netcdf" else ".grib"
-            suffix = ".zip" if request.download_format == "zip" else s
-            output = (output / "_".join(fname_parts)).with_suffix(suffix)
+        if request.download_format == "zip":
+            output = output.with_suffix(".zip")
         else:
-            output.parent.mkdir(parents=True, exist_ok=True)
-            if request.download_format == "zip":
-                output = output.with_suffix(".zip")
+            if request.format == "netcdf":
+                output = output.with_suffix(".nc")
             else:
-                if request.format == "netcdf":
-                    output = output.with_suffix(".nc")
-                else:
-                    output = output.with_suffix(".grib")
+                output = output.with_suffix(".grib")
 
-        if output.exists():
+        if not output.is_dir() and output.exists():
             return str(output)
 
         client = self.get_client(self.api_key)

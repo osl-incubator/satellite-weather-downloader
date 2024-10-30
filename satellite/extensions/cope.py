@@ -5,7 +5,6 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 import xagg as xa
-import trio
 from loguru import logger
 from epiweeks import Week
 
@@ -72,7 +71,11 @@ class CopeExtension(CopeExtensionBase):
         self._ds = xarray_ds
 
     def to_dataframe(self, adms: Union[list[ADM], ADM]) -> pd.DataFrame:
-        return trio.run(self._ato_dataframe, adms)
+        adms = [adms] if isinstance(adms, ADMBase) else adms
+        dfs = []
+        for adm in adms:
+            dfs.append(_adm_to_dataframe(self._ds, adm=adm))
+        return pd.concat(dfs)
 
     def to_sql(
         self,
@@ -84,65 +87,54 @@ class CopeExtension(CopeExtensionBase):
         verbose: bool = True,
     ) -> None:
         adms = [adms] if isinstance(adms, ADMBase) else adms
-        trio.run(self._ato_sql_async, adms, con, tablename, schema, verbose)
-
-    async def _ato_dataframe(self, adms: Union[list[ADM], ADM]) -> pd.DataFrame:
-        adms = [adms] if isinstance(adms, ADMBase) else adms
-        dfs = []
-        async with trio.open_nursery() as nursery:
-            for adm in adms:
-                nursery.start_soon(self._adm_dataframe, adm, dfs)
-        return pd.concat(dfs)
-
-    async def _adm_dataframe(self, adm: ADM, dfs: list) -> None:
-        ds = await trio.to_thread.run_sync(self.adm_ds, adm)
-        df = ds.to_dataframe().reset_index()
-        df = df.assign(epiweek=str(Week.fromdate(pd.to_datetime(df.time)[0])))
-        columns_to_round = list(
-            set(df.columns).difference(set(["time", "code", "name", "epiweek"]))
-        )
-        df[columns_to_round] = df[columns_to_round].map(lambda x: np.round(x, 4))
-        df = df.drop(columns=["poly_idx", "name"])
-        df = df.rename(columns={"time": "date", "code": "geocode"})
-        dfs.append(df)
-
-    async def _ato_sql_async(
-        self,
-        adms: Union[list[int], int],
-        con,
-        tablename: str,
-        schema: Optional[str] = None,
-        verbose: bool = True,
-    ) -> None:
-        async with trio.open_nursery() as nursery:
-            for adm in adms:
-                nursery.start_soon(
-                    self._adm_to_sql, adm, con, tablename, schema, verbose
-                )
-
-    async def _adm_to_sql(
-        self,
-        adm: ADM,
-        con,
-        tablename: str,
-        schema: Optional[str],
-        verbose: bool,
-    ) -> None:
-        df = await self._ato_dataframe(adm)
-        df.to_sql(
-            name=tablename,
-            schema=schema,
-            con=con,
-            if_exists="append",
-            index=False,
-        )
-        if verbose:
-            logger.info(
-                f"{adm.code} updated on {schema + '.' if schema else ''}{tablename}"
+        for adm in adms:
+            _geocode_to_sql(
+                dataset=self._ds,
+                adm=adm,
+                con=con,
+                schema=schema,
+                tablename=tablename,
             )
+            if verbose:
+                logger.info(
+                    f"{adm.code} updated on "
+                    f"{schema + '.' if schema else ''}{tablename}"
+                )
 
     def adm_ds(self, adm: ADM):
         return _adm_ds(ds=self._ds, adm=adm)
+
+
+def _geocode_to_sql(
+    dataset: xr.Dataset,
+    adm: ADM,
+    con,
+    schema: str,
+    tablename: str,
+) -> None:
+    df = _adm_to_dataframe(dataset=dataset, adm=adm)
+    df.to_sql(
+        name=tablename,
+        schema=schema,
+        con=con,
+        if_exists="append",
+        index=False,
+    )
+    del df
+
+
+def _adm_to_dataframe(dataset: xr.Dataset, adm: ADM) -> pd.DataFrame:
+    ds = _adm_ds(ds=dataset, adm=adm)
+    df = ds.to_dataframe().reset_index()
+    del ds
+    df = df.assign(epiweek=str(Week.fromdate(pd.to_datetime(df.time)[0])))
+    columns_to_round = list(
+        set(df.columns).difference(set(["time", "code", "name", "epiweek"]))
+    )
+    df[columns_to_round] = df[columns_to_round].map(lambda x: np.round(x, 4))
+    df = df.drop(columns=["poly_idx", "name"])
+    df = df.rename(columns={"time": "date", "code": "geocode"})
+    return df
 
 
 def _adm_ds(ds: xr.Dataset, adm: ADM) -> xr.Dataset:
