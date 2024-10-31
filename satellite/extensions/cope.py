@@ -127,12 +127,12 @@ def _adm_to_dataframe(dataset: xr.Dataset, adm: ADM) -> pd.DataFrame:
     ds = _adm_ds(ds=dataset, adm=adm)
     df = ds.to_dataframe().reset_index()
     del ds
+    df = df.drop(columns=["poly_idx", "name"])
     df = df.assign(epiweek=str(Week.fromdate(pd.to_datetime(df.time)[0])))
     columns_to_round = list(
-        set(df.columns).difference(set(["time", "code", "name", "epiweek"]))
+        set(df.columns).difference(set(["time", "code", "epiweek"]))
     )
-    df[columns_to_round] = df[columns_to_round].map(lambda x: np.round(x, 4))
-    df = df.drop(columns=["poly_idx", "name"])
+    df[columns_to_round] = df[columns_to_round].apply(lambda x: np.round(x, 4))
     df = df.rename(columns={"time": "date", "code": "geocode"})
     return df
 

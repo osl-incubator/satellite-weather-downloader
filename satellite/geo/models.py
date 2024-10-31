@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from abc import ABC, abstractmethod
 
+import pandas as pd
 import geopandas as gpd
 import duckdb
 
@@ -81,8 +82,15 @@ class ADMBase(ABC):
 
     @staticmethod
     @lru_cache(maxsize=None)
-    def _read_gpkg(fpath: Path) -> gpd.GeoDataFrame:
-        df = gpd.read_file(str(fpath), encoding="utf-8")
+    def _read_gpkg(fpath: Path, locale = None) -> gpd.GeoDataFrame:
+        if locale == "BRA":
+            chunks = constants.GPKGS_DIR / "BRA"
+            dfs = []
+            for chunk in chunks.glob("*.gpkg"):
+                dfs.append(gpd.read_file(str(chunk), encoding="utf-8"))
+            df = pd.concat(dfs, ignore_index=True)
+        else:
+            df = gpd.read_file(str(fpath), encoding="utf-8")
         return df
 
     @classmethod
@@ -140,7 +148,7 @@ class ADM0(ADMBase):
 
     def to_dataframe(self) -> gpd.GeoDataFrame:
         gpkg = constants.GPKGS_DIR / f"{self.code}.gpkg"
-        gdf = self._read_gpkg(gpkg)
+        gdf = self._read_gpkg(gpkg, locale=self.code)
         gdf = gdf.dissolve()
         if len(gdf) != 1:
             raise ValueError("expects only one row as output")
@@ -164,7 +172,7 @@ class ADM1(ADMBase):
     def to_dataframe(self) -> gpd.GeoDataFrame:
         adm0 = self.adm0.code if isinstance(self.adm0, ADM0) else self.adm0
         gpkg = constants.GPKGS_DIR / f"{adm0}.gpkg"
-        gdf = self._read_gpkg(gpkg)
+        gdf = self._read_gpkg(gpkg, locale=adm0)
         gdf = gdf[gdf["adm1"] == self.code]
         gdf = gdf.dissolve(by="adm1", as_index=False).reset_index(drop=True)
         if len(gdf) != 1:
@@ -199,7 +207,7 @@ class ADM2(ADMBase):
         adm0 = self.adm0.code if isinstance(self.adm0, ADM0) else self.adm0
         adm1 = self.adm1.code if isinstance(self.adm1, ADM1) else self.adm1
         gpkg = constants.GPKGS_DIR / f"{adm0}.gpkg"
-        gdf = self._read_gpkg(gpkg)
+        gdf = self._read_gpkg(gpkg, locale=adm0)
         gdf = gdf[(gdf["adm1"] == adm1) & (gdf["adm2"] == self.code)]
         if len(gdf) != 1:
             raise ValueError("expects only one row as output")
