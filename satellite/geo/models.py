@@ -82,7 +82,7 @@ class ADMBase(ABC):
 
     @staticmethod
     @lru_cache(maxsize=None)
-    def _read_gpkg(fpath: Path, locale = None) -> gpd.GeoDataFrame:
+    def _read_gpkg(fpath: Path, locale=None) -> gpd.GeoDataFrame:
         if locale == "BRA":
             chunks = constants.GPKGS_DIR / "BRA"
             dfs = []

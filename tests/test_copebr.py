@@ -4,8 +4,6 @@ from pathlib import Path
 from pstats import Stats
 
 import loguru
-import numpy as np
-import pandas as pd
 import xarray as xr
 from satellite import DataSet, ADM2, ADM0
 
@@ -43,5 +41,5 @@ class TestWeatherCopebr(unittest.TestCase):
         stats.sort_stats("cumtime").print_stats(10)
 
         self.assertTrue(type(dataset) == xr.core.dataset.Dataset)
-        self.assertEqual(list(dataset.keys()), ['t2m', 'tp', 'd2m', 'msl'])
+        self.assertEqual(list(dataset.keys()), ["t2m", "tp", "d2m", "msl"])
         self.assertEqual(list(dataset.coords), ["longitude", "latitude", "time"])
