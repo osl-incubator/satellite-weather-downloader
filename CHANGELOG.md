@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+# [1.11.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.10.1...1.11.0) (2024-11-01)
+
+
+### Features
+
+* **copebr:** add locales; include Argenina to weather ([#70](https://github.com/osl-incubator/satellite-weather-downloader/issues/70)) ([b9e2ac1](https://github.com/osl-incubator/satellite-weather-downloader/commit/b9e2ac1d8c06681cd7659acb3fcd2f818f6eafbc))
+
 ## [1.10.1](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.10.0...1.10.1) (2024-06-04)
 
 
