@@ -75,7 +75,7 @@ class CopeExtension(CopeExtensionBase):
         dfs = []
         for adm in adms:
             dfs.append(_adm_to_dataframe(self._ds, adm=adm))
-        return pd.concat(dfs)
+        return pd.concat(dfs, ignore_index=True)
 
     def to_sql(
         self,
@@ -148,9 +148,10 @@ def _adm_ds(ds: xr.Dataset, adm: ADM) -> xr.Dataset:
         _reduce_by(gb, np.max, "max"),
         _reduce_by(gb, np.sum, "tot"),
     )
-    return xr.combine_by_coords(
-        [ds.code, ds.name, gmin, gmean, gmax, gtot.precip_tot], data_vars="all"
-    )
+    coords = [ds.code, ds.name, gmin, gmean, gmax]
+    if "precip_tot" in gtot.data_vars:
+        coords.append(gtot.precip_tot)
+    return xr.combine_by_coords(coords, data_vars="all")
 
 
 def _reduce_by(ds: xr.Dataset, func, prefix: str) -> xr.Dataset:
