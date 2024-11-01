@@ -50,8 +50,7 @@
       {
         "assets": [
           "pyproject.toml",
-          "CHANGELOG.md",
-          "downloader_app/__init__.py"
+          "CHANGELOG.md"
         ],
         "message": "chore(release): ${nextRelease.version}"
       }

@@ -6,6 +6,7 @@
 notebooks_tmp/
 satellite_weather_downloader/tests/
 *utilities/geo_json/
+.pylintrc
 
 
 ### Python template
@@ -54,6 +55,9 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+.mypy_cache
+.pytest_cache
+.ruff_cache
 nosetests.xml
 coverage.xml
 *satellite_weather_downloader/tests
@@ -97,3 +101,8 @@ rabbitmq.conf
 *certificate.pem
 *key.pem
 *key.p12
+.misc
+*.dbf
+*.zip
+*.nc
+*.geojson
