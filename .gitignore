@@ -103,6 +103,5 @@ rabbitmq.conf
 *key.p12
 .misc
 *.dbf
-*.zip
 *.nc
 *.geojson
