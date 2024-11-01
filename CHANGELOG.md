@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.11.1](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.11.0...1.11.1) (2024-11-01)
+
+
+### Bug Fixes
+
+* **gpkgs:** zip gpkg files to reduce package size (~20%) ([#71](https://github.com/osl-incubator/satellite-weather-downloader/issues/71)) ([f0b668e](https://github.com/osl-incubator/satellite-weather-downloader/commit/f0b668e93b68f04d64c76d8feb2fe44aaaf3430f))
+
 # [1.11.0](https://github.com/osl-incubator/satellite-weather-downloader/compare/1.10.1...1.11.0) (2024-11-01)
 
 
